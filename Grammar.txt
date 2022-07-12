@@ -1,0 +1,24 @@
+Grammar:
+<regex> ::= <regex> | <anchor>
+<regex> ::= <anchor>
+<anchor>::= ^<anchor>
+<anchor>::= <anchor>$
+<anchor>::= <conc>
+<conc>  ::= <conc><quant> 
+<conc>  ::= <quant>
+<quant> ::= <quant>*
+<quant> ::= <quant>+
+<quant> ::= <quant>?
+<quant> ::= <quant>{int m, int n}
+<quant> ::= <special_char>
+<quant> ::= <group>
+<group> ::= (<regex>)
+<group> ::= <char_class>
+<char_class> ::= [<char_class_seq>]
+<char_class> ::= [^<char_class_seq>]
+<char_class> ::= <esc_seq>
+<char_class_seq> ::= <char_class_seq><range>
+<char_class_seq> ::= <char_class_seq><esq_seq>
+<esc_seq>    ::= \<factor>
+<esc_seq>    ::= <factor>
+<factor>     ::= alphanumber

@@ -1,11 +1,11 @@
 #include "regex.h"
 
-RegularExpressionResult RegularExpression::exec(const std::string& string)
+m0st4fa::RegularExpressionResult m0st4fa::RegularExpression::exec(const std::string&)
 {
-    return RegularExpressionResult();
+	return RegularExpressionResult();
 }
 
-bool RegularExpression::match(const std::string& string)
+bool m0st4fa::RegularExpression::match(const std::string&)
 {
-    return false;
+	return false;
 }

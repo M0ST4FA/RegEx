@@ -4,8 +4,8 @@
 
 namespace m0st4fa {
 
-	template <typename TableT, typename SymbolT, typename token_t, typename input_t = std::string>
-	class LRParser : public Parser<TableT, token_t, input_t> {
+	template <typename TableT, typename SymbolT, typename token_t, typename InputT = std::string>
+	class LRParser : public Parser<TableT, token_t, InputT> {
 
 
 	public:

@@ -15,13 +15,13 @@ namespace m0st4fa {
 		typedef struct table_t {};
 		typedef struct symbol_t {};
 		typedef struct token_t {};
-		typedef struct input_t {};
+		typedef struct InputT {};
 
 		// data members
 		std::string m_Source;
 		index_t m_Index;
 		flag_t m_Flags;
-		LRParser<table_t, symbol_t, token_t, input_t> m_Parser;
+		LRParser<table_t, symbol_t, token_t, InputT> m_Parser;
 
 		// private methods
 

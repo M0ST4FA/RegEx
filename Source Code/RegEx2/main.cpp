@@ -1,9 +1,11 @@
 #include "regex.h"
-
-
 using namespace m0st4fa;
 
+#include <iostream>
+#include <array>
+
 #define TEST_DFA
+
 
 #ifdef TEST_REGEX
 
@@ -44,17 +46,41 @@ int main(void) {
 }
 
 #elif defined TEST_DFA
+
+template<typename T>
+constexpr void initTranFn_ab(T& fun) {
+	fun[1]['a']= 2;
+	fun[2]['a'] = 3;
+	fun[3]['a'] = 1+2;
+	fun[3]['b'] = 2+2;
+	fun[4]['a'] = 1+2;
+	fun[4]['b'] = 3+2;
+	fun[5]['a'] = 3+2;
+	fun[5]['b'] = 3+2;
+}					 
+
 int main(void) {
-	typedef struct input_t {};
-	typedef struct transfn_t {};
+	typedef std::array<std::array<char, 'z'>, 10> table_t;
 
-	TransitionFunction<input_t> tf;
-	// state_t nextState = tf[cstate][cinput];
 
-	DFA<transfn_t, input_t> automaton; // {tranfn}
+	table_t input{};
+	initTranFn_ab(input);
 
+	TransitionFunction<table_t> tf{ input };
+
+	state_t nextState = tf(1, 'a');
+	std::cout << nextState << std::endl;
+
+
+	std::set<state_t> fstates = {5};
+	DFA<TransFn<table_t>, std::string> automaton{ fstates, tf, 0 }; // {tranfn}
+
+	
+	std::string str = "aababbaabbbafbbbbbbbb";
+	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_PREFIX);
+	std::cout << result << "\n";
+	
 }
-
 
 #endif
 

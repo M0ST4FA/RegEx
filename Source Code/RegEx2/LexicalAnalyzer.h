@@ -8,11 +8,11 @@
 namespace m0st4fa {
 	
 	
-	template <typename token_t, typename input_t = std::string>
+	template <typename token_t, typename InputT = std::string>
 	class LexicalAnalyzer {
-		using TokenFactoryT = token_t (*)(state_t, input_t);
+		using TokenFactoryT = token_t (*)(state_t, InputT);
 
-		DFA<TransFn<input_t>, input_t> automaton;
+		DFA<TransFn<InputT>, InputT> automaton;
 		TokenFactoryT m_TokenFactory = nullptr;
 
 	public:

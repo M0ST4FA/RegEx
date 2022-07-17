@@ -16,10 +16,8 @@ namespace m0st4fa {
 		// private methods
 		FSMResult _simulate_whole_string(const InputT&) const;
 		FSMResult _simulate_longest_prefix(const InputT&) const;
-		
-		/**
-		* @return (accepted?, endIndex)
-		*/
+		FSMResult _simulate_longest_substring(const InputT&) const;
+
 		bool _check_accepted_longest_prefix(const std::vector<state_t>&, size_t&) const;
 		
 	public:
@@ -34,8 +32,6 @@ namespace m0st4fa {
 
 	template <typename TransFuncT, typename InputT = std::string>
 	using DFA = DeterFiniteAutomata<TransFuncT, InputT>;
-	
-	
 	
 
 	// IMPLEMENTATIONS
@@ -94,6 +90,59 @@ namespace m0st4fa {
 
 		return FSMResult(accepted, { 0, index }, input);
 	}
+
+	template<typename TransFuncT, typename InputT>
+	FSMResult DeterFiniteAutomata<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
+	{
+
+		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		/**
+		* keeps track of the path taken through the machine.
+		* Will be used to figure out the longest matched prefix, if any.
+		*/
+		std::vector matchedStates = { currState };
+		size_t startIndex = 0, endIndex = 0;
+
+		/**
+		 * Follow a path through the machine using the characters of the string.
+		 * Keep track of that path in order to be able to find the longest prefix if the whole string is not accepted.
+		 * Break if you hit a dead state since it is dead.
+		 * If a substring was not accepted, start matching the next substring if any
+		*/
+		for (; startIndex < input.size(); endIndex = ++startIndex) {
+			// start from startIndex until the end of the string or until you reach a dead state
+			/**
+			* The value of endIndex will be correct because the last time we increment it, the condition is guaranteed to fail.
+			* This guarantees that endIndex will always equal the size of the string - startIndex.
+			*/
+			for (; endIndex < input.size(); endIndex++) {
+				// get next state
+				auto c = input[endIndex];
+				currState = this->m_TransitionFunc(currState, c);
+
+				// break out if it is dead
+				if (currState == DEAD_STATE)
+					break;
+
+				// update our path through the machine
+				matchedStates.push_back(currState);
+			};
+
+			// figure out whether there is an accepted longest prefix
+			bool accepted = _check_accepted_longest_prefix(matchedStates, endIndex);
+
+			// if this substring was not accepted, reset the current state and loopback
+			if (-not accepted) {
+				currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+				continue;
+			}
+
+			// if it was accepted:
+			return FSMResult(true, { startIndex, endIndex }, input);
+		}
+
+		return FSMResult(false, { 0, 0 }, input);
+	}
 	
 	template<typename TransFuncT, typename InputT>
 	inline bool DeterFiniteAutomata<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_t>& matchedStates, size_t& index) const
@@ -113,7 +162,7 @@ namespace m0st4fa {
 				break;
 			}
 
-			index--;
+			index = currState == FiniteStateMachine<TransFuncT, InputT>::START_STATE ? 0 : index - 1;
 			it++;
 		}
 		
@@ -128,6 +177,8 @@ namespace m0st4fa {
 			return this->_simulate_whole_string(input);
 		case FSM_MODE::MM_LONGEST_PREFIX:
 			return this->_simulate_longest_prefix(input);
+		case FSM_MODE::MM_LONGEST_SUBSTRING:
+			return this->_simulate_longest_substring(input);
 		default:
 			std::cerr << "Unreachable: simulate() cannot reach this point." << std::endl;
 		}

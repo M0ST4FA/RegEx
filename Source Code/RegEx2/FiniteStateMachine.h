@@ -46,6 +46,7 @@ namespace m0st4fa {
 	enum class FSM_MODE {
 		MM_WHOLE_STRING,
 		MM_LONGEST_PREFIX,
+		MM_LONGEST_SUBSTRING,
 		MM_FSM_MODE_MAX,
 	};
 

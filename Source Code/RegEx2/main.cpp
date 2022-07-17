@@ -75,9 +75,8 @@ int main(void) {
 	std::set<state_t> fstates = {5};
 	DFA<TransFn<table_t>, std::string> automaton{ fstates, tf, 0 }; // {tranfn}
 
-	
-	std::string str = "aababbaabbbafbbbbbbbb";
-	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_PREFIX);
+	std::string str = "fffffaabbffff";
+	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_SUBSTRING);
 	std::cout << result << "\n";
 	
 }

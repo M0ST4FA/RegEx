@@ -6,7 +6,7 @@ std::ostream& m0st4fa::operator<<(const std::ostream& os, const FSMResult& resul
         result.accepted, result.indecies.start, result.indecies.end);
 
 #ifdef _DEBUG
-    printf("Matched string: %.*s\n", result.indecies.end - result.indecies.start, result.input.c_str() + result.indecies.start - 1);
+    printf("Matched string: %.*s\n", result.indecies.end - result.indecies.start, result.input.c_str() + result.indecies.start);
 #endif
 
     return std::cout;

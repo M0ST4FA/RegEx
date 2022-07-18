@@ -10,7 +10,7 @@ namespace m0st4fa {
 	* Provides a single function: simulate();
 	*/
 	template <typename TransFuncT, typename InputT = std::string>
-	class DeterFiniteAutomatan: FiniteStateMachine<TransFuncT, InputT> {
+	class NonDeterFiniteAutomatan : FiniteStateMachine<TransFuncT, InputT> {
 		// fields
 
 		// static variables
@@ -22,24 +22,25 @@ namespace m0st4fa {
 		FSMResult _simulate_longest_substring(const InputT&) const;
 
 		bool _check_accepted_longest_prefix(const std::vector<state_t>&, size_t&) const;
-		
+
 	public:
-		DeterFiniteAutomatan() = default;
-		DeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
-			FiniteStateMachine<TransFuncT, InputT> {fStates, tranFn, FSM_TYPE::MT_DFA, flags}
+		NonDeterFiniteAutomatan() = default;
+		NonDeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, flag_t flags) :
+			FiniteStateMachine<TransFuncT, InputT>{ fStates, tranFn, flags }
 		{};
 
-		FSMResult simulate(const InputT&, FSM_MODE) const;
 		
+		FSMResult simulate(const InputT&, FSM_MODE) const;
+
 	};
 
 	template <typename TransFuncT, typename InputT = std::string>
-	using DFA = DeterFiniteAutomatan<TransFuncT, InputT>;
-	
+	using NFA = NonDeterFiniteAutomatan<TransFuncT, InputT>;
 
+	// TODO: provide the correct implementations
 	// IMPLEMENTATIONS
 	template<typename TransFuncT, typename InputT>
-	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_whole_string(const InputT& input) const
+	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_whole_string(const InputT& input) const
 	{
 		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 
@@ -56,17 +57,17 @@ namespace m0st4fa {
 
 		bool accepted = this->getFinalStates().contains(currState);
 
-		return FSMResult(accepted, { 0, accepted ? input.size() : 0}, input);
+		return FSMResult(accepted, { 0, accepted ? input.size() : 0 }, input);
 	}
 
 	template<typename TransFuncT, typename InputT>
-	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_prefix(const InputT& input) const
+	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_prefix(const InputT& input) const
 	{
 		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 		/**
 		* keeps track of the path taken through the machine.
 		* Will be used to figure out the longest matched prefix, if any.
-		*/ 
+		*/
 		std::vector matchedStates = { currState };
 		size_t index = 0;
 
@@ -95,7 +96,7 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
-	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
+	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
 	{
 
 		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
@@ -146,9 +147,9 @@ namespace m0st4fa {
 
 		return FSMResult(false, { 0, 0 }, input);
 	}
-	
+
 	template<typename TransFuncT, typename InputT>
-	inline bool DeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_t>& matchedStates, size_t& index) const
+	inline bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_t>& matchedStates, size_t& index) const
 	{
 		bool accepted = false;
 
@@ -168,7 +169,7 @@ namespace m0st4fa {
 			index = currState == FiniteStateMachine<TransFuncT, InputT>::START_STATE ? 0 : index - 1;
 			it++;
 		}
-		
+
 		return accepted;
 	};
 
@@ -176,7 +177,7 @@ namespace m0st4fa {
 	* @brief Simulate the given input string using the given simulation method.
 	*/
 	template<typename TransFuncT, typename InputT>
-	inline FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::simulate(const InputT& input, FSM_MODE mode) const
+	inline FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::simulate(const InputT& input, FSM_MODE mode) const
 	{
 		switch (mode) {
 		case FSM_MODE::MM_WHOLE_STRING:
@@ -192,5 +193,5 @@ namespace m0st4fa {
 		}
 
 	}
-
+	
 }

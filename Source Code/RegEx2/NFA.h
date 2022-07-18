@@ -25,10 +25,17 @@ namespace m0st4fa {
 
 	public:
 		NonDeterFiniteAutomatan() = default;
-		NonDeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, flag_t flags) :
-			FiniteStateMachine<TransFuncT, InputT>{ fStates, tranFn, flags }
-		{};
-
+		NonDeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, FSM_TYPE machineType, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
+			FiniteStateMachine<TransFuncT, InputT>{ fStates, tranFn, machineType, flags }
+		{
+			// TODO: more robust error handling
+			if (machineType != FSM_TYPE::MT_EPSILON_NFA && machineType != FSM_TYPE::MT_NON_EPSILON_NFA) {
+				std::cerr(R"(NonDeterFiniteAutomatan: machineType must be either "MT_EPSILON_NFA" or "MT_NON_EPSILON_NFA")");
+				throw std::invalid_argument(R"(NonDeterFiniteAutomatan: machineType must be either "MT_EPSILON_NFA" or "MT_NON_EPSILON_NFA")");
+			};
+			
+		};
+		
 		
 		FSMResult simulate(const InputT&, FSM_MODE) const;
 

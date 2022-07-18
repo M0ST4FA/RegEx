@@ -49,9 +49,6 @@ namespace m0st4fa {
 			return m_Function.at(state).at(input);
 		}
 
-	private:
-		
-
 	};
 
 	template<typename TableT>
@@ -84,7 +81,21 @@ namespace m0st4fa {
 		FiniteStateMachine() = default;
 		FiniteStateMachine(const state_set_t& fStates, const TransFuncT& tranFn, FSM_TYPE machineType ,flag_t flags) :
 			m_FinalStates { fStates }, m_TransitionFunc{ tranFn }, m_MachineType {machineType}, m_Flags{flags}
-			{};
+			{
+			
+			// TODO: better error handling
+			if (fStates.empty()) {
+				std::cerr << R"(FiniteStateMachine: the set of final states cannot be empty)";
+				throw std::invalid_argument(R"(FiniteStateMachine: the set of final states cannot be empty)");
+			};
+
+			// TODO: better error handling
+			if (machineType == FSM_TYPE::MT_MACHINE_TYPE_MAX) {
+				std::cerr << R"(FiniteStateMachine: the machine type is invalid)";
+				throw std::invalid_argument(R"(FiniteStateMachine: the machine type is invalid)");
+			};
+		
+		};
 
 		const std::set<state_t>& getFinalStates() const { return m_FinalStates; };
 		flag_t getFlags() const { return m_Flags; };

@@ -6,13 +6,11 @@ namespace m0st4fa {
 
 	// DECLARATIONS
 	/**
-	* @brief A DFA that that can be used to match strings.
-	* Provides a single function: simulate();
+	* @brief An NFA that that can be used to match strings.
+	* The transition function must map states and input to sets of states.
 	*/
 	template <typename TransFuncT, typename InputT = std::string>
 	class NonDeterFiniteAutomatan : FiniteStateMachine<TransFuncT, InputT> {
-		// fields
-
 		// static variables
 		constexpr static state_t DEAD_STATE = 0;
 
@@ -28,10 +26,12 @@ namespace m0st4fa {
 		NonDeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, FSM_TYPE machineType, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
 			FiniteStateMachine<TransFuncT, InputT>{ fStates, tranFn, machineType, flags }
 		{
-			// TODO: more robust error handling
+			
+			// if the correct machine type is not passed
 			if (machineType != FSM_TYPE::MT_EPSILON_NFA && machineType != FSM_TYPE::MT_NON_EPSILON_NFA) {
-				std::cerr(R"(NonDeterFiniteAutomatan: machineType must be either "MT_EPSILON_NFA" or "MT_NON_EPSILON_NFA")");
-				throw std::invalid_argument(R"(NonDeterFiniteAutomatan: machineType must be either "MT_EPSILON_NFA" or "MT_NON_EPSILON_NFA")");
+				const std::string message = R"(NonDeterFiniteAutomatan: machineType must be either "MT_EPSILON_NFA" or "MT_NON_EPSILON_NFA")";
+				this->m_ErrorReporter.report(ERROR_TYPE::ET_INVALID_ARGUMENT, message);
+				throw std::invalid_argument(message);
 			};
 			
 		};
@@ -44,7 +44,6 @@ namespace m0st4fa {
 	template <typename TransFuncT, typename InputT = std::string>
 	using NFA = NonDeterFiniteAutomatan<TransFuncT, InputT>;
 
-	// TODO: provide the correct implementations
 	// IMPLEMENTATIONS
 	template<typename TransFuncT, typename InputT>
 	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_whole_string(const InputT& input) const

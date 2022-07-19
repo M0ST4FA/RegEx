@@ -4,6 +4,7 @@
 
 namespace m0st4fa {
 	
+
 	template <typename TableT, typename token_t, typename input_t = std::string>
 	class Parser {
 		LexicalAnalyzer<token_t, input_t> m_LexicalAnalyzer;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Error.h"
+
 #include <set>
 #include <vector>
 #include <array>
@@ -75,6 +77,9 @@ namespace m0st4fa {
 
 	protected:
 		TransFuncT m_TransitionFunc;
+		ErrorReporter m_ErrorReporter;
+		
+		// static
 		static constexpr state_t START_STATE = 1;
 
 	public:
@@ -83,16 +88,16 @@ namespace m0st4fa {
 			m_FinalStates { fStates }, m_TransitionFunc{ tranFn }, m_MachineType {machineType}, m_Flags{flags}
 			{
 			
-			// TODO: better error handling
 			if (fStates.empty()) {
-				std::cerr << R"(FiniteStateMachine: the set of final states cannot be empty)";
-				throw std::invalid_argument(R"(FiniteStateMachine: the set of final states cannot be empty)");
+				const std::string message = "FiniteStateMachine: the set of final states cannot be empty.";
+				m_ErrorReporter.report(ERROR_TYPE::ET_INVALID_ARGUMENT, message, "Pass at least a single argument.");
+				throw std::invalid_argument(message);
 			};
 
-			// TODO: better error handling
 			if (machineType == FSM_TYPE::MT_MACHINE_TYPE_MAX) {
-				std::cerr << R"(FiniteStateMachine: the machine type is invalid)";
-				throw std::invalid_argument(R"(FiniteStateMachine: the machine type is invalid)");
+				const std::string message = R"(FiniteStateMachine: the machine type is invalid.)";
+				m_ErrorReporter.report(ERROR_TYPE::ET_INVALID_ARGUMENT, message);
+				throw std::invalid_argument(message);
 			};
 		
 		};

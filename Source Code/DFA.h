@@ -6,11 +6,13 @@ namespace m0st4fa {
 
 	// DECLARATIONS
 	/**
-	* @brief An NFA that that can be used to match strings.
-	* The transition function must map states and input to sets of states.
+	* @brief A DFA that that can be used to match strings.
+	* Provides a single function: simulate();
 	*/
 	template <typename TransFuncT, typename InputT = std::string>
-	class NonDeterFiniteAutomatan : FiniteStateMachine<TransFuncT, InputT> {
+	class DeterFiniteAutomatan: FiniteStateMachine<TransFuncT, InputT> {
+		// fields
+
 		// static variables
 		constexpr static state_t DEAD_STATE = 0;
 
@@ -20,33 +22,24 @@ namespace m0st4fa {
 		FSMResult _simulate_longest_substring(const InputT&) const;
 
 		bool _check_accepted_longest_prefix(const std::vector<state_t>&, size_t&) const;
-
+		
 	public:
-		NonDeterFiniteAutomatan() = default;
-		NonDeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, FSM_TYPE machineType, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
-			FiniteStateMachine<TransFuncT, InputT>{ fStates, tranFn, machineType, flags }
-		{
-			
-			// if the correct machine type is not passed
-			if (machineType != FSM_TYPE::MT_EPSILON_NFA && machineType != FSM_TYPE::MT_NON_EPSILON_NFA) {
-				const std::string message = R"(NonDeterFiniteAutomatan: machineType must be either "MT_EPSILON_NFA" or "MT_NON_EPSILON_NFA")";
-				this->m_ErrorReporter.report(ERROR_TYPE::ET_INVALID_ARGUMENT, message);
-				throw std::invalid_argument(message);
-			};
-			
-		};
-		
-		
-		FSMResult simulate(const InputT&, FSM_MODE) const;
+		DeterFiniteAutomatan() = default;
+		DeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
+			FiniteStateMachine<TransFuncT, InputT> {fStates, tranFn, FSM_TYPE::MT_DFA, flags}
+		{};
 
+		FSMResult simulate(const InputT&, FSM_MODE) const;
+		
 	};
 
 	template <typename TransFuncT, typename InputT = std::string>
-	using NFA = NonDeterFiniteAutomatan<TransFuncT, InputT>;
+	using DFA = DeterFiniteAutomatan<TransFuncT, InputT>;
+	
 
 	// IMPLEMENTATIONS
 	template<typename TransFuncT, typename InputT>
-	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_whole_string(const InputT& input) const
+	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_whole_string(const InputT& input) const
 	{
 		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 
@@ -63,17 +56,17 @@ namespace m0st4fa {
 
 		bool accepted = this->getFinalStates().contains(currState);
 
-		return FSMResult(accepted, { 0, accepted ? input.size() : 0 }, input);
+		return FSMResult(accepted, { 0, accepted ? input.size() : 0}, input);
 	}
 
 	template<typename TransFuncT, typename InputT>
-	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_prefix(const InputT& input) const
+	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_prefix(const InputT& input) const
 	{
 		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 		/**
 		* keeps track of the path taken through the machine.
 		* Will be used to figure out the longest matched prefix, if any.
-		*/
+		*/ 
 		std::vector matchedStates = { currState };
 		size_t index = 0;
 
@@ -102,7 +95,7 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
-	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
+	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
 	{
 
 		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
@@ -153,9 +146,9 @@ namespace m0st4fa {
 
 		return FSMResult(false, { 0, 0 }, input);
 	}
-
+	
 	template<typename TransFuncT, typename InputT>
-	inline bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_t>& matchedStates, size_t& index) const
+	inline bool DeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_t>& matchedStates, size_t& index) const
 	{
 		bool accepted = false;
 
@@ -172,10 +165,10 @@ namespace m0st4fa {
 				break;
 			}
 
-			index = currState == FiniteStateMachine<TransFuncT, InputT>::START_STATE ? 0 : index - 1;
+			index = FiniteStateMachine<TransFuncT, InputT>::START_STATE ? 0 : index - 1;
 			it++;
 		}
-
+		
 		return accepted;
 	};
 
@@ -183,7 +176,7 @@ namespace m0st4fa {
 	* @brief Simulate the given input string using the given simulation method.
 	*/
 	template<typename TransFuncT, typename InputT>
-	inline FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::simulate(const InputT& input, FSM_MODE mode) const
+	inline FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::simulate(const InputT& input, FSM_MODE mode) const
 	{
 		switch (mode) {
 		case FSM_MODE::MM_WHOLE_STRING:
@@ -199,5 +192,5 @@ namespace m0st4fa {
 		}
 
 	}
-	
+
 }

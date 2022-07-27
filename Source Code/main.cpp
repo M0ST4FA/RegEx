@@ -1,4 +1,6 @@
 #include "regex.h"
+#include "NFA.h"
+
 using namespace m0st4fa;
 
 #include <iostream>
@@ -47,6 +49,7 @@ int main(void) {
 
 #elif defined TEST_DFA
 
+// TODO: create a version for NFA
 template<typename T>
 constexpr void initTranFn_ab(T& fun) {
 	fun[1]['a']= 2;
@@ -59,25 +62,59 @@ constexpr void initTranFn_ab(T& fun) {
 	fun[5]['b'] = 3+2;
 }					 
 
+template<typename T>
+constexpr void initTranFn_ab_NFA(T& fun) {
+
+	/*
+	  -> a -> a
+	s    |
+	  -> b
+	*/
+
+	fun[1]['a'] = { 2 };
+	fun[1]['b'] = { 3 };
+
+	fun[2]['a'] = { 2, 4 };
+	fun[2]['b'] = { 3 };
+
+	fun[3]['a'] = { 2, 4 };
+	fun[3]['b'] = { 3 };
+
+	fun[4]['a'] = { 2, 4 };
+	fun[4]['b'] = { 2 };
+
+};
+
+
 int main(void) {
-	typedef std::array<std::array<char, 'z'>, 10> table_t;
+	typedef std::array<std::array<state_set_t, 'z'>, 10> table_t;
 
 
 	table_t input{};
-	initTranFn_ab(input);
+	initTranFn_ab_NFA(input);
+
 
 	TransitionFunction<table_t> tf{ input };
 
-	state_t nextState = tf(1, 'a');
-	std::cout << nextState << std::endl;
 
+	// TODO: next state is a set now
+	/*state_t nextState = tf(1, 'a');
+	std::cout << nextState << std::endl;*/
 
-	std::set<state_t> fstates = {5};
-	DFA<TransFn<table_t>, std::string> automaton{ fstates, tf, 0 }; // {tranfn}
+	state_set_t fstates = {4, 2};
+	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_EPSILON_NFA };
 
-	std::string str = "fffffaabbffff";
-	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_SUBSTRING);
+	std::string str = "aabba";
+	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_PREFIX);
 	std::cout << result << "\n";
+
+	std::string x;
+	
+	while (x != "q") {
+		std::cin >> x;
+		if (x == "q") break;
+	}
+	
 	
 }
 

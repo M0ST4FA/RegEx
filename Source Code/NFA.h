@@ -111,6 +111,67 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
+	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
+	{
+		
+		std::vector<state_set_t> matchedStatesSet = { {FiniteStateMachine<TransFuncT, InputT>::START_STATE} };
+
+		/**
+		* keeps track of the path taken through the machine.
+		* Will be used to figure out the longest matched prefix, if any.
+		*/
+		size_t startIndex = 0, endIndex = 0;
+
+		for (; endIndex < input.size(); endIndex = ++startIndex ) {
+
+			/**
+			 * Follow a path through the machine using the characters of the string.
+			 * Keep track of that path in order to be able to find the longest prefix if the whole string is not accepted.
+			*/
+			if (this->getMachineType() == FSM_TYPE::MT_NON_EPSILON_NFA)
+				for (; endIndex < input.size(); endIndex++)
+				{
+					this->m_Logger.logDebug(std::string() + input[endIndex]);
+					auto c = input[endIndex];
+					state_set_t currStateSet = this->m_TransitionFunc(matchedStatesSet.back(), c);
+					
+					// get next set of states
+					// update our path through the machine
+					matchedStatesSet.push_back(currStateSet);
+				}
+			else 
+				for (; endIndex < input.size(); endIndex++)
+				{
+					auto c = input[endIndex];
+					auto currStateSet = _epsilon_closure(
+						this->m_TransitionFunc(matchedStatesSet.back(), c));
+					
+					this->m_Logger.logDebug(std::string("Set size: ") + std::to_string(currStateSet.size()));
+
+					// get next set of states
+					// update our path through the machine
+					matchedStatesSet.push_back(currStateSet);
+				}
+
+			// figure out whether there is an accepted longest prefix
+			bool accepted = _check_accepted_longest_prefix(matchedStatesSet, endIndex);
+
+			// if this substring was not accepted, check the next
+			if (-not accepted) {
+				matchedStatesSet = { {FiniteStateMachine<TransFuncT, InputT>::START_STATE} };
+				continue;
+			}
+
+			// if it was accepted
+			return FSMResult(true, { startIndex, endIndex }, input);
+		}
+
+		// if there was no accepted substring
+		return FSMResult(false, { 0, 0 }, input);
+
+	}
+
+	template<typename TransFuncT, typename InputT>
 	bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_set_t>& stateSet, size_t& index) const
 	{
 		bool res = false;
@@ -130,10 +191,12 @@ namespace m0st4fa {
 					break;
 				}
 
-			this->m_Logger.logDebug("index: " + std::to_string(index));
+			this->m_Logger.logDebug("_check_accepted_longest_prefix: current searched index: " + std::to_string(index));
 			index =  (currStateSet.contains(FiniteStateMachine<TransFuncT, InputT>::START_STATE)) ? 0 : index - 1;
-			this->m_Logger.logDebug("index: " + std::to_string(index));
 			
+			if (res)
+				break;
+
 			it++;
 		}
 		
@@ -189,11 +252,14 @@ namespace m0st4fa {
 			return this->_simulate_whole_string(input);
 		case FSM_MODE::MM_LONGEST_PREFIX:
 			return this->_simulate_longest_prefix(input);
-	/*	case FSM_MODE::MM_LONGEST_SUBSTRING:
+		case FSM_MODE::MM_LONGEST_SUBSTRING:
 			return this->_simulate_longest_substring(input);
-	*/	default:
-			std::cerr << "Unreachable: simulate() cannot reach this point." << std::endl;
-			// TODO: throw a better exception
+		default:
+			LoggerInfo loggerInfo = {
+				  .level = LOG_LEVEL::LL_ERROR,
+				  .info = {.errorType = ERROR_TYPE::ET_INVALID_ARGUMENT}
+			};
+			this->m_Logger.log(loggerInfo, "Unreachable: simulate() cannot reach this point. The provided mode is probably erraneous.");
 			throw std::runtime_error("The provided mode is erroneous in function DFA::simulate().");
 		}
 

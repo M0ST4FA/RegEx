@@ -5,7 +5,7 @@
 #include <format>
 #include <source_location>
 
-#define _TRACE
+//#define _TRACE
 
 namespace m0st4fa {
 	
@@ -34,15 +34,15 @@ namespace m0st4fa {
 	
 	class Logger {
 
-		static constexpr const char* LOG_LEVEL_STRING[(int)LOG_LEVEL::LL_LOG_LEVEL_MAX] = {
+		static constexpr const volatile char* LOG_LEVEL_STRING[(int)LOG_LEVEL::LL_LOG_LEVEL_MAX] = {
 			"FATAL ERROR",
 			"ERROR",
 			"WARNING",
-			"INFO"
+			"INFO",
 			"DEBUG",
 		};
 
-		static constexpr const char* ERROR_TYPE_NAMES[(int)ERROR_TYPE::ET_ERROR_TYPE_MAX] = {
+		static constexpr const volatile char* ERROR_TYPE_NAMES[(int)ERROR_TYPE::ET_ERROR_TYPE_MAX] = {
 			"Invalid Argument",
 		};
 		

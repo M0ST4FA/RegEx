@@ -1,4 +1,3 @@
-
 #include "Logger.h"
 
 namespace m0st4fa {
@@ -13,8 +12,8 @@ namespace m0st4fa {
 		};
 
 		// if logging any other message
-		const std::string logLevelStr = LOG_LEVEL_STRING[static_cast<int>(loggerInfo.level)];
-		const std::string errorTypeStr = ERROR_TYPE_NAMES[static_cast<int>(loggerInfo.info.errorType)];
+		const std::string logLevelStr = (const char *)LOG_LEVEL_STRING[static_cast<int>(loggerInfo.level)];
+		const std::string errorTypeStr = (const char* )ERROR_TYPE_NAMES[static_cast<int>(loggerInfo.info.errorType)];
 
 		std::string messageStr;
 		
@@ -25,7 +24,7 @@ namespace m0st4fa {
 			messageStr += std::format("[{:s}]: {:s}\n", logLevelStr, message);
 #ifdef _DEBUG 
 #ifdef _TRACE
-		messageStr += std::string("File Name: ") + location.file_name() + std::string("\n");
+		messageStr += std::string("\nFile Name: ") + location.file_name() + std::string("\n");
 		messageStr += std::string("Line: ") + std::to_string(location.line()) + std::string(", Character: ") + std::to_string(location.column()) + "\n";
 		messageStr += std::string("Function: ") + location.function_name() + "\n";
 #endif
@@ -53,11 +52,11 @@ namespace m0st4fa {
 	{
 
 #ifdef _DEBUG
-		const std::string logLevelStr = LOG_LEVEL_STRING[static_cast<int>(LOG_LEVEL::LL_DEBUG)];
+		const std::string logLevelStr = (const char* ) LOG_LEVEL_STRING[(int)LOG_LEVEL::LL_DEBUG];
 		std::string messageStr = std::format("[{:s}]: {:s}", logLevelStr, message);
 		
 #ifdef _TRACE
-		messageStr += std::string("File Name: ") + location.file_name() + std::string("\n");
+		messageStr += std::string("\nFile Name: ") + location.file_name() + std::string("\n");
 		messageStr += std::string("Line: ") + std::to_string(location.line()) + std::string(", Character: ") + std::to_string(location.column()) + "\n";
 		messageStr += std::string("Function: ") + location.function_name() + "\n";
 #endif

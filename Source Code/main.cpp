@@ -102,10 +102,11 @@ int main(void) {
 	std::cout << nextState << std::endl;*/
 
 	state_set_t fstates = {4, 2};
-	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_EPSILON_NFA };
+	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_NON_EPSILON_NFA };
 
-	std::string str = "aabba";
-	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_PREFIX);
+
+	std::string str = "aaababffaba";
+	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_SUBSTRING);
 	std::cout << result << "\n";
 
 	std::string x;

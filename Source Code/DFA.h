@@ -41,7 +41,8 @@ namespace m0st4fa {
 	template<typename TransFuncT, typename InputT>
 	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_whole_string(const InputT& input) const
 	{
-		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		state_t currState = startState;
 
 		/**
 		 * Follow a path through the machine using the characters of the string.
@@ -56,13 +57,14 @@ namespace m0st4fa {
 
 		bool accepted = this->getFinalStates().contains(currState);
 
-		return FSMResult(accepted, { 0, accepted ? input.size() : 0}, input);
+		return FSMResult(accepted, accepted ? state_set_t{currState} : state_set_t{startState}, { 0, accepted ? input.size() : 0 }, input);
 	}
 
 	template<typename TransFuncT, typename InputT>
 	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_prefix(const InputT& input) const
 	{
-		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		state_t currState = startState;
 		/**
 		* keeps track of the path taken through the machine.
 		* Will be used to figure out the longest matched prefix, if any.
@@ -91,14 +93,14 @@ namespace m0st4fa {
 		// figure out whether there is an accepted longest prefix
 		bool accepted = _check_accepted_longest_prefix(matchedStates, index);
 
-		return FSMResult(accepted, { 0, index }, input);
+		return FSMResult(accepted, accepted ? state_set_t{ matchedStates.at(index)} : state_set_t{startState}, {0, index}, input);
 	}
 
 	template<typename TransFuncT, typename InputT>
 	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
 	{
-
-		state_t currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		state_t currState = startState;
 		/**
 		* keeps track of the path taken through the machine.
 		* Will be used to figure out the longest matched prefix, if any.
@@ -141,10 +143,10 @@ namespace m0st4fa {
 			}
 
 			// if it was accepted:
-			return FSMResult(true, { startIndex, endIndex }, input);
+			return FSMResult{ true, state_set_t { matchedStates.at(endIndex) }, {startIndex, endIndex}, input };
 		}
 
-		return FSMResult(false, { 0, 0 }, input);
+		return FSMResult(false, state_set_t {startState}, {0, 0}, input);
 	}
 	
 	template<typename TransFuncT, typename InputT>

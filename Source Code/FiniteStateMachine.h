@@ -77,20 +77,13 @@ namespace m0st4fa {
 	template<typename TableT>
 	using TransFn = TransitionFunction<TableT>;
 
-	struct FSMResult {
-		bool accepted = false;
-		struct {
-			unsigned long start = 0;
-			unsigned long end = 0;
-		} indecies;
-		const std::string& input;
-
-	};
-	std::ostream& operator<<(const std::ostream&, const FSMResult&);
 
 	template <typename TransFuncT, typename InputT = std::string>
 	class FiniteStateMachine {
 
+		// friends
+		friend class FSMResult;
+		
 		// private instance data members
 		const state_set_t m_FinalStates{};
 		FSM_TYPE m_MachineType;
@@ -133,4 +126,16 @@ namespace m0st4fa {
 		flag_t getFlags() const { return m_Flags; };
 		FSM_TYPE getMachineType() const { return m_MachineType; };
 	};
+
+	struct FSMResult {
+		bool accepted = false;
+		state_set_t finalState = { FiniteStateMachine<state_t>::START_STATE };
+		struct {
+			unsigned long start = 0;
+			unsigned long end = 0;
+		} indecies;
+		const std::string& input;
+
+	};
+	std::ostream& operator<<(const std::ostream&, const FSMResult&);
 };

@@ -9,14 +9,14 @@
 
 namespace m0st4fa {
 	
-	template<typename TokenT, typename InputT>
+	template<typename TokenT, typename InputT = std::string>
 	//                               state    lexeme
 	using TokenFactoryT = TokenT (*)(state_t, InputT);
 	
-	template <typename TokenT, typename InputT = std::string>
+	template <typename TokenT, typename TableT, typename InputT = std::string>
 	class LexicalAnalyzer {
 
-		DFA<TransFn<InputT>, InputT> m_Automatan;
+		DFA<TransFn<TableT>, InputT> m_Automatan;
 		TokenFactoryT<TokenT, InputT> m_TokenFactory = nullptr;
 		std::string m_SourceCode;
 
@@ -32,7 +32,7 @@ namespace m0st4fa {
 		void _remove_whitespace(void);
 	protected:
 
-		const DFA<TransFn<InputT>, InputT>& getAutomatan() { return this->m_Automatan; };
+		const DFA<TransFn<TableT>, InputT>& getAutomatan() { return this->m_Automatan; };
 		const TokenFactoryT<TokenT, InputT> getTokenFactory() { return this->m_TokenFactory; };
 		const std::string& getSourceCode() { return this->m_SourceCode; };
 		size_t getBeginPtr() { return this->m_BeginPtr; };
@@ -41,7 +41,7 @@ namespace m0st4fa {
 	public:
 
 		LexicalAnalyzer(
-			DFA<TransFn<InputT>, InputT> automaton,
+			DFA<TransFn<TableT>, InputT> automaton,
 			TokenFactoryT<TokenT, InputT> tokenFactory,
 			std::string sourceCode) :
 			m_Automatan{automaton}, m_TokenFactory{ tokenFactory }, m_SourceCode{ sourceCode }
@@ -49,6 +49,7 @@ namespace m0st4fa {
 
 			LoggerInfo info;
 			info.level = LOG_LEVEL::LL_ERROR;
+			info.info = { .errorType = ERROR_TYPE::ET_INVALID_ARGUMENT };
 			
 			if (this->m_TokenFactory == nullptr) {
 				this->m_Logger.log(info, "TokenFactory is not set");
@@ -60,6 +61,9 @@ namespace m0st4fa {
 		TokenT getNextToken();
 		size_t getLine() { return this->m_Line; };
 		size_t getCol() { return this->m_Col; };
+		std::pair<size_t, size_t> getPosition() {
+			return std::pair<size_t, size_t>{m_Line, m_Col};
+		};
 		
 	};
 
@@ -67,8 +71,8 @@ namespace m0st4fa {
 }
 
 namespace m0st4fa {
-	template<typename TokenT, typename InputT>
-	void LexicalAnalyzer<TokenT, InputT>::_remove_whitespace(void)
+	template<typename TokenT, typename TableT, typename InputT>
+	void LexicalAnalyzer<TokenT, TableT, InputT>::_remove_whitespace(void)
 	{
 
 		// remove all whitespaces
@@ -95,30 +99,56 @@ namespace m0st4fa {
 		return;
 	}
 
-	template<typename TokenT, typename InputT>
-	TokenT m0st4fa::LexicalAnalyzer<TokenT, InputT>::getNextToken()
+	template<typename TokenT, typename TableT, typename InputT>
+	TokenT m0st4fa::LexicalAnalyzer<TokenT, TableT, InputT>::getNextToken()
 	{
-#define _EOF this->m_SourceCode.size();
 
+		// if we are at the end of the source code or it is empty, return EOF token
+		if (this->m_SourceCode.empty()) {
+			LoggerInfo info;
+			info.level = LOG_LEVEL::LL_DEBUG;
+
+			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"End of file reached"});
+			this->m_Logger.log(info, msg);
+
+			// assuming that EOF is the default value for a token
+			return TokenT{};
+		};
+		
 		TokenT res{};
-		
-		// remove all whitespaces
-		this->_remove_whitespace();
-			
-		// get the lexeme
-		FSMResult fsmRes = this->m_Automatan.simulate(this->m_SourceCode, FSM_MODE::MM_LONGEST_PREFIX);
-		size_t lexemeSize = fsmRes.indecies.end;
-		std::string lexeme = this->m_SourceCode.substr(0, lexemeSize);
 
-		res = m_TokenFactory();
+		// remove all whitespaces and count new lines
+		this->_remove_whitespace();
+
+		// get the lexeme and the final state reached (if any)
+		const FSMResult fsmRes = this->m_Automatan.simulate(this->m_SourceCode, FSM_MODE::MM_LONGEST_PREFIX);
+		const state_t fstate = *fsmRes.finalState.begin();
+
+		// check whether there is a matched lexeme
+		if (-not fsmRes.accepted) {
+			
+			LoggerInfo info;
+			info.level = LOG_LEVEL::LL_ERROR;
+			info.info = { .errorType = ERROR_TYPE::ET_INVALID_LEXEME };
+
+			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"No lexeme matched"});
+			this->m_Logger.log(info, msg);
+			throw std::runtime_error("No lexeme accepted by the state machine");
+
+		}
 		
+		// if a lexeme is accepted, extract it
+		const size_t lexemeSize = fsmRes.indecies.end;
+		this->m_Col += lexemeSize;
+		const std::string lexeme = this->m_SourceCode.substr(0, lexemeSize);
+
+		// get the token
+		res = m_TokenFactory(fstate, lexeme);
 
 		// erease the lexeme from source code stream
 		m_SourceCode.erase(0, lexemeSize);
 
 		return res;
-
-#undef _EOF
 	}
 
 	

@@ -143,7 +143,8 @@ namespace m0st4fa {
 			}
 
 			// if it was accepted:
-			return FSMResult{ true, state_set_t { matchedStates.at(endIndex) }, {startIndex, endIndex}, input };
+			typedef unsigned long ull;
+			return FSMResult{ true, state_set_t { matchedStates.at(endIndex) }, {(ull)startIndex, (ull)endIndex}, input };
 		}
 
 		return FSMResult(false, state_set_t {startState}, {0, 0}, input);

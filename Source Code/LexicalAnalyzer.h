@@ -139,6 +139,8 @@ namespace m0st4fa {
 		
 		// if a lexeme is accepted, extract it
 		const size_t lexemeSize = fsmRes.indecies.end;
+
+		m_Logger.logDebug(std::format("LexemeSize: {}", lexemeSize));
 		this->m_Col += lexemeSize;
 		const std::string lexeme = this->m_SourceCode.substr(0, lexemeSize);
 
@@ -147,6 +149,8 @@ namespace m0st4fa {
 
 		// erease the lexeme from source code stream
 		m_SourceCode.erase(0, lexemeSize);
+		m_Logger.logDebug(std::format("SourceCode: {}", m_SourceCode));
+
 
 		return res;
 	}

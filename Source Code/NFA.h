@@ -216,7 +216,7 @@ namespace m0st4fa {
 	bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_set_t>& stateSet, size_t& index) const
 	{
 		bool res = false;
-		
+		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 		/**
 		* Loop through the path from the end seeking the closes final state.
 		* Update the end index as you do so.
@@ -225,6 +225,21 @@ namespace m0st4fa {
 		while (it != stateSet.rend())
 		{
 			state_set_t currStateSet = *it;
+
+			if (currStateSet.contains(startState))
+				break;
+			
+			// print the currently searched index (previous index)
+			this->m_Logger.logDebug(
+				"_check_accepted_longest_prefix: current searched index (previous index): " 
+				+ 
+				std::to_string(index));
+
+			// update the index and the iterators
+			index--;
+			it++;
+
+			// perform the search
 			for (auto s : currStateSet)
 				if (this->getFinalStates().contains(s))
 				{
@@ -232,13 +247,10 @@ namespace m0st4fa {
 					break;
 				}
 
-			this->m_Logger.logDebug("_check_accepted_longest_prefix: current searched index: " + std::to_string(index));
-			index =  (currStateSet.contains(FiniteStateMachine<TransFuncT, InputT>::START_STATE)) ? 0 : index - 1;
-			
+			// if a final state is found, break out of the loop
 			if (res)
 				break;
 
-			it++;
 		}
 		
 		return res;

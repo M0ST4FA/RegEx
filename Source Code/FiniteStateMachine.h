@@ -10,12 +10,45 @@
 #include <functional>
 
 #include "Logger.h"
+#include <concepts>
 
 namespace m0st4fa {
 
 	// TYPE ALIASES
 	typedef unsigned state_t;
 	using state_set_t = std::unordered_set<state_t>;
+	
+	template <typename T>
+	concept set_type = std::is_same_v<T, state_set_t> || std::is_same_v<T, std::vector<state_t>>;
+	
+	template <set_type T>
+	std::ostream& operator<<(std::ostream& os, const T& set)
+	{
+
+		// if the set is empty
+		if (set.empty()) {
+			std::cout << "{ }";
+
+			return os;
+		}
+
+
+		// if it is not empty
+		std::string temp = "{ ";
+		temp += std::to_string(*set.begin());
+		for (auto s : set) {
+			if (s == *set.begin())
+				continue;
+
+			temp += (", " + std::to_string(s));
+		}
+		temp += " }\n";
+
+		std::cout << temp;
+
+		return os;
+	}
+
 	typedef unsigned flag_t;
 
 

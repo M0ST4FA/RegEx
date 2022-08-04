@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FiniteStateMachine.h"
+#include <assert.h>
 
 namespace m0st4fa {
 
@@ -22,6 +23,7 @@ namespace m0st4fa {
 		FSMResult _simulate_longest_substring(const InputT&) const;
 
 		bool _check_accepted_longest_prefix(const std::vector<state_t>&, size_t&) const;
+		bool _check_accepted_substring(const InputT&, std::vector<state_t>&, size_t&, size_t&) const;
 		
 	public:
 		DeterFiniteAutomatan() = default;
@@ -70,7 +72,6 @@ namespace m0st4fa {
 		* Will be used to figure out the longest matched prefix, if any.
 		*/ 
 		std::vector matchedStates = { currState };
-		size_t index = 0;
 
 		/**
 		 * Follow a path through the machine using the characters of the string.
@@ -80,7 +81,6 @@ namespace m0st4fa {
 		for (auto c : input) {
 			// get next state
 			currState = this->m_TransitionFunc(currState, c);
-			index++;
 
 			// break out if it is dead
 			if (currState == DEAD_STATE)
@@ -90,61 +90,47 @@ namespace m0st4fa {
 			matchedStates.push_back(currState);
 		}
 
+		size_t index = matchedStates.size();
+	 	this->m_Logger.logDebug(std::format("[DFA] index of the last checked character: {}\n[DFA] size of matchedStates: {}\n", index, matchedStates.size()));
+		//assert(index == matchedStates.size());
 		// figure out whether there is an accepted longest prefix
 		bool accepted = _check_accepted_longest_prefix(matchedStates, index);
 
-		return FSMResult(accepted, accepted ? state_set_t{ matchedStates.at(index)} : state_set_t{startState}, {0, index}, input);
+#if defined(_DEBUG)
+		std::cout << "[DFA] matched set of states (path through the FSM): " << matchedStates;
+#endif
+
+		return FSMResult(accepted, accepted ? state_set_t{ matchedStates.at(index) } : state_set_t{startState}, {0, index}, input);
 	}
 
 	template<typename TransFuncT, typename InputT>
 	FSMResult DeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
 	{
-		state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
-		state_t currState = startState;
+		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 		/**
 		* keeps track of the path taken through the machine.
 		* Will be used to figure out the longest matched prefix, if any.
 		*/
-		std::vector matchedStates = { currState };
-		size_t startIndex = 0, endIndex = 0;
+		std::vector matchedStates = { startState };
+		size_t startIndex = 0, charIndex = 0;
 
 		/**
-		 * Follow a path through the machine using the characters of the string.
+		 * Follow a path through the machine using the characters of the string until you check all the characters.
 		 * Keep track of that path in order to be able to find the longest prefix if the whole string is not accepted.
 		 * Break if you hit a dead state since it is dead.
 		 * If a substring was not accepted, start matching the next substring if any
 		*/
-		for (; startIndex < input.size(); endIndex = ++startIndex) {
-			// start from startIndex until the end of the string or until you reach a dead state
-			/**
-			* The value of endIndex will be correct because the last time we increment it, the condition is guaranteed to fail.
-			* This guarantees that endIndex will always equal the size of the string - startIndex.
-			*/
-			for (; endIndex < input.size(); endIndex++) {
-				// get next state
-				auto c = input[endIndex];
-				currState = this->m_TransitionFunc(currState, c);
+		for (; startIndex < input.size(); charIndex = ++startIndex) {
+			
+			bool accepted = _check_accepted_substring(input, matchedStates, startIndex, charIndex);
 
-				// break out if it is dead
-				if (currState == DEAD_STATE)
-					break;
-
-				// update our path through the machine
-				matchedStates.push_back(currState);
-			};
-
-			// figure out whether there is an accepted longest prefix
-			bool accepted = _check_accepted_longest_prefix(matchedStates, endIndex);
-
-			// if this substring was not accepted, reset the current state and loopback
-			if (-not accepted) {
-				currState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+			// if this substring was not accepted
+			if (-not accepted)
 				continue;
-			}
 
 			// if it was accepted:
 			typedef unsigned long ull;
-			return FSMResult{ true, state_set_t { matchedStates.at(endIndex) }, {(ull)startIndex, (ull)endIndex}, input };
+			return FSMResult{ true, state_set_t { matchedStates.at(charIndex - startIndex) }, {(ull)startIndex, (ull)charIndex}, input };
 		}
 
 		return FSMResult(false, state_set_t {startState}, {0, 0}, input);
@@ -154,23 +140,66 @@ namespace m0st4fa {
 	inline bool DeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_t>& matchedStates, size_t& index) const
 	{
 		bool accepted = false;
+		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 
 		/**
 		* Loop through the path from the end seeking the closes final state.
 		* Update the end index as you do so.
+		* The number of states in the set is: (the number of characters in the longest prefix + 1, the start state).
+		* The last state in the matchedSet is almost guaranteed failed state.
 		*/
 		auto it = matchedStates.rbegin();
 		while (it != matchedStates.rend())
 		{
 			state_t currState = *it;
+			
+			// if the currunt state is the start state
+			if (currState == startState)
+				break;
+
+			index--;
+			it++;
+
 			if (this->getFinalStates().contains(currState)) {
 				accepted = true;
 				break;
 			}
 
-			index = FiniteStateMachine<TransFuncT, InputT>::START_STATE ? 0 : index - 1;
-			it++;
 		}
+		
+		return accepted;
+	}
+
+	template<typename TransFuncT, typename InputT>
+	bool DeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_substring(const InputT& input, std::vector<state_t>& matchedStates, size_t& startIndex, size_t& charIndex) const
+	{
+		state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
+		state_t currState = startState;
+		// start from startIndex until the end of the string or until you reach a dead state
+			/**
+			* The value of charIndex will be correct because the last time we increment it, the condition is guaranteed to fail.
+			* This guarantees that charIndex will always equal: the number of matched characters + startIndex.
+			*/
+
+		for (; charIndex < input.size(); charIndex++) {
+			// get next state
+			auto c = input[charIndex];
+			currState = this->m_TransitionFunc(currState, c);
+
+			// break out if it is dead
+			if (currState == DEAD_STATE)
+				break;
+
+			// update the path through the machine
+			matchedStates.push_back((state_t)currState);
+		};
+
+		// endIndex = number of characters checked + the offset of the substring into the input string
+		size_t endIndex = matchedStates.size() + startIndex;
+		//this->m_Logger.logDebug(std::format("at _check_accepted_substring: charIndex: {}, endIndex: {}\n", charIndex, endIndex));
+
+		// figure out whether there is an accepted longest prefix
+		bool accepted = _check_accepted_longest_prefix(matchedStates, endIndex);
 		
 		return accepted;
 	};

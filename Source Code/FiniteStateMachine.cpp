@@ -24,3 +24,4 @@ std::ostream& m0st4fa::operator<<(const std::ostream& os, const FSMResult& resul
 
     return std::cout;
 }
+

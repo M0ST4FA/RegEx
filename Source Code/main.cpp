@@ -78,13 +78,18 @@ int main(void) {
 
 enum TOKEN {
 	T_AAB,
+	T_EOF,
 	T_MAX,
 };
 
 struct token_t {
-	TOKEN type;
+	TOKEN type = T_EOF;
 	std::string lexeme;
-	
+};
+
+std::ostream& operator<<(std::ostream& os, const token_t token) {
+	printf("Lexeme: %s\n", token.lexeme.c_str());
+	return os;
 };
 
 token_t fact(state_t state, std::string lexeme) {
@@ -112,15 +117,21 @@ int main(void) {
 
 	DFA<TransitionFunction<table_t>> automaton{ state_set_t{5}, tf };
 
-	std::string src = "aaabbaffbababa";
+	std::string src = "aaabb aaabb";
 	LexicalAnalyzer<token_t, table_t> lexicalAnal{ automaton, fact, src };
 
+	// get next token
 	token_t token = lexicalAnal.getNextToken();
-	std::pair<size_t, size_t> pos = lexicalAnal.getPosition();
-	printf("(%u, %u) ", (unsigned)pos.first, (unsigned)pos.second);
-	printf("Lexeme: %s\n", token.lexeme.c_str());
-	
 
+	while (token.type != T_EOF) {
+		std::pair<size_t, size_t> pos = lexicalAnal.getPosition();
+		printf("(%u, %u) ", (unsigned)pos.first, (unsigned)pos.second);
+		std::cout << token;
+
+		token = lexicalAnal.getNextToken();
+	}
+
+	// infinite loop
 	std::string x;
 
 	while (x != "q") {
@@ -130,7 +141,7 @@ int main(void) {
 	
 }
 
-#elif defined TEST_DFA
+#elif defined TEST_FSM
 
 
 
@@ -150,18 +161,31 @@ int main(void) {
 	state_set_t fstates = {4, 2};
 	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_NON_EPSILON_NFA };
 
-	std::string str = "aaababffaba";
+	std::string str = "fffaaababffaba";
 	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_SUBSTRING);
 	std::cout << result << "\n";
 
 	std::string x;
 	
+
+	typedef std::array<std::array<state_t, 'z'>, 10> table_t_dfa;
+
+
+	table_t_dfa input_dfa{};
+	initTranFn_ab(input_dfa);
+
+	TransitionFunction<table_t_dfa> tfDFA{ input_dfa };
+	state_set_t fstatesDFA = state_set_t{ 4 };
+
+	DFA<TransitionFunction<table_t_dfa>> automatonDFA{ fstatesDFA, tfDFA };
+
+	auto resultDFA = automatonDFA.simulate(str, FSM_MODE::MM_LONGEST_SUBSTRING);
+	std::cout << resultDFA << "\n";
+	
 	while (x != "q") {
 		std::cin >> x;
 		if (x == "q") break;
 	}
-	
-	
 }
 
 #endif

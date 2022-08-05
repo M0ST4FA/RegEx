@@ -1,49 +1,13 @@
 #include "regex.h"
 #include "NFA.h"
+import Tests;
 
 using namespace m0st4fa;
 
 #include <iostream>
 #include <array>
 
-
-template<typename T>
-constexpr void initTranFn_ab(T& fun) {
-	fun[1]['a'] = 2;
-	fun[2]['a'] = 3;
-	fun[3]['a'] = 3;
-	fun[3]['b'] = 4;
-	fun[4]['a'] = 3;
-	fun[4]['b'] = 5;
-	fun[5]['a'] = 5;
-	fun[5]['b'] = 5;
-}
-
-template<typename T>
-constexpr void initTranFn_ab_NFA(T& fun) {
-
-	/*
-	  -> a -> a
-	s    |
-	  -> b
-	*/
-
-	fun[1]['a'] = { 2 };
-	fun[1]['b'] = { 3 };
-
-	fun[2]['a'] = { 2, 4 };
-	fun[2]['b'] = { 3 };
-
-	fun[3]['a'] = { 2, 4 };
-	fun[3]['b'] = { 3 };
-
-	fun[4]['a'] = { 2, 4 };
-	fun[4]['b'] = { 2 };
-
-};
-
-
-#define TEST_LA
+#define TEST_FSM
 
 
 #ifdef TEST_REGEX
@@ -76,35 +40,6 @@ int main(void) {
 
 #elif defined TEST_LA
 
-enum TOKEN {
-	T_AAB,
-	T_EOF,
-	T_MAX,
-};
-
-struct token_t {
-	TOKEN type = T_EOF;
-	std::string lexeme;
-};
-
-std::ostream& operator<<(std::ostream& os, const token_t token) {
-	printf("Lexeme: %s\n", token.lexeme.c_str());
-	return os;
-};
-
-token_t fact(state_t state, std::string lexeme) {
-	
-	switch (state) {
-	case 5:
-		return { T_AAB, lexeme };
-	
-	default:
-		fprintf(stderr, "Error: unexpected state %d\n", state);
-		throw std::runtime_error("Unreachable");
-	}
-
-	return token_t{};
-};
 
 int main(void) {
 	typedef std::array<std::array<state_t, 'z'>, 10> table_t;
@@ -159,9 +94,9 @@ int main(void) {
 	std::cout << nextState << std::endl;*/
 
 	state_set_t fstates = {4, 2};
-	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_NON_EPSILON_NFA };
+	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_EPSILON_NFA };
 
-	std::string str = "fffaaababffaba";
+	std::string str = "aaababffaba";
 	auto result = automaton.simulate(str, FSM_MODE::MM_LONGEST_SUBSTRING);
 	std::cout << result << "\n";
 

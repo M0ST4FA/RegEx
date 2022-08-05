@@ -23,7 +23,7 @@ namespace m0st4fa {
 		FSMResult _simulate_longest_substring(const InputT&) const;
 
 		bool _check_accepted_longest_prefix(const std::vector<state_t>&, size_t&) const;
-		bool _check_accepted_substring(const InputT&, std::vector<state_t>&, size_t&, size_t&) const;
+		bool _check_accepted_substring(const InputT&, std::vector<state_t>&, size_t, size_t&) const;
 		
 	public:
 		DeterFiniteAutomatan() = default;
@@ -154,12 +154,15 @@ namespace m0st4fa {
 			state_t currState = *it;
 			
 			// if the currunt state is the start state
-			if (currState == startState)
+			if (currState == startState) {
 				break;
+			}
 
+			// set up the iterator and the index for the next iteration
 			index--;
 			it++;
 
+			// if the current state is a final state
 			if (this->getFinalStates().contains(currState)) {
 				accepted = true;
 				break;
@@ -171,7 +174,7 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
-	bool DeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_substring(const InputT& input, std::vector<state_t>& matchedStates, size_t& startIndex, size_t& charIndex) const
+	bool DeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_substring(const InputT& input, std::vector<state_t>& matchedStates, size_t startIndex, size_t& charIndex) const
 	{
 		state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 		state_t currState = startState;

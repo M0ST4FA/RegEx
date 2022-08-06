@@ -1,13 +1,17 @@
+// std includes
+#include <iostream>
+#include <array>
+
+// my includes
 #include "regex.h"
 #include "NFA.h"
 import Tests;
 
+// using directives
 using namespace m0st4fa;
 
-#include <iostream>
-#include <array>
-
-#define TEST_FSM
+// #defines
+#define TEST_LA
 
 
 #ifdef TEST_REGEX

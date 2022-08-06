@@ -1,7 +1,8 @@
 #pragma once
-#include "LRParser.h"
-
 #include <string>
+
+#include "LRParser.hpp"
+
 
 namespace m0st4fa {
 	

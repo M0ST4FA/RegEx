@@ -13,11 +13,12 @@ namespace m0st4fa {
 	protected:
 		LexicalAnalyzer<TokenT, InputT>& getLexicalAnalyzer() { return m_LexicalAnalyzer; };
 		TableT& getTable() { return m_Table; };
+		using ActionT = void (*)(int);
 
 	public:
 
 		// enums
-		static enum struct ExecutionOrder : unsigned char {
+		enum struct ExecutionOrder : unsigned char {
 			EO_PREORDER = 0,
 			EO_INORDER,
 			EO_POSTORDER,

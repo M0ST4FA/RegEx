@@ -56,7 +56,7 @@ int main(void) {
 
 	DFA<TransitionFunction<table_t>> automaton{ state_set_t{5}, tf };
 
-	std::string src = "aaabb aaabb";
+	std::string src = "aaabb\taaabb";
 	LexicalAnalyzer<token_t, table_t> lexicalAnal{ automaton, fact, src };
 
 	// get next token
@@ -67,7 +67,7 @@ int main(void) {
 		printf("(%u, %u) ", (unsigned)pos.first, (unsigned)pos.second);
 		std::cout << token;
 
-		token = lexicalAnal.getNextToken();
+		token = lexicalAnal.getNextToken((unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS);
 	}
 
 	// infinite loop

@@ -9,6 +9,12 @@
 
 namespace m0st4fa {
 	
+	enum struct LA_FLAG {
+		LAF_ALLOW_WHITE_SPACE_CHARS = 1,
+		LAF_ALLOW_NEW_LINE,
+		LAF_MAX_NUM,
+	};
+
 	template<typename TokenT, typename InputT = std::string>
 	//                               state    lexeme
 	using TokenFactoryT = TokenT (*)(state_t, InputT);
@@ -29,7 +35,7 @@ namespace m0st4fa {
 
 
 		// methods
-		void _remove_whitespace(void);
+		void _remove_whitespace(unsigned = (unsigned)LA_FLAG::LAF_MAX_NUM);
 	protected:
 
 		const DFA<TransFn<TableT>, InputT>& getAutomatan() { return this->m_Automatan; };
@@ -58,7 +64,7 @@ namespace m0st4fa {
 
 		}
 		
-		TokenT getNextToken();
+		TokenT getNextToken(unsigned = (unsigned)LA_FLAG::LAF_MAX_NUM);
 		size_t getLine() { return this->m_Line; };
 		size_t getCol() { return this->m_Col; };
 		std::pair<size_t, size_t> getPosition() {
@@ -72,15 +78,24 @@ namespace m0st4fa {
 
 namespace m0st4fa {
 	template<typename TokenT, typename TableT, typename InputT>
-	void LexicalAnalyzer<TokenT, TableT, InputT>::_remove_whitespace(void)
+	void LexicalAnalyzer<TokenT, TableT, InputT>::_remove_whitespace(unsigned flags)
 	{
 
-		// remove all whitespaces
+		// this function will be entered in case white space characters are to be removed.
+		// remove all whitespaces...
 		while (true) {
 			char currChar = *this->m_SourceCode.data();
-			bool isWhiteSpace = std::isspace(currChar);
+			bool isWhiteSpace = std::isspace(currChar) && currChar != '\0'; // null marks the EOF.
 
+			// if we've catched a white space...
 			if (isWhiteSpace) {
+
+				// if the current character is a new line char and they are allowed, do not remove the current char
+				if (currChar == '\n' && (flags & (unsigned)LA_FLAG::LAF_ALLOW_NEW_LINE)) {
+					this->m_Line++, this->m_Col = 1;
+					continue;
+				}
+				
 				// erase whitespace from source code stream
 				this->m_SourceCode.erase(this->m_SourceCode.begin());
 
@@ -91,6 +106,7 @@ namespace m0st4fa {
 					this->m_Col++;
 
 			}
+			// if no white space is caught
 			else
 				break;
 			
@@ -100,9 +116,13 @@ namespace m0st4fa {
 	}
 
 	template<typename TokenT, typename TableT, typename InputT>
-	TokenT m0st4fa::LexicalAnalyzer<TokenT, TableT, InputT>::getNextToken()
+	TokenT m0st4fa::LexicalAnalyzer<TokenT, TableT, InputT>::getNextToken(unsigned flags)
 	{
 
+		// remove all whitespaces and count new lines
+		if (-not (flags & (unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS))
+			this->_remove_whitespace(flags);
+			
 		// if we are at the end of the source code or it is empty, return EOF token
 		if (this->m_SourceCode.empty()) {
 			LoggerInfo info;
@@ -117,8 +137,6 @@ namespace m0st4fa {
 		
 		TokenT res{};
 
-		// remove all whitespaces and count new lines
-		this->_remove_whitespace();
 
 		// get the lexeme and the final state reached (if any)
 		const FSMResult fsmRes = this->m_Automatan.simulate(this->m_SourceCode, FSM_MODE::MM_LONGEST_PREFIX);
@@ -131,6 +149,8 @@ namespace m0st4fa {
 			info.level = LOG_LEVEL::LL_ERROR;
 			info.info = { .errorType = ERROR_TYPE::ET_INVALID_LEXEME };
 
+			this->m_Col++;
+			
 			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"No lexeme matched"});
 			this->m_Logger.log(info, msg);
 			throw std::runtime_error("No lexeme accepted by the state machine");

@@ -72,8 +72,12 @@ namespace m0st4fa {
 		//FF_CASE_SENSITIVE,
 		FF_FLAG_MAX
 	};
+	
 
-	template <typename TableT>
+	template <size_t StateCount, size_t InputCount>
+	using FSMTable = std::array<std::array<state_t, InputCount>, StateCount>;
+
+	template <typename TableT = FSMTable<20, 'z'>>
 	struct TransitionFunction {
 		size_t m_StateMax = 0;
 		size_t m_InputMax = 0;

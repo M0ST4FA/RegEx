@@ -40,7 +40,7 @@
     <ClCompile Include="Tests.ixx">
       <Filter>Source Files\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Tests.cpp">
+    <ClCompile Include="ParserTests.cpp">
       <Filter>Source Files\Test</Filter>
     </ClCompile>
     <ClCompile Include="LATests.cpp">
@@ -75,5 +75,18 @@
     <ClInclude Include="LexicalAnalyzer.h">
       <Filter>Source Files\LexAna</Filter>
     </ClInclude>
+    <ClInclude Include="PDataStructs.h">
+      <Filter>Source Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="PEnum.h">
+      <Filter>Source Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="PStack.h">
+      <Filter>Source Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="PProduction.h">
+      <Filter>Source Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="PTable.h" />
   </ItemGroup>
 </Project>

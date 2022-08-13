@@ -137,17 +137,22 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="regex.cpp" />
-    <ClCompile Include="Tests.cpp" />
+    <ClCompile Include="ParserTests.cpp" />
     <ClCompile Include="Tests.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DFA.h" />
     <ClInclude Include="FiniteStateMachine.h" />
     <ClInclude Include="LexicalAnalyzer.h" />
+    <ClInclude Include="PDataStructs.h" />
+    <ClInclude Include="PEnum.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="LRParser.hpp" />
     <ClInclude Include="NFA.h" />
     <ClInclude Include="Parser.h" />
+    <ClInclude Include="PProduction.h" />
+    <ClInclude Include="PStack.h" />
+    <ClInclude Include="PTable.h" />
     <ClInclude Include="regex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -4,14 +4,14 @@
 
 // my includes
 #include "regex.h"
-#include "NFA.h"
+#include "DFA.h"
+#include "LLParser.hpp"
 import Tests;
 
 // using directives
 using namespace m0st4fa;
 
 // #defines
-#define TEST_LA
 
 
 #ifdef TEST_REGEX
@@ -32,13 +32,31 @@ int main(void) {
 #elif defined TEST_PARSER
 	
 int main(void) {
-	typedef struct table_t {};
-	typedef struct symbol_t {};
+	
 
-	LRParser<table_t, symbol_t> parser; // {lexicalAnalyzer, parsingTable}
-	//auto parserRes = parser.parse();    // (action, executionOrder)
+	table_t fsmTable{};
+	initFSMTable_parser(fsmTable);
 
+	TransitionFunction<table_t> tf_parser{ fsmTable };
 
+	DFA<TransitionFunction<table_t>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
+
+	std::string src = "id + id * id";
+	LexicalAnalyzer<_Token, table_t> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+
+	LLParsingTable table{};
+	define_table_llparser(table);
+
+	LLParser <_Symbol, _Token > parser{ grammer_expression(), lexicalAnal_parser, table, _Symbol{false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
+	
+	parser.parse(m0st4fa::ExecutionOrder::EO_INORDER);
+
+	std::string x;
+	while (x != "q") {
+		std::cin >> x;
+		if (x == "q") break;
+	}
+	
 	return 0;
 }
 

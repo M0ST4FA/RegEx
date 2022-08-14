@@ -1,25 +1,17 @@
 #pragma once
 
+#include <string>
+
 #include "FiniteStateMachine.h"
 #include "DFA.h"
 #include "Logger.h"
+#include "LADataStructs.h"
 
-#include <string>
 
 
 namespace m0st4fa {
 
-	enum struct LA_FLAG {
-		LAF_ALLOW_WHITE_SPACE_CHARS = 1,
-		LAF_ALLOW_NEW_LINE,
-		LAF_MAX_NUM,
-	};
-
-	template<typename TokenT, typename InputT = std::string>
-	//                               state    lexeme
-	using TokenFactoryT = TokenT(*)(state_t, InputT);
-
-	template <typename TokenT, typename TableT, typename InputT = std::string>
+	template <typename TokenT, typename TableT = FSMTable<>, typename InputT = std::string>
 	class LexicalAnalyzer {
 
 		DFA<TransFn<TableT>, InputT> m_Automatan;
@@ -35,7 +27,7 @@ namespace m0st4fa {
 
 
 		// methods
-		void _remove_whitespace(unsigned = (unsigned)LA_FLAG::LAF_MAX_NUM);
+		void _remove_whitespace(unsigned = (unsigned)LA_FLAG::LAF_NONE);
 	protected:
 
 		const DFA<TransFn<TableT>, InputT>& getAutomatan() { return this->m_Automatan; };
@@ -64,7 +56,7 @@ namespace m0st4fa {
 
 		}
 
-		TokenT getNextToken(unsigned = (unsigned)LA_FLAG::LAF_MAX_NUM);
+		TokenT getNextToken(unsigned = (unsigned)LA_FLAG::LAF_NONE);
 		size_t getLine() { return this->m_Line; };
 		size_t getCol() { return this->m_Col; };
 		std::pair<size_t, size_t> getPosition() {

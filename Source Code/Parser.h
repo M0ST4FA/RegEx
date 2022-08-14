@@ -30,7 +30,7 @@ namespace m0st4fa {
 	* @input Input buffer w (managed by the lexical analyzer) and parsing table M for grammer G.
 	*/
 	template <typename SymbolT, typename TokenT, 
-		typename ParsingTableT, typename FSMTableT = FSMTable<50, 'z'>, // set them to have a default value
+		typename ParsingTableT, typename FSMTableT = FSMTable<>, // set them to have a default value
 		typename InputT = std::string>
 		requires ParserRequirments<ParsingTableT, SymbolT, TokenT>
 	class Parser {

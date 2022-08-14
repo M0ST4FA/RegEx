@@ -143,6 +143,7 @@
   <ItemGroup>
     <ClInclude Include="DFA.h" />
     <ClInclude Include="FiniteStateMachine.h" />
+    <ClInclude Include="LADataStructs.h" />
     <ClInclude Include="LexicalAnalyzer.h" />
     <ClInclude Include="PDataStructs.h" />
     <ClInclude Include="PEnum.h" />

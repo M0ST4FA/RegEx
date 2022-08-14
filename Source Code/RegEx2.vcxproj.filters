@@ -87,6 +87,11 @@
     <ClInclude Include="PProduction.h">
       <Filter>Source Files\Parser</Filter>
     </ClInclude>
-    <ClInclude Include="PTable.h" />
+    <ClInclude Include="PTable.h">
+      <Filter>Source Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="LADataStructs.h">
+      <Filter>Source Files\LexAna</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

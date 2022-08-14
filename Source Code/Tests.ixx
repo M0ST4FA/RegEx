@@ -11,6 +11,7 @@ export module Tests;
 
 using m0st4fa::state_t;
 using m0st4fa::state_set_t;
+using m0st4fa::Symbol;
 export typedef std::array<std::array<state_t, 'z'>, 10> table_t;
 
 export template<typename T>
@@ -63,7 +64,7 @@ export std::ostream& operator<<(std::ostream&, const token_t);
 
 export token_t fact(m0st4fa::state_t, std::string);
 
-// PARSER
+// PARSER -----------------------------------------------------------
 
 export enum struct _TERMINAL {
 	T_ID,
@@ -71,13 +72,12 @@ export enum struct _TERMINAL {
 	T_STAR,
 	T_LEFT_PAREN,
 	T_RIGHT_PAREN,
+	T_EOF,
+	T_EPSILON,
 	T_NUM
 };
 
-export struct _Token {
-	_TERMINAL name;
-	std::string lexeme;
-};
+export std::ostream& operator<<(std::ostream&, const _TERMINAL);
 
 // so that no collisions occur with map
 export enum struct _NON_TERMINAL {
@@ -88,34 +88,16 @@ export enum struct _NON_TERMINAL {
 	NT_F,
 	NT_NUM
 };
+export std::ostream& operator<<(std::ostream&, const _NON_TERMINAL);
 
-export struct _Symbol {
-	bool isTerminal = true;
-	
-	union {
-		_TERMINAL terminal;
-		_NON_TERMINAL nonTerminal;
-	} as;
 
-	bool operator== (const _Token& other) const {
-
-		if (isTerminal) {
-			return as.terminal == other.name;
-		}
-		
-		return false;
-	}
-	
-};
-
-// for map
-export bool operator<(const _Symbol lhs,  const _Symbol other) {
+export bool operator<(const Symbol<_TERMINAL, _NON_TERMINAL> lhs,  const Symbol<_TERMINAL, _NON_TERMINAL> other) {
 	return (unsigned)lhs.as.terminal < (unsigned)other.as.terminal;
 }
 
 
-export std::vector<m0st4fa::ProductionRecord<_Symbol>> grammer_expression();
-export void define_table_llparser(m0st4fa::LLParsingTable<50, 'z'>&);
-export void initFSMTable_parser(m0st4fa::FSMTable<50, 'z'>&);
-export _Token token_fact_parser(m0st4fa::state_t, std::string);
+export std::vector<m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>> grammer_expression();
+export void define_table_llparser(m0st4fa::LLParsingTable<>&);
+export void initFSMTable_parser(m0st4fa::FSMTable<>&);
+export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);
 	

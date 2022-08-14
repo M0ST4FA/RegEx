@@ -9,7 +9,7 @@
 namespace m0st4fa {
 
 	template <typename SymbolT, typename TokenT,
-		typename ParsingTableT = LLParsingTable<50, 127>, typename FSMTableT = FSMTable<50, 'z'>,
+		typename ParsingTableT = LLParsingTable<>, typename FSMTableT = FSMTable<>,
 		typename InputT = std::string> 
 	class LLParser : public Parser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT> {
 
@@ -26,7 +26,7 @@ namespace m0st4fa {
 			const ParsingTableT& parsingTable, 
 			const LexicalAnalyzer<TokenT, FSMTableT>& lexer
 			):
-			Parser<ParsingTableT, FSMTableT, SymbolT, TokenT, InputT> 
+			Parser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT> 
 					{lexer, parsingTable, startSymbol}, 
 			m_ProdRecords{ prodRecords }
 		{};
@@ -60,6 +60,7 @@ namespace m0st4fa {
 		* Whenever a symbol is matched, it is popped off the stack.
 		* The purpose is to pop the start symbol off the stack (to match it, leaving the stack empty) and not produce any errors.
 		*/
+		TokenT currInputToken = this->getLexicalAnalyzer().getNextToken();
 		while (-not stack.empty()) {
 
 			// get the current symbol on top of the stack, pop it and get the next input token
@@ -67,14 +68,15 @@ namespace m0st4fa {
 			const SymbolT topSymbol = top.as.gramSymbol;
 			stack.pop_back();
 
-			TokenT currInputToken = this->getLexicalAnalyzer().getNextToken();
 
 			// if the symbol at the top of the stack is a terminal symbol
 			if (topSymbol.isTerminal) {
 				// match it explicitly
 				bool matched = (topSymbol == currInputToken);
-				this->m_Logger.logDebug(std::format("Matched terminal: {}\n", (unsigned)topSymbol.as.terminal));
-				
+
+				std::clog << "Matched " << topSymbol << " with " << currInputToken << ": " << std::boolalpha << matched << std::endl;
+				currInputToken = this->getLexicalAnalyzer().getNextToken();
+
 				if (-not matched); // TODO: error handling
 				
 			}
@@ -82,8 +84,11 @@ namespace m0st4fa {
 			else {
 
 				// get the production record for the current symbol and input
-				const ProductionRecord<SymbolT>& prodRecord = this->m_Table(topSymbol, currInputToken);
-				const auto& prodBody = prodRecord.prodBody;
+				const TableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(top)][(size_t)currInputToken.name];
+
+				// Caution: this is a reference
+				const auto& prod = this->m_ProdRecords[tableEntry.prodIndex];
+				const auto& prodBody = prod.prodBody;
 
 				// if the production record is empty
 				if (prodBody.empty()); // TODO: error
@@ -93,7 +98,7 @@ namespace m0st4fa {
 					StackElement<SymbolT> se = *it;
 					stack.push_back(se);
 				};
-				this->m_Logger.logDebug(std::format("Expanded non-terminal: {}\n", (unsigned)topSymbol.as.nonTerminal));
+				std::cout << "Expanded " << topSymbol << " with " << currInputToken << ": " << prod << std::endl;
 				
 			}
 			

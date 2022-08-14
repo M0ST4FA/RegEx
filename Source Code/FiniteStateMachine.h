@@ -74,7 +74,7 @@ namespace m0st4fa {
 	};
 	
 
-	template <size_t StateCount, size_t InputCount>
+	template <size_t StateCount = 50, size_t InputCount = 'z'>
 	using FSMTable = std::array<std::array<state_t, InputCount>, StateCount>;
 
 	template <typename TableT = FSMTable<20, 'z'>>

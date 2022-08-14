@@ -18,7 +18,7 @@ namespace m0st4fa {
 		};
 	};
 
-	template <size_t VariableCount, size_t TerminalCount>
+	template <size_t VariableCount = 20, size_t TerminalCount = 127>
 	struct LLParsingTable {
 		std::array<std::array<TableEntry, TerminalCount>, VariableCount> table;
 

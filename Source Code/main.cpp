@@ -6,13 +6,14 @@
 #include "regex.h"
 #include "DFA.h"
 #include "LLParser.hpp"
+#include "LexicalAnalyzer.h"
 import Tests;
 
 // using directives
 using namespace m0st4fa;
 
 // #defines
-
+#define TEST_PARSER
 
 #ifdef TEST_REGEX
 
@@ -34,20 +35,21 @@ int main(void) {
 int main(void) {
 	
 
-	table_t fsmTable{};
+	FSMTable<> fsmTable{};
 	initFSMTable_parser(fsmTable);
 
-	TransitionFunction<table_t> tf_parser{ fsmTable };
+	TransitionFunction<FSMTable<>> tf_parser{ fsmTable };
 
-	DFA<TransitionFunction<table_t>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
+	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
 
-	std::string src = "id + id * id";
-	LexicalAnalyzer<_Token, table_t> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+	std::string src = " id + id * id + id * id * id * id";
+	LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
-	LLParsingTable table{};
+	LLParsingTable<> table{};
 	define_table_llparser(table);
 
-	LLParser <_Symbol, _Token > parser{ grammer_expression(), lexicalAnal_parser, table, _Symbol{false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
+	auto startSym = Symbol<_TERMINAL, _NON_TERMINAL>{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+	LLParser <Symbol<_TERMINAL, _NON_TERMINAL>, Token<_TERMINAL>> parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
 	
 	parser.parse(m0st4fa::ExecutionOrder::EO_INORDER);
 

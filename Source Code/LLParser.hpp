@@ -15,6 +15,17 @@ namespace m0st4fa {
 
 		// a parsing table entry should contain indecies into this vector of productions
 		std::vector<ProductionRecord<SymbolT>> m_ProdRecords;
+
+
+		/*
+		* @brief implements error recovery.
+		*/
+		void error_recovery(ErrorRecoveryType);
+		
+		/*
+		* @brief implements panic mode error recovery.
+		*/
+		void panic_mode();
 		
 	public:
 		
@@ -36,7 +47,7 @@ namespace m0st4fa {
 		* @output If w is in L(G), a leftmost derivation of w; otherwise, an error indication.
 		* It might execute actions during the leftmost derivation, for example, to make a parsing or syntax tree.
 		*/
-		ParserResult parse(ExecutionOrder);
+		ParserResult parse(ExecutionOrder, ErrorRecoveryType);
 
 
 	};
@@ -44,7 +55,7 @@ namespace m0st4fa {
 
 	// IMPLEMENTATIONS
 	template<typename SymbolT, typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	ParserResult LLParser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>::parse(ExecutionOrder exeuctionOrder)
+	ParserResult LLParser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>::parse(ExecutionOrder exeuctionOrder, ErrorRecoveryType errRecoveryType)
 	{
 		ParserResult res;
 		std::vector<StackElement<SymbolT>> stack;
@@ -71,13 +82,18 @@ namespace m0st4fa {
 
 			// if the symbol at the top of the stack is a terminal symbol
 			if (topSymbol.isTerminal) {
+
+				if (topSymbol == TokenT::EPSILON)
+					continue;
+				
 				// match it explicitly
 				bool matched = (topSymbol == currInputToken);
 
 				std::clog << "Matched " << topSymbol << " with " << currInputToken << ": " << std::boolalpha << matched << std::endl;
 				currInputToken = this->getLexicalAnalyzer().getNextToken();
 
-				if (-not matched); // TODO: error handling
+				if (-not matched)
+					error_recovery();
 				
 			}
 			// if the symbol is a non-terminal symbol

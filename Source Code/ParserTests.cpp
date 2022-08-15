@@ -184,12 +184,12 @@ std::ostream& operator<<(std::ostream& os, const _TERMINAL terminal)
 
 	static const std::map<_TERMINAL, std::string> terminal_to_string = {
 		{ _TERMINAL::T_ID, "ID" },
-		{ _TERMINAL::T_LEFT_PAREN, "(" },
-		{ _TERMINAL::T_RIGHT_PAREN, ")" },
-		{ _TERMINAL::T_PLUS, "+" },
-		{ _TERMINAL::T_STAR, "*" },
+		{ _TERMINAL::T_LEFT_PAREN, "LEFT_PAREN" },
+		{ _TERMINAL::T_RIGHT_PAREN, "RIGHT_PAREN" },
+		{ _TERMINAL::T_PLUS, "PLUS" },
+		{ _TERMINAL::T_STAR, "STAR" },
 		{ _TERMINAL::T_EOF, "EOF" },
-		{ _TERMINAL::T_EPSILON, "epsilon" }
+		{ _TERMINAL::T_EPSILON, "EPSILON" }
 	};
 	
 	return os << terminal_to_string.at(terminal);

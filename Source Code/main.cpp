@@ -42,7 +42,10 @@ int main(void) {
 
 	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
 
-	std::string src = " id + id * id + id * id * id * id";
+	std::string src;
+	std::cout << "Enter the source code to be parsed: ";
+	std::getline(std::cin, src);
+	std::cout << "\n";
 	LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
 	LLParsingTable<> table{};

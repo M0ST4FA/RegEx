@@ -15,11 +15,22 @@ namespace m0st4fa {
 
 	// TOKEN
 	template <typename TerminalT>
-		requires requires { TerminalT::T_EOF; }
+		requires requires { TerminalT::T_EOF; TerminalT::T_EPSILON; }
 	struct Token {
 		TerminalT name = TerminalT::T_EOF;
 		std::string lexeme = "\0";
+
+		static Token<TerminalT> EPSILON;
+
+		bool operator==(const Token& other) const {
+			return name == other.name && lexeme == other.lexeme;
+		};
 	};
+
+	template <typename TerminalT>
+		requires requires { TerminalT::T_EOF; TerminalT::T_EPSILON; }
+	Token<TerminalT> Token<TerminalT>::EPSILON = { TerminalT::T_EPSILON, "\0" };
+
 
 	template <typename TerminalT>
 	std::ostream& operator<<(std::ostream& os, const m0st4fa::Token<TerminalT>& token) {

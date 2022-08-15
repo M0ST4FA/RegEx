@@ -49,8 +49,8 @@ namespace m0st4fa {
 			requires requires (TokenT tok) { tok.name; }
 		bool operator==(const TokenT& token) const {
 
-			if (isTerminal)
-				return as.terminal == token.name;
+			if (this->isTerminal)
+				return this->as.terminal == token.name;
 
 			return false;
 		}
@@ -63,7 +63,6 @@ namespace m0st4fa {
 				return as.nonTerminal == other.as.nonTerminal;
 			
 		};
-
 	};
 
 	template <typename TerminalT, typename VariableT>

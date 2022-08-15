@@ -9,6 +9,15 @@ namespace m0st4fa {
 		EO_NUM
 	};
 
+	enum struct ErrorRecoveryType {
+		ERT_NONE = 0,
+		ERT_PANIC_MODE,
+		ERT_PHRASE_LEVE,
+		ERT_GLOBAL,
+		ERT_ABORT,
+		ERT_NUM,
+	};
+
 	// Parser Stack
 	enum StackElementType {
 		SE_GRAM_SYMBOL,

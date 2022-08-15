@@ -8,20 +8,14 @@ namespace m0st4fa {
 	// Parser class
 
 	template <typename ParsingTableT, typename SymbolT, typename TokenT>
-	concept ParserRequirments = requires (SymbolT gramSym, TokenT token) {
-		////require the parsing table to be callable
-		//ParsingTableT(gramSym, token);
+	concept ParserRequirments = requires (SymbolT gramSym, TokenT token, ParsingTableT table) {
+		//require the parsing table to be callable
+		//table[EXTRACT_VARIABLE(gramSym)][EXTRACT_TERMINAL(token)];
 
-		//// require SymbolT to have a 'isTerminal' property
-		//gramSym.isTerminal;
-
-		//// require SymbolT to be comparable by equality with TokenT and returns a boolean
-		//{gramSym == token} noexcept -> std::same_as<bool>;
-
-		//// require SymbolT to have operator== and operator<
+		// require SymbolT to be comparable by equality with TokenT and returns a boolean
+		//{gramSym == token} -> std::same_as<bool>;
+		// require SymbolT to have operator== and operator<
 		//gramSym == gramSym;
-		//gramSym < gramSym;
-		//
 
 		true;
 	};

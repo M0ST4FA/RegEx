@@ -141,8 +141,6 @@ namespace m0st4fa {
 			info.level = LOG_LEVEL::LL_ERROR;
 			info.info = { .errorType = ERROR_TYPE::ET_INVALID_LEXEME };
 
-			this->m_Col++;
-
 			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"No lexeme matched"});
 			this->m_Logger.log(info, msg);
 			throw std::runtime_error("No lexeme accepted by the state machine");

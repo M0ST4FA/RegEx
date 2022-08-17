@@ -20,7 +20,7 @@ namespace m0st4fa {
 		StackElement& operator=(const StackElement& other) {
 			type = other.type;
 			switch (type) {
-			case SE_GRAM_SYMBOL:
+			case SET_GRAM_SYMBOL:
 				as.gramSymbol = other.as.gramSymbol;
 				break;
 			}

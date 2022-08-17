@@ -49,6 +49,9 @@
     <ClCompile Include="LLParser.hpp">
       <Filter>Source Files\Parser</Filter>
     </ClCompile>
+    <ClCompile Include="PEnum.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DFA.h">

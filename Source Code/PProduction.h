@@ -19,20 +19,23 @@ namespace m0st4fa {
 			return *this;
 		}
 
+		std::string toString() const {
+
+			std::string str = this->prodHead.toString() + " -> ";
+
+			// body
+			for (const StackElement<SymbolT>& symbol : this->prodBody)
+				str+= symbol.as.gramSymbol.toString() + " ";
+
+			return str;
+		}
+
 	};
 
 	template <typename SymbolT>
 	std::ostream& operator<<(std::ostream& os, const ProductionRecord<SymbolT>& prod) {
 
-		std::cout << prod.prodHead << " -> ";
-
-		// body
-		for (const StackElement<SymbolT>& symbol : prod.prodBody)
-			std::cout << symbol.as.gramSymbol << " ";
-	
-
-		return std::cout << "\n";
-
+		return std::cout << prod.toString() << "\n";
 	};
 
 	// Symbol
@@ -63,6 +66,13 @@ namespace m0st4fa {
 				return as.nonTerminal == other.as.nonTerminal;
 			
 		};
+
+		std::string toString() const {
+
+			return this->isTerminal ? stringfy(this->as.terminal) : stringfy(this->as.nonTerminal);
+
+		}
+
 	};
 
 	template <typename TerminalT, typename VariableT>
@@ -71,12 +81,7 @@ namespace m0st4fa {
 	template <typename TerminalT, typename VariableT>
 	std::ostream& operator<<(std::ostream& os, const Symbol<TerminalT, VariableT>& symbol) {
 
-		if (symbol.isTerminal)
-			std::cout << symbol.as.terminal;
-		else
-			std::cout << symbol.as.nonTerminal;
-
-		return os;
+		return os << symbol.toString();
 		
 	}
 	

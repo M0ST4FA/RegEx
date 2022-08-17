@@ -75,8 +75,11 @@ export enum struct _TERMINAL {
 	T_EOF,
 	T_EPSILON,
 	T_NUM
+
 };
 
+
+export std::string stringfy(_TERMINAL);
 export std::ostream& operator<<(std::ostream&, const _TERMINAL);
 
 // so that no collisions occur with map
@@ -88,6 +91,8 @@ export enum struct _NON_TERMINAL {
 	NT_F,
 	NT_NUM
 };
+
+export std::string stringfy(_NON_TERMINAL);
 export std::ostream& operator<<(std::ostream&, const _NON_TERMINAL);
 
 

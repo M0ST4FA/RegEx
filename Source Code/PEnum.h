@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <ostream>
 
 namespace m0st4fa {
 
@@ -8,6 +10,8 @@ namespace m0st4fa {
 		EO_POSTORDER,
 		EO_NUM
 	};
+	std::ostream& operator<<(std::ostream&, ExecutionOrder);
+
 
 	enum struct ErrorRecoveryType {
 		ERT_NONE = 0,
@@ -17,13 +21,15 @@ namespace m0st4fa {
 		ERT_ABORT,
 		ERT_NUM,
 	};
+	std::ostream& operator<<(std::ostream&, ErrorRecoveryType);
 
 	// Parser Stack
 	enum StackElementType {
-		SE_GRAM_SYMBOL,
-		SE_SYNTH_RECORD,
-		SE_ACTION_RECORD,
-		SE_NUM
+		SET_GRAM_SYMBOL,
+		SET_SYNTH_RECORD,
+		SET_ACTION_RECORD,
+		SET_NUM
 	};
+	std::ostream& operator<<(std::ostream&, StackElementType);
 
 }

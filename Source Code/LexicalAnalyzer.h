@@ -57,6 +57,7 @@ namespace m0st4fa {
 		}
 
 		TokenT getNextToken(unsigned = (unsigned)LA_FLAG::LAF_NONE);
+		TokenT peak(unsigned = (unsigned)LA_FLAG::LAF_NONE);
 		size_t getLine() { return this->m_Line; };
 		size_t getCol() { return this->m_Col; };
 		std::pair<size_t, size_t> getPosition() {
@@ -106,6 +107,7 @@ namespace m0st4fa {
 
 		return;
 	}
+
 
 	template<typename TokenT, typename TableT, typename InputT>
 	TokenT m0st4fa::LexicalAnalyzer<TokenT, TableT, InputT>::getNextToken(unsigned flags)
@@ -165,5 +167,63 @@ namespace m0st4fa {
 		return res;
 	}
 
+
+	template<typename TokenT, typename TableT, typename InputT>
+	TokenT m0st4fa::LexicalAnalyzer<TokenT, TableT, InputT>::peak(unsigned flags) {
+
+		// remove all whitespaces and count new lines
+		if (-not (flags & (unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS))
+			this->_remove_whitespace(flags);
+
+		// if we are at the end of the source code or it is empty, return EOF token
+		if (this->m_SourceCode.empty()) {
+			LoggerInfo info;
+			info.level = LOG_LEVEL::LL_DEBUG;
+
+			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"End of file reached"});
+			this->m_Logger.log(info, msg);
+
+			// assuming that EOF is the default value for a token
+			return TokenT{};
+		};
+
+		TokenT res{};
+
+
+		// get the lexeme and the final state reached (if any)
+		const FSMResult fsmRes = this->m_Automatan.simulate(this->m_SourceCode, FSM_MODE::MM_LONGEST_PREFIX);
+		const state_t fstate = *fsmRes.finalState.begin();
+
+		// check whether there is a matched lexeme
+		if (-not fsmRes.accepted) {
+
+			// TODO: try to make the lexical analyzer able to print the erranous lexeme
+			LoggerInfo info;
+			info.level = LOG_LEVEL::LL_ERROR;
+			info.info = { .errorType = ERROR_TYPE::ET_INVALID_LEXEME };
+
+			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"No lexeme matched"});
+			this->m_Logger.log(info, msg);
+			throw std::runtime_error("No lexeme accepted by the state machine");
+
+		}
+
+		// if a lexeme is accepted, extract it
+		const size_t lexemeSize = fsmRes.indecies.end;
+
+		m_Logger.logDebug(std::format("LexemeSize: {}", lexemeSize));
+		const std::string lexeme = this->m_SourceCode.substr(0, lexemeSize);
+
+		// get the token
+		res = m_TokenFactory(fstate, lexeme);
+
+		// do not erease the lexeme from source code stream
+		m_Logger.logDebug(std::format("SourceCode: {}", m_SourceCode));
+
+
+		return res;
+
+
+	}
 
 };

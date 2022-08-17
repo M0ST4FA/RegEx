@@ -6,13 +6,25 @@
 
 namespace m0st4fa {
 
+	// type aliases
+	template<typename SymbolT>
+	using Stack = std::vector<StackElement<SymbolT>>;
+
+	template<typename SymbolT>
+	using ProdVec = std::vector<ProductionRecord<SymbolT>>;
+
 	struct TableEntry {
 		bool isError = true;
-		size_t prodIndex = 0;
 
-		std::ostream& print() {
+		union {
+			size_t prodIndex = 0;
+			void* action;
+		};
 
-			std::string msg = isError ? " \n" : std::format("Production Index of table entry: {}\n", prodIndex);
+		template<typename SymbolT>
+		std::ostream& toString(ProdVec<SymbolT>& prodVec) {
+
+			std::string msg = isError ? "Error Entry\n" : std::format("Production Index of table entry: {}\n", prodIndex);
 
 			return std::cout;
 		};

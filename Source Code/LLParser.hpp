@@ -44,10 +44,7 @@ namespace m0st4fa {
 				throw std::invalid_argument("Argument ERT_NONE cannot be used in this context.\nNote: it is just for knowing the number of possible values of this enum.");
 			}
 
-			this->m_Logger.logDebug("[ERR_RECOVERY]: started error recovery: ");
-#ifdef _DEBUG
-			std::cout << errRecovType << std::endl;
-#endif
+			this->m_Logger.logDebug("[ERR_RECOVERY]: started error recovery: " + stringfy(errRecovType));
 
 			switch (errRecovType) {
 
@@ -155,7 +152,7 @@ namespace m0st4fa {
 
 				// if the symbol at the top of the stack is not a terminal symbol and the input token is not matched,
 				if (-not matched)
-					error_recovery();
+					error_recovery(errRecoveryType);
 				
 			}
 			// if the symbol is a non-terminal symbol
@@ -166,7 +163,7 @@ namespace m0st4fa {
 
 				// if the table entry is an error
 				if (tableEntry.isError)
-					error_recovery();
+					error_recovery(errRecoveryType);
 
 				// if the table entry is not an error
 
@@ -196,6 +193,7 @@ namespace m0st4fa {
 	void LLParser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>::panic_mode()
 	{
 		// get top stack element
+		auto currInputToken = this->m_CurrInputToken;
 		const SymbolT topSymbol = m_CurrTopElement.as.gramSymbol;
 
 		// set up the logger state
@@ -207,7 +205,7 @@ namespace m0st4fa {
 			// if the top symbol is a terminal
 			if (topSymbol.isTerminal) {
 				this->m_Logger.log(info, std::format(
-					"Added lexeme {:s} to the input stream.", m_CurrInputToken.attribute)
+					"Added lexeme {:s} to the input stream.", currInputToken.attribute)
 				);
 
 				// pop the token of the stack and return to the parser
@@ -218,12 +216,12 @@ namespace m0st4fa {
 			else {
 
 				// peak to see the next token
-				this->m_CurrInputToken = this->getLexicalAnalyzer().peak();
+				currInputToken = this->getLexicalAnalyzer().peak();
 
 				// check if it can be used to sync with the parser
 
 				// get the production record for the current symbol and input
-				const TableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)m_CurrInputToken.name];
+				const TableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)currInputToken.name];
 
 				/**
 				* Assume the syncronization set of each non-terminal contains the first set of that non-terminal.
@@ -236,11 +234,27 @@ namespace m0st4fa {
 				*/ 
 				if (tableEntry.isError) {
 
-					
+					if (tableEntry.action) {
+						auto action = static_cast<bool (*)(Stack<SymbolT>, StackElement<SymbolT>, TokenT)>(tableEntry.action);
 
+						// if the action results in a syncronization
+						if (action(m_Stack, m_CurrTopElement, currInputToken)) {
+							m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+							this->m_Logger.log(info, "Syncronized successfully.");
+							return;
+						}
+
+						m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+						continue;
+					}
+					
+					// if the entry has no action
+					m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
 					continue;
 				}
 
+				// get the next token
+				m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
 				this->m_Logger.log(info, "Syncronized successfully.");
 
 				/**

@@ -54,7 +54,7 @@ int main(void) {
 	auto startSym = Symbol<_TERMINAL, _NON_TERMINAL>{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 	LLParser <Symbol<_TERMINAL, _NON_TERMINAL>, Token<_TERMINAL>> parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
 	
-	parser.parse(m0st4fa::ExecutionOrder::EO_INORDER);
+	parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 
 	std::string x;
 	while (x != "q") {

@@ -2,20 +2,26 @@
 
 namespace m0st4fa {
 	
-	std::ostream& operator<<(std::ostream& os, ExecutionOrder execOrder) {
+	std::string stringfy(ExecutionOrder execOrder) {
+
 		static constexpr const char* const names[] = {
 			"PRE_ORDER",
 			"IN_ORDER",
 			"POST_ORDER",
 		};
 		
-		const char* name = execOrder == ExecutionOrder::EO_NUM ? nullptr : names[static_cast<int>(execOrder)];
-		
-		return os << (name ? name : std::to_string((unsigned)ExecutionOrder::EO_NUM).data());
+		const char* name = execOrder == ExecutionOrder::EO_NUM ? 
+			std::to_string((unsigned)ExecutionOrder::EO_NUM).data() : names[static_cast<int>(execOrder)];
+
+		return name;
 	};
-	
-	std::ostream& operator<<(std::ostream& os, ErrorRecoveryType type) {
-		
+
+	std::ostream& operator<<(std::ostream& os, ExecutionOrder execOrder) {
+		return os << stringfy(execOrder);
+	};
+
+	std::string stringfy(ErrorRecoveryType type) {
+
 		static constexpr const char* const names[] = {
 			"NONE",
 			"PANIC_MODE",
@@ -24,12 +30,17 @@ namespace m0st4fa {
 			"ABORT",
 		};
 		
-		const char* name = type == ErrorRecoveryType::ERT_NUM ? nullptr : names[static_cast<int>(type)];
-		
-		return os << (name ? name : std::to_string((unsigned)ErrorRecoveryType::ERT_NUM).data());
-	};
+		const char* name = type == ErrorRecoveryType::ERT_NUM ? 
+			std::to_string((unsigned)ErrorRecoveryType::ERT_NUM).data() : names[static_cast<int>(type)];
 
-	std::ostream& operator<<(std::ostream& os, StackElementType type) {
+		return name;
+	}
+	std::ostream& operator<<(std::ostream& os, ErrorRecoveryType type) {
+		return os << stringfy(type);
+	};
+	
+	std::string stringfy(StackElementType type) {
+
 
 		static constexpr const char* const names[] = {
 			"GRAM_SYMBOL",
@@ -38,9 +49,13 @@ namespace m0st4fa {
 		};
 		
 
-		const char* name = type == StackElementType::SET_NUM ? nullptr : names[static_cast<int>(type)];
+		const char* name = type == StackElementType::SET_NUM ? 
+			std::to_string((unsigned)StackElementType::SET_NUM).data() : names[static_cast<int>(type)];
 
-		return os << (name ? name : std::to_string((unsigned)StackElementType::SET_NUM).data());
+		return name;
+	}
+	std::ostream& operator<<(std::ostream& os, StackElementType type) {
+		return os << stringfy(type);
 	};
 	
 }

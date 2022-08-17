@@ -10,6 +10,7 @@ namespace m0st4fa {
 		EO_POSTORDER,
 		EO_NUM
 	};
+	std::string stringfy(ExecutionOrder);
 	std::ostream& operator<<(std::ostream&, ExecutionOrder);
 
 
@@ -21,6 +22,7 @@ namespace m0st4fa {
 		ERT_ABORT,
 		ERT_NUM,
 	};
+	std::string stringfy(ErrorRecoveryType);
 	std::ostream& operator<<(std::ostream&, ErrorRecoveryType);
 
 	// Parser Stack
@@ -30,6 +32,7 @@ namespace m0st4fa {
 		SET_ACTION_RECORD,
 		SET_NUM
 	};
+	std::string stringfy(StackElementType);
 	std::ostream& operator<<(std::ostream&, StackElementType);
 
 }

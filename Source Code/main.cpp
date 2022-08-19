@@ -42,25 +42,25 @@ int main(void) {
 
 	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
 
-	std::string src;
-	std::cout << "Enter the source code to be parsed: ";
-	std::getline(std::cin, src);
-	std::cout << "\n";
-	LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+	while (true) {
+		std::string src;
+		std::cout << "Enter the source code to be parsed: ";
+		std::getline(std::cin, src);
+		std::cout << "\n";
 
-	LLParsingTable<> table{};
-	define_table_llparser(table);
+		if (src == "q" || src == "Q")
+			break;
+		
+		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
-	auto startSym = Symbol<_TERMINAL, _NON_TERMINAL>{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
-	LLParser <Symbol<_TERMINAL, _NON_TERMINAL>, Token<_TERMINAL>> parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
-	
-	parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+		LLParsingTable<> table{};
+		define_table_llparser(table);
 
-	std::string x;
-	while (x != "q") {
-		std::cin >> x;
-		if (x == "q") break;
-	}
+		auto startSym = Symbol<_TERMINAL, _NON_TERMINAL>{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+		LLParser <Symbol<_TERMINAL, _NON_TERMINAL>, Token<_TERMINAL>> parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
+
+		parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+	};
 	
 	return 0;
 }

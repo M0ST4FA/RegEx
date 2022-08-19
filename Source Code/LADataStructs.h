@@ -15,7 +15,7 @@ namespace m0st4fa {
 
 	// TOKEN
 	template <typename TerminalT, typename AttrT = std::string>
-		requires requires { TerminalT::T_EOF; TerminalT::T_EPSILON; }
+		requires requires (TerminalT a) { TerminalT::T_EOF; TerminalT::T_EPSILON; stringfy(a); }
 	struct Token {
 		TerminalT name = TerminalT::T_EOF;
 		AttrT attribute;
@@ -25,29 +25,30 @@ namespace m0st4fa {
 		bool operator==(const Token& other) const {
 			return name == other.name && attribute == other.attribute;
 		};
+		
+		operator std::string() const {
+			return this->toString();
+		}
+
+		std::string toString() const {
+			return "<" + stringfy(this->name) + ", " + this->attribute + ">";
+		}
 	};
 
 	template <typename TerminalT, typename AttrT>
-		requires requires { TerminalT::T_EOF; TerminalT::T_EPSILON; }
+		requires requires (TerminalT a) { TerminalT::T_EOF; TerminalT::T_EPSILON; stringfy(a); }
 	Token<TerminalT> Token<TerminalT, typename AttrT>::EPSILON = { TerminalT::T_EPSILON, "\0" };
 
 
 	template <typename TerminalT>
+		requires requires (TerminalT a) { stringfy(a); }
 	std::ostream& operator<<(std::ostream& os, const m0st4fa::Token<TerminalT>& token) {
-		os << "<" << token.name << ", " << token.attribute << ">";
-		return os;
+		return os << token.toString();
 	}
 	
 
 	template<typename TokenT, typename InputT = std::string>
 	//                               state    lexeme
 	using TokenFactoryT = TokenT(*)(state_t, InputT);
-	
-}
-
-namespace {
-
-	
-	
 	
 }

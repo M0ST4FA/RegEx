@@ -18,10 +18,8 @@ namespace m0st4fa {
 		TokenFactoryT<TokenT, InputT> m_TokenFactory = nullptr;
 		std::string m_SourceCode;
 
-		size_t m_BeginPtr = 0,
-			m_ForwardPtr = 0,
-			m_Line = 1,
-			m_Col = 1;
+		size_t m_Line = 1,
+			   m_Col = 1;
 
 		Logger m_Logger;
 
@@ -33,8 +31,6 @@ namespace m0st4fa {
 		const DFA<TransFn<TableT>, InputT>& getAutomatan() { return this->m_Automatan; };
 		const TokenFactoryT<TokenT, InputT> getTokenFactory() { return this->m_TokenFactory; };
 		const std::string& getSourceCode() { return this->m_SourceCode; };
-		size_t getBeginPtr() { return this->m_BeginPtr; };
-		size_t getForwardPtr() { return this->m_ForwardPtr; };
 
 	public:
 

@@ -19,6 +19,10 @@ namespace m0st4fa {
 			return *this;
 		}
 
+		operator std::string() const {
+			return this->toString();
+		}
+
 		std::string toString() const {
 
 			std::string str = this->prodHead.toString() + " -> ";
@@ -66,6 +70,10 @@ namespace m0st4fa {
 				return as.nonTerminal == other.as.nonTerminal;
 			
 		};
+		
+		operator std::string() const {
+			return this->toString();
+		}
 
 		std::string toString() const {
 

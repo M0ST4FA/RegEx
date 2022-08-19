@@ -13,6 +13,8 @@ namespace m0st4fa {
 	enum class ERROR_TYPE {
 		ET_INVALID_ARGUMENT,
 		ET_INVALID_LEXEME,
+		ET_PROD_BODY_EMPTY,
+		ET_UNEXCPECTED_TOKEN,
 		ET_ERROR_TYPE_MAX
 	};
 
@@ -46,6 +48,8 @@ namespace m0st4fa {
 		static constexpr const volatile char* ERROR_TYPE_NAMES[(int)ERROR_TYPE::ET_ERROR_TYPE_MAX] = {
 			"Invalid Argument",
 			"Invlaid Lexeme",
+			"Empty Production Body",
+			"Unexpected Token"
 		};
 		
 	public:

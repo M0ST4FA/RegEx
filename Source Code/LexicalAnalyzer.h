@@ -19,7 +19,11 @@ namespace m0st4fa {
 		std::string m_SourceCode;
 
 		size_t m_Line = 1,
-			   m_Col = 1;
+			/** When does the line number change?
+			* When escaping a whitespace character (+1).
+			* After matching a lexeme (+sizeof(lexeme)).
+			*/
+			   m_Col = 0;
 
 		Logger m_Logger;
 
@@ -81,18 +85,18 @@ namespace m0st4fa {
 
 				// if the current character is a new line char and they are allowed, do not remove the current char
 				if (currChar == '\n' && (flags & (unsigned)LA_FLAG::LAF_ALLOW_NEW_LINE)) {
-					this->m_Line++, this->m_Col = 1;
+					this->m_Line++, this->m_Col = 0;
+					this->m_SourceCode.erase(this->m_SourceCode.begin());
 					continue;
 				}
 
+				// if this whitespace character is not a new line character
+				
 				// erase whitespace from source code stream
 				this->m_SourceCode.erase(this->m_SourceCode.begin());
 
-				// update line and col
-				if (currChar == '\n')
-					this->m_Line++, this->m_Col = 1;
-				else
-					this->m_Col++;
+				// update character
+				this->m_Col++;
 
 			}
 			// if no white space is caught
@@ -157,8 +161,7 @@ namespace m0st4fa {
 
 		// erease the lexeme from source code stream
 		m_SourceCode.erase(0, lexemeSize);
-		m_Logger.logDebug(std::format("SourceCode: {}", m_SourceCode));
-
+		m_Logger.logDebug(std::format("Source Code: {}, Length {}", m_SourceCode, m_SourceCode.length()));
 
 		return res;
 	}
@@ -214,7 +217,7 @@ namespace m0st4fa {
 		res = m_TokenFactory(fstate, lexeme);
 
 		// do not erease the lexeme from source code stream
-		m_Logger.logDebug(std::format("SourceCode: {}", m_SourceCode));
+		m_Logger.logDebug(std::format("SourceCode: {}, Length {}", m_SourceCode, m_SourceCode.length()));
 
 
 		return res;

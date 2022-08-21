@@ -14,6 +14,7 @@ using namespace m0st4fa;
 
 // #defines
 #define TEST_PARSER
+#define ANSI_ESC "\u001b"
 
 #ifdef TEST_REGEX
 
@@ -44,7 +45,7 @@ int main(void) {
 
 	while (true) {
 		std::string src;
-		std::cout << "Enter the source code to be parsed: ";
+		std::cout << ANSI_ESC"[36m""Enter the source code to be parsed : " ANSI_ESC"[0m";
 		std::getline(std::cin, src);
 		std::cout << "\n";
 
@@ -59,7 +60,12 @@ int main(void) {
 		auto startSym = Symbol<_TERMINAL, _NON_TERMINAL>{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 		LLParser <Symbol<_TERMINAL, _NON_TERMINAL>, Token<_TERMINAL>> parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
 
-		parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+		try { 
+			parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_NONE);
+		}
+		catch (std::exception& e) {
+			std::cout << "Exception : " << e.what() << "\n";
+		};
 	};
 	
 	return 0;

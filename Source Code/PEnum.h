@@ -14,6 +14,10 @@ namespace m0st4fa {
 	std::ostream& operator<<(std::ostream&, ExecutionOrder);
 
 
+	/**
+	* The effect of ERT_NONE is close to ERT_PANIC_MODE because of how the parser is architected.
+	* ERT_PANIC_MODE is more powerfull though: wherease ERT_NONE can only sync in case we find a token from FIRST, ERT_PANIC_MODE can do a lot more, and is not limited to this only.
+	*/
 	enum struct ErrorRecoveryType {
 		ERT_NONE = 0,
 		ERT_PANIC_MODE,

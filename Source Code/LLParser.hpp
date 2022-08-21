@@ -75,7 +75,7 @@ namespace m0st4fa {
 		* @brief implements panic mode error recovery.
 		*/
 		bool panic_mode();
-		bool panic_mode_sync_variable(TokenT&);
+		bool panic_mode_try_sync_variable(TokenT&);
 
 		// TODO: implement phrase level and global error recovery
 		bool phrase_level() const { return false; };
@@ -88,6 +88,17 @@ namespace m0st4fa {
 		* If it is empty, the function reports the error and throws a logic_exception.
 		*/
 		void check_prod_body(const ProductionRecord<SymbolT>&) const;
+		void print_sync_msg(const std::pair<size_t, size_t> pos) const {
+			
+			static constexpr LoggerInfo info = { .level = LOG_LEVEL::LL_INFO, .info = {.noVal = 0} };
+
+			std::string msg = std::format("({}, {}) Syncronized successfully. Current input token {}",
+				pos.first,
+				pos.second,
+				(std::string)m_CurrInputToken);
+
+			this->m_Logger.log(info, msg);
+		};
 
 	public:
 
@@ -215,18 +226,19 @@ namespace m0st4fa {
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 		LoggerInfo errInfo{ .level = LOG_LEVEL::LL_ERROR, .info {.errorType = ERROR_TYPE::ET_UNEXCPECTED_TOKEN } };
 
+		this->m_Logger.log(errInfo, std::format(
+			"({}, {}) Didn't excpect token {:s}",
+			this->getLexicalAnalyzer().getLine(),  
+			this->getLexicalAnalyzer().getCol(),
+			(std::string)this->m_CurrInputToken
+		));
+
 		// loop until the input and the stack are synchronized
 		while (true) {
 
 			// if the top symbol is a terminal
 			if (topSymbol.isTerminal) {
 
-				this->m_Logger.log(errInfo, std::format(
-					"({}, {}) Didn't excpect token {:s}",
-					this->getLexicalAnalyzer().getLine(),  
-					this->getLexicalAnalyzer().getCol(),
-					(std::string)this->m_CurrInputToken
-				));
 				
 				this->m_Logger.log(info, std::format(
 					"Added lexeme {:s} to the input stream.", currInputToken.attribute)
@@ -242,24 +254,44 @@ namespace m0st4fa {
 				// peak to see the next token
 				currInputToken = this->getLexicalAnalyzer().peak();
 
-				this->m_Logger.log(errInfo, std::format(
-					"({}, {}) Didn't excpect token {:s}",
-					this->getLexicalAnalyzer().getLine(),
-					this->getLexicalAnalyzer().getCol(),
-					(std::string)this->m_CurrInputToken
-				));
-
 				// check if it can be used to sync with the parser
-				return this->panic_mode_sync_variable(currInputToken);
+				bool synced = this->panic_mode_try_sync_variable(currInputToken);
+				
+				if (synced)
+					break;
 
+				// if we've reached the end of the input and could not sync with this token
+				if (m_CurrInputToken == TokenT{}) {
+					// pop this element since there is no way to syncronize using it
+					m_Stack.pop_back();
+
+					// if the stack is empty, return to the caller
+					if (m_Stack.empty()) {
+						this->m_Logger.log(info, std::format("[ERROR_RECOVERY] ({}, {}) Failed to syncronize: current input: {:s}",
+							this->getLexicalAnalyzer().getLine(),
+							this->getLexicalAnalyzer().getCol(),
+							(std::string)currInputToken
+						));
+
+						return false;
+					};
+					
+				};
+
+				
 			}
 		}
 
 		return true;
 	}
 
+	/** Actions:
+	* If the non-terminal has an epsilon production, make it the default.
+	* If there is a token whose associated table entry has an error action, execute it.
+	* If we find a token that is in the first set of the currunt token, expand by it.
+	*/
 	template<typename SymbolT, typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	bool LLParser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>::panic_mode_sync_variable(TokenT& currInputToken) {
+	bool LLParser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>::panic_mode_try_sync_variable(TokenT& currInputToken) {
 
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 
@@ -289,7 +321,7 @@ namespace m0st4fa {
 				m_CurrInputToken.toString(),
 				prod.toString()));
 
-			this->m_Logger.log(info, "Syncronized successfuly.");
+			print_sync_msg(this->getLexicalAnalyzer().getPosition());
 
 			return true;
 		}
@@ -306,43 +338,28 @@ namespace m0st4fa {
 		* If the entry is an error, check whether it has an action or no.
 		* If it has an associated action, do it, otherwise, continue to skip tokens.
 		*/
-loopBegin:
 		if (tableEntry.isError) {
 
+			// if the entry has an action
 			if (tableEntry.action) {
 				auto action = static_cast<bool (*)(Stack<SymbolT>, StackElement<SymbolT>, TokenT)>(tableEntry.action);
 
 				// if the action results in a syncronization
 				if (action(m_Stack, m_CurrTopElement, currInputToken)) {
 					m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
-					this->m_Logger.log(info, "Syncronized successfully.");
+					
+					print_sync_msg(this->getLexicalAnalyzer().getPosition());
+					
 					return true;
 				}
 
 			}
 
-			// if the entry has no action the action has failed to syncronize
-
-			// if we've reached the end of the input and could not sync with this token
-			if (m_CurrInputToken == TokenT{}) {
-				// pop this element since there is no way to syncronize using it
-				m_Stack.pop_back();
-
-				// if the stack is empty, return to the caller
-				if (m_Stack.empty()) {
-					this->m_Logger.log(info, std::format("[ERROR_RECOVERY] ({}, {}) Failed to syncronize: current input: {:s}",
-						this->getLexicalAnalyzer().getLine(),
-						this->getLexicalAnalyzer().getCol(),
-						(std::string)currInputToken
-					));
-					
-					return false;
-				};
-			};
+			// if the entry has no action or the action has failed to syncronize
 
 			// get the next input and try again to syncronize
 			m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
-			goto loopBegin;
+			return false;
 		}
 
 		//---------------------------------------------Syncronized-------------------------------------------
@@ -351,9 +368,7 @@ loopBegin:
 		* Since we've just peaked to see whether we can sync with it or not, now we need to fetch it so that parsing can continue from it.
 		*/
 		m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
-		this->m_Logger.log(info, std::format("Syncronized successfully. Current input: {:s}",
-			(std::string)m_CurrInputToken
-		));
+		print_sync_msg(this->getLexicalAnalyzer().getPosition());
 
 		/**
 		* If the table entry is not an error, then we have syncronized correctly using FIRST set and possibly using FOLLOW set.

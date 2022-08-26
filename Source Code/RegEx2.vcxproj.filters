@@ -96,5 +96,8 @@
     <ClInclude Include="LADataStructs.h">
       <Filter>Source Files\LexAna</Filter>
     </ClInclude>
+    <ClInclude Include="termcolor.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

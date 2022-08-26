@@ -11,7 +11,6 @@ export module Tests;
 
 using m0st4fa::state_t;
 using m0st4fa::state_set_t;
-using m0st4fa::Symbol;
 export typedef std::array<std::array<state_t, 'z'>, 10> table_t;
 
 export template<typename T>
@@ -95,13 +94,42 @@ export enum struct _NON_TERMINAL {
 export std::string stringfy(_NON_TERMINAL);
 export std::ostream& operator<<(std::ostream&, const _NON_TERMINAL);
 
+export using Symbol = m0st4fa::Symbol<_TERMINAL, _NON_TERMINAL>;
 
-export bool operator<(const Symbol<_TERMINAL, _NON_TERMINAL> lhs,  const Symbol<_TERMINAL, _NON_TERMINAL> other) {
+export bool operator<(const Symbol lhs,  const Symbol other) {
 	return (unsigned)lhs.as.terminal < (unsigned)other.as.terminal;
 }
 
 
-export std::vector<m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>> grammer_expression();
+export struct ActData;
+export struct SynData;
+
+using Stack = m0st4fa::Stack<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
+
+// IMPORTANT: these two data structures cause problems if they do not have trivial destructors.
+struct SynData {
+	/*std::string text;
+	void(*action)(
+		Stack&, std::string&
+		) = nullptr;
+
+	~SynData() = default;*/
+};
+
+struct ActData {
+	/*std::string text;
+
+	void(*action)(
+		Stack&, std::string&
+		) = nullptr;
+
+	~ActData() = default;*/
+};
+
+using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
+using Action = m0st4fa::ActionRecord<ActData>;
+
+export std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expression();
 export void define_table_llparser(m0st4fa::LLParsingTable<>&);
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);

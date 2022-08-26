@@ -11,44 +11,48 @@ module;
 module Tests;
 
 using m0st4fa::Token;
-using m0st4fa::Symbol;
 
-std::vector<m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>> grammer_expression() {
-	std::vector<m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>> result;
+std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expression() {
+	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
+	using StackElement = m0st4fa::StackElement< Symbol, Synthesized, Action>;
 
-	m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>> prod;
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_E = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_EP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_T = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_TP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_F = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
 
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_ID = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_ID}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_PLUS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_PLUS}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_STAR = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_STAR}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_LP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_RP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_EPS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_EPSILON}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_EOF = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_EOF}} };
+	std::vector<Production> result;
+
+
+	Production prod;
+	StackElement se_E = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
+	StackElement se_EP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
+	StackElement se_T = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
+	StackElement se_TP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
+	StackElement se_F = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
+
+	StackElement se_ID = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_ID}} };
+	StackElement se_PLUS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_PLUS}} };
+	StackElement se_STAR = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_STAR}} };
+	StackElement se_LP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
+	StackElement se_RP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
+	StackElement se_EPS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} };
+	StackElement se_EOF = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EOF}} };
 
 
 
 	// E -> T E'
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
 		.prodBody = {se_T, se_EP} };
 
 	result.push_back(prod);
 
 	// E' -> + E T
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
 		.prodBody = {se_PLUS, se_T, se_EP} };
 
 	result.push_back(prod);
 
 	// T -> F T'
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
 		.prodBody = {se_F, se_TP} };
 
@@ -56,33 +60,33 @@ std::vector<m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>> grammer
 
 
 	// T' -> * F T'
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
 		.prodBody = {se_STAR, se_F, se_TP} };
 
 	result.push_back(prod);
 
 	// F -> (E)
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
 		.prodBody = {se_LP, se_E, se_RP} };
 
 	result.push_back(prod);
 
 	// F -> ID
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
 		.prodBody = {se_ID} };
 
 	result.push_back(prod);
 
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
 		.prodBody = {se_EPS} };
 
 	result.push_back(prod);
 
-	prod = m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>{
+	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
 		.prodBody = {se_EPS} };
 
@@ -93,21 +97,25 @@ std::vector<m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>> grammer
 
 void define_table_llparser(m0st4fa::LLParsingTable<>& table)
 {
-	std::vector<m0st4fa::ProductionRecord<Symbol<_TERMINAL, _NON_TERMINAL>>> grammer = grammer_expression();
+	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
+	using StackElement = m0st4fa::StackElement<Symbol, Synthesized, Action>;
 
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_E = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_EP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_T = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_TP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_F = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
+	std::vector<Production> grammer = grammer_expression();
 
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_ID = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_ID}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_PLUS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_PLUS}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_STAR = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_STAR}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_LP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_RP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_EPS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_EPSILON}} };
-	m0st4fa::StackElement<Symbol<_TERMINAL, _NON_TERMINAL>> se_EOF = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol<_TERMINAL, _NON_TERMINAL> {true, {.terminal = _TERMINAL::T_EOF}} };
+	Production prod;
+	StackElement se_E = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
+	StackElement se_EP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
+	StackElement se_T = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
+	StackElement se_TP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
+	StackElement se_F = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
+
+	StackElement se_ID = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_ID}} };
+	StackElement se_PLUS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_PLUS}} };
+	StackElement se_STAR = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_STAR}} };
+	StackElement se_LP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
+	StackElement se_RP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
+	StackElement se_EPS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} };
+	StackElement se_EOF = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EOF}} };
 
 	auto token_id = Token{ _TERMINAL::T_ID, "id" };
 

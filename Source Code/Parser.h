@@ -7,6 +7,7 @@
 namespace m0st4fa {
 	// Parser class
 
+	// TODO: work on this concept
 	template <typename ParsingTableT, typename SymbolT, typename TokenT>
 	concept ParserRequirments = requires (SymbolT gramSym, TokenT token, ParsingTableT table) {
 		//require the parsing table to be callable
@@ -34,6 +35,9 @@ namespace m0st4fa {
 	protected:
 		ParsingTableT m_Table;
 		Logger m_Logger;
+
+		// set the maximum number of errors that you recover from
+		static constexpr size_t ERR_RECOVERY_LIMIT = 5;
 
 		LexicalAnalyzer<TokenT, FSMTableT>& getLexicalAnalyzer() { return m_LexicalAnalyzer; }
 		SymbolT getStartSymbol() { return m_StartSymbol; }

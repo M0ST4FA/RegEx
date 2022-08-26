@@ -3,15 +3,10 @@
 #include <iostream>
 #include <format>
 
+#include "PStack.h"
+#include "PProduction.h"
 
 namespace m0st4fa {
-
-	// type aliases
-	template<typename SymbolT>
-	using Stack = std::vector<StackElement<SymbolT>>;
-
-	template<typename SymbolT>
-	using ProdVec = std::vector<ProductionRecord<SymbolT>>;
 
 	struct TableEntry {
 		bool isError = true;
@@ -21,8 +16,8 @@ namespace m0st4fa {
 			void* action;
 		};
 
-		template<typename SymbolT>
-		std::ostream& toString(ProdVec<SymbolT>& prodVec) {
+		template<typename SymbolT, typename SynthesizedT, typename ActionT>
+		std::ostream& toString(ProdVec<SymbolT, SynthesizedT, ActionT>& prodVec) {
 
 			std::string msg = isError ? "Error Entry\n" : std::format("Production Index of table entry: {}\n", prodIndex);
 

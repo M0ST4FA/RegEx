@@ -13,16 +13,11 @@ namespace m0st4fa {
 
 
 	class RegularExpression {
-		typedef struct table_t {};
-		typedef struct symbol_t {};
-		typedef struct token_t {};
-		typedef struct InputT {};
-
 		// data members
 		std::string m_Source;
 		index_t m_Index;
 		flag_t m_Flags;
-		LRParser<table_t, symbol_t, token_t, InputT> m_Parser;
+		LRParser<size_t, size_t, size_t, size_t> m_Parser;
 
 		// private methods
 

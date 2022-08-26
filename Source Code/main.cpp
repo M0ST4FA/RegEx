@@ -9,8 +9,19 @@
 #include "LexicalAnalyzer.h"
 import Tests;
 
-// using directives
-using namespace m0st4fa;
+// using declarations
+using m0st4fa::DFA;
+using m0st4fa::FSMTable;
+using m0st4fa::LexicalAnalyzer;
+using m0st4fa::state_set_t;
+using m0st4fa::state_t;
+using m0st4fa::Token;
+using m0st4fa::LLParser;
+using m0st4fa::LLParsingTable;
+using m0st4fa::TransitionFunction;
+using m0st4fa::ActionRecord;
+using m0st4fa::SynthesizedRecord;
+
 
 // #defines
 #define TEST_PARSER
@@ -57,11 +68,22 @@ int main(void) {
 		LLParsingTable<> table{};
 		define_table_llparser(table);
 
-		auto startSym = Symbol<_TERMINAL, _NON_TERMINAL>{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
-		LLParser <Symbol<_TERMINAL, _NON_TERMINAL>, Token<_TERMINAL>> parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
+		// create parser object
+		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 
+		m0st4fa::LLParser <
+			Symbol, 
+			SynthesizedRecord<SynData>, 
+			SynData,
+			ActionRecord<ActData>,
+			ActData,
+			Token<_TERMINAL>
+		> 
+			parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
+
+		// parse entered source
 		try { 
-			parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_NONE);
+			parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";

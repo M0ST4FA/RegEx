@@ -156,6 +156,7 @@
     <ClInclude Include="PStack.h" />
     <ClInclude Include="PTable.h" />
     <ClInclude Include="regex.h" />
+    <ClInclude Include="termcolor.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

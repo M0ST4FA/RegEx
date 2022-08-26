@@ -7,11 +7,15 @@
 namespace m0st4fa {
 
 	// Production
-	template <typename SymbolT>
+	template <typename SymbolT, typename SynthesizedT, typename ActionT>
 	struct ProductionRecord {
+
+		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
+		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
+
 		// TODO: demand that the prodHead be a non-terminal
 		SymbolT prodHead = SymbolT{};
-		std::vector<StackElement<SymbolT>> prodBody;
+		std::vector<StackElement> prodBody;
 
 		ProductionRecord& operator=(const ProductionRecord& other) {
 			prodHead = other.prodHead;
@@ -28,7 +32,7 @@ namespace m0st4fa {
 			std::string str = this->prodHead.toString() + " -> ";
 
 			// body
-			for (const StackElement<SymbolT>& symbol : this->prodBody)
+			for (const StackElement& symbol : this->prodBody)
 				str+= symbol.as.gramSymbol.toString() + " ";
 
 			return str;
@@ -36,8 +40,8 @@ namespace m0st4fa {
 
 	};
 
-	template <typename SymbolT>
-	std::ostream& operator<<(std::ostream& os, const ProductionRecord<SymbolT>& prod) {
+	template <typename SymbolT, typename SynthesizedT, typename ActionT>
+	std::ostream& operator<<(std::ostream& os, const ProductionRecord<SymbolT, SynthesizedT, ActionT>& prod) {
 
 		return std::cout << prod.toString() << "\n";
 	};
@@ -92,5 +96,10 @@ namespace m0st4fa {
 		return os << symbol.toString();
 		
 	}
-	
+
+
+	// ALIASES
+	template<typename SymbolT, typename SynthesizedT, typename ActionT>
+	using ProdVec = std::vector<ProductionRecord<SymbolT, SynthesizedT, ActionT>>;
+
 }

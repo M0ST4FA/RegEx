@@ -32,8 +32,24 @@ namespace m0st4fa {
 			std::string str = this->prodHead.toString() + " -> ";
 
 			// body
-			for (const StackElement& symbol : this->prodBody)
-				str+= symbol.as.gramSymbol.toString() + " ";
+			for (const StackElement& symbol : this->prodBody) {
+
+				switch (symbol.type) {
+				case SET_GRAM_SYMBOL:
+					str += symbol.as.gramSymbol.toString() + " ";
+					break;
+
+				case SET_SYNTH_RECORD:
+					str += symbol.as.synRecord.toString() + " ";
+					break;
+
+				case SET_ACTION_RECORD:
+					str += symbol.as.actRecord.toString() + " ";
+					break;
+
+				}
+			}
+
 
 			return str;
 		}
@@ -56,6 +72,7 @@ namespace m0st4fa {
 			VariableT nonTerminal;
 		} as;
 		
+
 		template <typename TokenT>
 			requires requires (TokenT tok) { tok.name; }
 		bool operator==(const TokenT& token) const {

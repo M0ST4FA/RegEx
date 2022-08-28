@@ -100,31 +100,33 @@ export bool operator<(const Symbol lhs,  const Symbol other) {
 	return (unsigned)lhs.as.terminal < (unsigned)other.as.terminal;
 }
 
+// IMPORTANT: these two data structures cause problems if they do not have trivial destructors.
+export struct SynData {
+	const char* str = "[SynData] Hello world";
 
-export struct ActData;
-export struct SynData;
+	operator std::string() const {
+		return std::string(str);
+	}
+
+	std::string toString() const {
+		return std::string(*this);
+	}
+};
+
+export struct ActData {
+	const char* str = "[ActData] Hello world";
+
+	operator std::string() const {
+		return std::string(str);
+	}
+
+	std::string toString() const {
+		return std::string(*this);
+	}
+
+};
 
 using Stack = m0st4fa::Stack<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
-
-// IMPORTANT: these two data structures cause problems if they do not have trivial destructors.
-struct SynData {
-	/*std::string text;
-	void(*action)(
-		Stack&, std::string&
-		) = nullptr;
-
-	~SynData() = default;*/
-};
-
-struct ActData {
-	/*std::string text;
-
-	void(*action)(
-		Stack&, std::string&
-		) = nullptr;
-
-	~ActData() = default;*/
-};
 
 using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
 using Action = m0st4fa::ActionRecord<ActData>;
@@ -133,4 +135,8 @@ export std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> gramm
 export void define_table_llparser(m0st4fa::LLParsingTable<>&);
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);
-	
+
+export void synDataAct(Stack&, SynData&);
+
+export void actDataAct(Stack&, ActData&);
+

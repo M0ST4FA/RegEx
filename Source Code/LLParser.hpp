@@ -217,6 +217,7 @@ namespace m0st4fa {
 				// execute the action if any
 				if (action)
 					action(this->m_Stack, topRecord.data);
+
 				continue;
 			}
 

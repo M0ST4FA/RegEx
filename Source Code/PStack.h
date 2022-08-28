@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <type_traits>
+#include <sstream>
 
 #include "PEnum.h"
 
@@ -11,22 +13,28 @@ namespace m0st4fa {
 	
 	// FORWARD DECLARATIONS
 	template <typename DataT>
+		requires requires (DataT data) { std::string(data); }
 	struct SynthesizedRecord;
 
 	template <typename DataT>
+		requires requires (DataT data) { std::string(data); }
 	struct ActionRecord;
 
+	template <typename SymbolT, typename SynthesizedT, typename ActionT>
+	concept StackElementConstraints = requires (SymbolT sym1, SymbolT sym2) { sym1 = sym2; } && std::is_trivially_destructible_v<SynthesizedT> && std::is_trivially_destructible_v<ActionT>;
+
 	template <
-		typename SymbolT, 
-		typename SynthesizedT, 
+		typename SymbolT,
+		typename SynthesizedT,
 		typename ActionT
 	>
-		requires requires (SymbolT sym1, SymbolT sym2) { sym1 = sym2; }
+		requires StackElementConstraints<SymbolT, SynthesizedT, ActionT>
 	struct StackElement {
 
 		StackElementType type;
 
-		union {
+		// TODO: try enhance this
+		struct {
 			SymbolT gramSymbol;
 			SynthesizedT synRecord;
 			ActionT actRecord;
@@ -85,6 +93,7 @@ namespace m0st4fa {
 	* @brief A simple base class for synthesized records from which you can derive more complex classes.
 	*/
 	template <typename DataT>
+		requires requires (DataT data) { std::string(data); }
 	struct SynthesizedRecord {
 		DataT data;
 
@@ -93,8 +102,19 @@ namespace m0st4fa {
 		*/
 		void* action = nullptr;
 
-		bool operator==(const SynthesizedRecord other) {
-			return this->action == other.action;
+		operator std::string() const {
+			std::stringstream ss;
+			ss << action;
+
+			return std::string("{ data: ") + std::string(data) + ", action: " + ss.str() + " }";
+		}
+
+		std::string toString() const {
+			return std::string(*this);
+		}
+
+		bool operator==(const SynthesizedRecord& other) {
+			return this->action == other.action && this->data == other.data;
 		}
 
 	};
@@ -105,6 +125,7 @@ namespace m0st4fa {
 	* @brief A simple base class for action records from which you can derive more complex classes.
 	*/
 	template <typename DataT>
+		requires requires (DataT data) { std::string(data); }
 	struct ActionRecord {
 		DataT data;
 
@@ -113,8 +134,19 @@ namespace m0st4fa {
 		*/
 		void* action = nullptr;
 
-		bool operator==(const ActionRecord other) {
-			return this->action == other.action;
+		operator std::string() const {
+			std::stringstream ss;
+			ss << action;
+
+			return std::string("{ data: ") + std::string(data) + ", action: " + ss.str() + " }";
+		}
+
+		std::string toString() const {
+			return std::string(*this);
+		}
+
+		bool operator==(const ActionRecord& other) {
+			return this->action == other.action && this->data == other.data;
 		}
 
 	};

@@ -8,7 +8,9 @@
 
 namespace m0st4fa {
 
-	struct TableEntry {
+	// LL TABLE
+
+	struct LLTableEntry {
 		bool isError = true;
 
 		union {
@@ -27,12 +29,19 @@ namespace m0st4fa {
 
 	template <size_t VariableCount = 20, size_t TerminalCount = 127>
 	struct LLParsingTable {
-		std::array<std::array<TableEntry, TerminalCount>, VariableCount> table;
+		std::array<std::array<LLTableEntry, TerminalCount>, VariableCount> table;
 
-		std::array<TableEntry, TerminalCount>& operator[](size_t index) {
+		std::array<LLTableEntry, TerminalCount>& operator[](size_t index) {
 			return table[index];
 		}
 
 	};
+
+
+	// LR TABLE
+
+	struct LRTableEntry;
+
+	struct LRParsingTable;
 
 };

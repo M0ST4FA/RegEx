@@ -149,11 +149,14 @@ namespace m0st4fa {
 		~LLParser() = default;
 
 		// methods
+
+		// TODO: determine what the parse function should return.
+
 		/**
 		* @output If w is in L(G), a leftmost derivation of w; otherwise, an error indication.
 		* It might execute actions during the leftmost derivation, for example, to make a parsing or syntax tree.
 		*/
-		ParserResult parse(ExecutionOrder, ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
+		ParserResult parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
 
 	};
 
@@ -163,7 +166,7 @@ namespace m0st4fa {
 		typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
 
 	ParserResult LLParser<SymbolT, SynthesizedT, SynDataT, ActionT, ActDataT, 
-	TokenT, ParsingTableT, FSMTableT, InputT>::parse(ExecutionOrder exeuctionOrder, ErrorRecoveryType errRecoveryType)
+	TokenT, ParsingTableT, FSMTableT, InputT>::parse(ErrorRecoveryType errRecoveryType)
 	{
 		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
 		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
@@ -198,6 +201,10 @@ namespace m0st4fa {
 				parse_grammar_symbol(errRecoveryType);
 				continue;
 
+		/**
+		* When you come to execute the action on a record, recall that the synthesized record is already poped off the stack.
+		* This affects the stack size as well as indecies you use to access other records.
+		*/
 			case SET_SYNTH_RECORD: {
 				// extract the record
 				SynthesizedT topRecord = m_CurrTopElement.as.synRecord;
@@ -256,6 +263,7 @@ namespace m0st4fa {
 			// match it explicitly
 			bool matched = (topSymbol == m_CurrInputToken);
 
+			this->m_Logger.logDebug(std::format("Stack size before: {}", m_Stack.size() + 1));
 			this->m_Logger.log(info, std::format("Matched {:s} with {:s}: {:s}", (std::string)topSymbol, (std::string)m_CurrInputToken, matched ? "true" : "false"));
 
 			// get the next input token
@@ -270,7 +278,7 @@ namespace m0st4fa {
 		else {
 
 			// get the production record for the current symbol and input
-			const TableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)m_CurrInputToken.name];
+			const LLTableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)m_CurrInputToken.name];
 
 			// if the table entry is an error
 			if (tableEntry.isError) {
@@ -294,8 +302,8 @@ namespace m0st4fa {
 				m_Stack.push_back(se);
 			};
 
+			this->m_Logger.logDebug(std::format("Stack size before: {}", m_Stack.size() + 1));
 			this->m_Logger.log(info, std::format("Expanded {:s} with {:s}: {:s}", (std::string)topSymbol, (std::string)m_CurrInputToken, (std::string)prod));
-
 
 		}
 
@@ -398,7 +406,7 @@ namespace m0st4fa {
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 
 		// Check for whether the non-terminal has an epsilon production and use it to reduce that non-terminal.
-		TableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)TokenT::EPSILON.name];
+		LLTableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)TokenT::EPSILON.name];
 
 		// if it is not an err, there is an epsilon production
 		if (-not tableEntry.isError) {

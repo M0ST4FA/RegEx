@@ -142,6 +142,7 @@
     <ClCompile Include="Tests.ixx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="common.h" />
     <ClInclude Include="DFA.h" />
     <ClInclude Include="FiniteStateMachine.h" />
     <ClInclude Include="LADataStructs.h" />

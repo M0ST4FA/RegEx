@@ -50,11 +50,14 @@ namespace m0st4fa {
 			"Invalid Argument",
 			"Invlaid Lexeme",
 			"Empty Production Body",
-			"Unexpected Token"
+			"Unexpected Token",
+			"Error Recovery Limit Exceeded"
 		};
-		
+
 	public:
-		
+
+		static const LoggerInfo WARNING, INFO, DEBUG, ERR_INVALID_ARG, ERR_INVALID_LEXEME, ERR_EMPTY_PROD_BODY, ERR_UNXPCTED_TOKEN, ERR_RECOV_LIMIT_EXCEEDED;
+
 		void log(const LoggerInfo, const std::string&, std::source_location = std::source_location::current()) const;
 		
 		void logDebug(const std::string&, std::source_location = std::source_location::current()) const;

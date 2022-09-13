@@ -2,6 +2,16 @@
 
 namespace m0st4fa {
 	
+	const LoggerInfo Logger::WARNING = LoggerInfo{ LOG_LEVEL::LL_WARRNING };
+	const LoggerInfo Logger::INFO = LoggerInfo{ LOG_LEVEL::LL_INFO };
+	const LoggerInfo Logger::DEBUG = LoggerInfo{ LOG_LEVEL::LL_DEBUG };
+	const LoggerInfo Logger::ERR_INVALID_ARG = LoggerInfo{ LOG_LEVEL::LL_ERROR, { .errorType = ERROR_TYPE::ET_INVALID_ARGUMENT} };
+	const LoggerInfo Logger::ERR_INVALID_LEXEME = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_INVALID_LEXEME} };
+	const LoggerInfo Logger::ERR_EMPTY_PROD_BODY = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_PROD_BODY_EMPTY} };
+	const LoggerInfo Logger::ERR_UNXPCTED_TOKEN = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_UNEXCPECTED_TOKEN} };
+	const LoggerInfo Logger::ERR_RECOV_LIMIT_EXCEEDED = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_ERR_RECOVERY_LIMIT_EXCEEDED} };
+
+
 	void Logger::log(LoggerInfo loggerInfo, const std::string& message, std::source_location location) const
 	{
 

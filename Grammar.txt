@@ -1,5 +1,5 @@
 Grammar:
-<regex> ::= <regex> | <anchor>
+<regex> ::= <regex>|<anchor>
 <regex> ::= <anchor>
 <anchor>::= ^<anchor>
 <anchor>::= <anchor>$

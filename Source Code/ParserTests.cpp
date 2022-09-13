@@ -13,11 +13,25 @@ module Tests;
 using m0st4fa::Token;
 
 void synDataAct(Stack& stack, SynData& data) {
-	std::cout << data.str << ", stack size: " << stack.size() << "\n\n";
+	
+	std::cout << data.str << ", stack size: " << stack.size() + 1 << "\n\n";
 }
 
 void actDataAct(Stack& stack, ActData& data) {
-	std::cout << data.str << ", stack size: " << stack.size() << "\n\n";
+
+	unsigned currIndex = stack.size() + 1;
+	unsigned actIndex = currIndex - 3;
+
+	static char msg[100] = "[Modified] ";
+	const char* original = stack.at(actIndex).as.synRecord.data.str;
+
+	if (strlen(msg) < 20)
+		strcat(msg, original);
+
+	stack.at(actIndex).as.synRecord.data.str = msg;
+
+	std::cout << stack.at(actIndex).type << "\n";
+	printf("[Action at index: %u] Assigned data to synthesized record at index: %u\n\n", currIndex, actIndex);
 }
 
 std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expression() {
@@ -51,7 +65,7 @@ std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expr
 	// E -> T E'
 	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
-		.prodBody = {se_T, se_EP, se_Syn, se_Act} };
+		.prodBody = {se_T, se_Act, se_EP, se_Syn} };
 
 	result.push_back(prod);
 
@@ -73,7 +87,7 @@ std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expr
 	// T' -> * F T'
 	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
-		.prodBody = {se_STAR, se_Syn, se_F, se_Act, se_TP} };
+		.prodBody = {se_STAR, se_Act, se_F, se_Syn, se_TP} };
 
 	result.push_back(prod);
 
@@ -86,7 +100,7 @@ std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expr
 
 	// F -> ID
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
+		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
 		.prodBody = {se_ID} };
 
 	result.push_back(prod);
@@ -200,7 +214,7 @@ Token<_TERMINAL> token_fact_parser(m0st4fa::state_t state, std::string lexeme) {
 
 std::string stringfy(const _TERMINAL terminal) {
 
-	_ASSERT_EXPR(variable >= _TERMINAL::T_ID && variable < _TERMINAL::T_NUM, "There is no such terminal");
+	_ASSERT_EXPR(terminal >= _TERMINAL::T_ID && terminal < _TERMINAL::T_NUM, "There is no such terminal");
 
 	static const std::map<_TERMINAL, std::string> terminal_to_string = {
 		{ _TERMINAL::T_ID, "ID" },

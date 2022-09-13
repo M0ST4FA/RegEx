@@ -102,7 +102,7 @@ export bool operator<(const Symbol lhs,  const Symbol other) {
 
 // IMPORTANT: these two data structures cause problems if they do not have trivial destructors.
 export struct SynData {
-	const char* str = "[SynData] Hello world";
+	const char* str = "[SynData] Hello world from Synthesized Data";
 
 	operator std::string() const {
 		return std::string(str);
@@ -114,7 +114,7 @@ export struct SynData {
 };
 
 export struct ActData {
-	const char* str = "[ActData] Hello world";
+	const char* str = "[ActData] Hello world from Action Data";
 
 	operator std::string() const {
 		return std::string(str);
@@ -128,8 +128,8 @@ export struct ActData {
 
 using Stack = m0st4fa::Stack<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
 
-using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
-using Action = m0st4fa::ActionRecord<ActData>;
+export using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
+export using Action = m0st4fa::ActionRecord<ActData>;
 
 export std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expression();
 export void define_table_llparser(m0st4fa::LLParsingTable<>&);

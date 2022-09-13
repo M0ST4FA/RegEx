@@ -10,7 +10,7 @@
 
 import Tests;
 
-// using declarations
+// using declaraEtions
 using m0st4fa::DFA;
 using m0st4fa::FSMTable;
 using m0st4fa::LexicalAnalyzer;
@@ -71,6 +71,8 @@ int main(void) {
 
 		// create parser object
 		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+		auto grammar = grammer_expression();
+		m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec {grammar};
 
 		m0st4fa::LLParser <
 			Symbol, 
@@ -80,17 +82,20 @@ int main(void) {
 			ActData,
 			Token<_TERMINAL>
 		> 
-			parser{ grammer_expression(), startSym, table, lexicalAnal_parser };
+			parser{ grammar, startSym, table, lexicalAnal_parser };
 
 		// parse entered source
 		try { 
-			parser.parse(m0st4fa::ExecutionOrder::EO_INORDER, m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+			prodVec.calculateFIRST();
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";
 		};
 	};
 	
+
+
 	return 0;
 }
 

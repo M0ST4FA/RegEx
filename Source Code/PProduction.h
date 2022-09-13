@@ -134,20 +134,31 @@ namespace m0st4fa {
 
 	// TODO: enhance the encapsulation of this struct
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
-	struct ProductionVector {
+	class ProductionVector {
 		using ProdRec = ProductionRecord<SymbolT, SynthesizedT, ActionT>;
 		using VecType = std::vector<ProdRec>;
 		// TODO: consider making this use terminals instead for storage efficiencey
 		using SetType = std::vector<std::set<SymbolT>>;
 		
-		VecType vector;
+		bool m_CalculatedFIRST = false;
+		bool m_CalculatedFOLLOW = false;
 		Logger m_Logger;
+		SetType FIRST {0};
+		SetType FOLLOW {0};
 
+		/**
+		* Calculates FIRST for the head of a production, using whatever information is currently available.
+		* @return true = continue to the next grammar symbol, false = continue to the next production;
+		*/
+		bool _FIRST_calc_prod(const ProdRec&, const SymbolT&, bool&, size_t);
+
+	public:
+		VecType vector;
 		/**
 		* The index of the non-terminal will hold its FIRST or FOLLOW set.
 		*/
-		SetType FIRST {0};
-		SetType FOLLOW {0};
+
+		ProductionVector(const VecType& vec) : vector{ vec } {};
 
 		ProdRec& operator [] (size_t i) {
 			return this->vector.at(i);
@@ -167,28 +178,41 @@ namespace m0st4fa {
 			return str;
 		}
 
+		/**
+		* Calculates FIRST for all non-terminals of this production vector.
+		* @return true if FIRST is calculated, otherwise, calculates FIRST and then returns true.
+		*/
 		bool calculateFIRST();
-		bool _FIRST_calc_prod(const ProdRec&, const SymbolT&, bool&, size_t);
+		bool FIRSTCalculated() { return this->m_CalculatedFIRST; };
+		std::set<SymbolT> getFIRST(decltype(SymbolT().as.nonTerminal) nonTerminal) { 
+				
+			// if FIRST is already calculated
+			if (this->m_CalculatedFIRST)
+				return this->FIRST[(size_t)nonTerminal];
+
+			// TODO: handle the situation where it is not yet calculated
+		};
+
 		/**
-		* @return (set, exists or not)
+		* Calculates FOLLOW for all non-terminals of this production vector.
+		* @return true if FOLLOW is calculated, otherwise, calculates FOLLOW and then returns true.
 		*/
-		bool FIRSTCalculated();
-
-
 		bool calculateFOLLOW();
-		/**
-		* @return (set, exists or not)
-		*/
-		bool FOLLOWCalculated();
+		bool FOLLOWCalculated() { return this->m_CalculatedFOLLOW; };
+		std::set<SymbolT> getFOLLOW(decltype(SymbolT().as.nonTerminal) nonTerminal) {
 
+			// if FOLLOW is already calculated
+			if (this->m_CalucatedFOLLOW)
+				return this->FOLLOW[(size_t)nonTerminal];
+
+			// TODO: handle the situation where it is not yet calculated
+		};
 
 	};
-
 
 	// ALIASES
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
 	using ProdVec = ProductionVector<SymbolT, SynthesizedT, ActionT>;
-
 }
 
 namespace m0st4fa {
@@ -211,6 +235,11 @@ namespace m0st4fa {
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
 	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::calculateFIRST()
 	{
+
+		// if FIRST is already calculated, return
+		if (this->m_CalculatedFIRST)
+			return true;
+
 		/** Algorithm
 		* Loop through every production of the grammar until you cannot add another terminal to the first set of any non-terminal.
 		* Variable added asserts whether we added any terminal in the last iteration to the FIRST set of any non-terminal.
@@ -249,12 +278,6 @@ namespace m0st4fa {
 
 			// loop through every production
 			for (const ProdRec& prod : this->vector) {
-				const SymbolT& head = prod.prodHead;
-				size_t setIndexH = (size_t)head.as.nonTerminal;
-				std::set<SymbolT>& fsetH = this->FIRST[setIndexH];
-
-				// check whether the first set contains epsilon
-				bool containsEpsilonH = fsetH.contains(SymbolT::EPSILON);
 
 				// loop through every symbol of the production
 				for (size_t index = 1; const auto& stackElement : prod.prodBody) {
@@ -269,134 +292,15 @@ namespace m0st4fa {
 					// get the symbol and its first set (if any)
 					const SymbolT& symbol = stackElement.as.gramSymbol;
 
-					// if the symbol is a non-terminal
-					if (!symbol.isTerminal) {
-
-						// get the first set of the symbol	
-						size_t setIndexN = (size_t)symbol.as.nonTerminal;
-						std::set<SymbolT>& fsetN = this->FIRST[setIndexN];
-
-						// check whether the first set contains epsilon
-						bool containsEpsilonN = fsetN.contains(SymbolT::EPSILON);
-						// if the symbol is the same as head
-						if (symbol == head) {
-							/**
-							* If S == H, check whether FIRST(H) contains epsilon:
-								* If it does, check whether we are at the end of the body of P:
-									* If we are, add epsilon to FIRST(H) [Note: already added].
-									* If we are not, move on to the next grammar symbol.
-								* If it does not, move on to the next production.
-							*/
-
-							// 1. if the first set does not contain epsilon
-							if (-not containsEpsilonN)
-								// move on to the next production
-								break;
-
-							// 2. if FIRST contains epsilon
-
-							// move on to the next grammar symbol, which will automatically move on to the next production if this is the last grammar symbol
-							// Note: epsilon is already added (that's why we are here in the first place)
-							continue;
-						}
-
-						// if the symbol is differnt from head
-						/**
-						* If S is a non-terminal N:
-							* F = FIRST(N), FE = F has epsilon?, HE = H has epsilon?
-							* Add the current F to FIRST(H).
-								* If any terminal was added (was not already there) set added to true.
-							* If (FE && !HE) remove the epsilon from FIRST(H).
-								* Note: the condition means: if F has epsilon and FIRST(H) didn't have epsilon before mergin the two FIRST sets.
-							* If FE, check whether we are at the end of the body of P:
-								* If we are, add epsilon to FIRST(H).
-									* If it was added (was not already there) set added to true.
-								* If we are not, move on to the next grammar symbol of the body of P.
-						*/
-
-						if (fsetN.empty())
-							break;
-
-						// loop through each symbol of the FIRST set of the current non-terminal
-						for (const auto& symbol : fsetN) {
-
-							// skip to the next symbol if the current is epsilon (optimize this out if you could)
-							if (symbol == SymbolT::EPSILON)
-								continue;
-
-							// add the symbol to the FIRST set of the head
-							// BUG: the symbol is inserted although it exists
-							auto p = this->FIRST[setIndexH].insert(symbol);
-
-							// if it was added, set the boolean
-							if (p.second) {
-								added = true;
-
-								this->m_Logger.logDebug(
-									std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
-										(std::string)symbol,
-										(std::string)head,
-										stringfy(this->FIRST[setIndexH])));
-
-							}
-						}
-
-						// if the non-terminal contains epsilon
-						if (containsEpsilonN) {
-							// check whether we are at the end of the production
-							bool atEnd = index == prod.prodBody.size();
-
-							// if we are not at the end of the production
-							if (-not atEnd)
-								// continue to the next grammar symbol
-								break;
-
-							// if we are at the end of the production
-
-							if (-not containsEpsilonH) {
-								// add epsilon to the FIRST set of the head
-								auto p = this->FIRST[setIndexH].insert(SymbolT::EPSILON);
-
-								if (p.second) {
-									added = true;
-
-									this->m_Logger.logDebug(
-										std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
-											(std::string)SymbolT::EPSILON,
-											(std::string)head,
-											stringfy(this->FIRST[setIndexH])));
-								}
-							}
-
-						}
-
-						// if does not, continue to the next grammar symbol
-						break;
-					}
-					else {
-						/**
-							*If S is a terminal T, add T to FIRST(H) and move on to the next production.
-								* If T is added(was not already there), set added to true.
-						*/
-						auto p = this->FIRST[setIndexH].insert(symbol);
-
-						// add epsilon to the FIRST set of the head
-						if (p.second) {
-							added = true;
-
-							this->m_Logger.logDebug(
-								std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
-									(std::string)symbol,
-									(std::string)head,
-									stringfy(this->FIRST[setIndexH])));
-						}
-
-						// continue to the next production
-						break;
-					}
+					// continue or not?
+					bool cont = _FIRST_calc_prod(prod, symbol, added, index);
 
 					// increment the index of the current element
 					++index;
+
+					if (-not cont)
+						break;
+
 				}
 
 			}
@@ -435,13 +339,159 @@ namespace m0st4fa {
 		}
 
 		// if we reached here, that means that first has been calculated
-		return true;
+		return this->m_CalculatedFIRST = true;
 	}
 
-	
+	template<typename SymbolT, typename SynthesizedT, typename ActionT>
+	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::_FIRST_calc_prod(const ProdRec& prod, const SymbolT& symbol, bool& added, size_t index)
+	{
+
+		const SymbolT& head = prod.prodHead;
+		size_t setIndexH = (size_t)head.as.nonTerminal;
+		std::set<SymbolT>& fsetH = this->FIRST[setIndexH];
+
+		// check whether the first set contains epsilon
+		bool containsEpsilonH = fsetH.contains(SymbolT::EPSILON);
+
+		// if the symbol is a non-terminal
+		if (!symbol.isTerminal) {
+
+			// get the first set of the symbol	
+			size_t setIndexN = (size_t)symbol.as.nonTerminal;
+			std::set<SymbolT>& fsetN = this->FIRST[setIndexN];
+
+			// check whether the first set contains epsilon
+			bool containsEpsilonN = fsetN.contains(SymbolT::EPSILON);
+			// if the symbol is the same as head
+			if (symbol == head) {
+				/**
+				* If S == H, check whether FIRST(H) contains epsilon:
+					* If it does, check whether we are at the end of the body of P:
+						* If we are, add epsilon to FIRST(H) [Note: already added].
+						* If we are not, move on to the next grammar symbol.
+					* If it does not, move on to the next production.
+				*/
+
+				// 1. if the first set does not contain epsilon
+				if (-not containsEpsilonN)
+					// move on to the next production
+					return false;
+
+				// 2. if FIRST contains epsilon
+
+				// move on to the next grammar symbol, which will automatically move on to the next production if this is the last grammar symbol
+				// Note: epsilon is already added (that's why we are here in the first place)
+				return true;
+			}
+
+			// if the symbol is differnt from head
+			/**
+			* If S is a non-terminal N:
+				* F = FIRST(N), FE = F has epsilon?, HE = H has epsilon?
+				* Add the current F to FIRST(H).
+					* If any terminal was added (was not already there) set added to true.
+				* If (FE && !HE) remove the epsilon from FIRST(H).
+					* Note: the condition means: if F has epsilon and FIRST(H) didn't have epsilon before mergin the two FIRST sets.
+				* If FE, check whether we are at the end of the body of P:
+					* If we are, add epsilon to FIRST(H).
+						* If it was added (was not already there) set added to true.
+					* If we are not, move on to the next grammar symbol of the body of P.
+			*/
+
+			if (fsetN.empty())
+				return false;
+
+			// loop through each symbol of the FIRST set of the current non-terminal
+			for (const auto& symbol : fsetN) {
+
+				// skip to the next symbol if the current is epsilon (optimize this out if you could)
+				if (symbol == SymbolT::EPSILON)
+					return true;
+
+				// add the symbol to the FIRST set of the head
+				// BUG: the symbol is inserted although it exists
+				auto p = this->FIRST[setIndexH].insert(symbol);
+
+				// if it was added, set the boolean
+				if (p.second) {
+					added = true;
+
+					this->m_Logger.logDebug(
+						std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
+							(std::string)symbol,
+							(std::string)head,
+							stringfy(this->FIRST[setIndexH])));
+
+				}
+			}
+
+			// if the non-terminal contains epsilon
+			if (containsEpsilonN) {
+				// check whether we are at the end of the production
+				bool atEnd = index == prod.prodBody.size();
+
+				// if we are not at the end of the production
+				if (-not atEnd)
+					// continue to the next grammar symbol
+					return false;
+
+				// if we are at the end of the production
+
+				if (-not containsEpsilonH) {
+					// add epsilon to the FIRST set of the head
+					auto p = this->FIRST[setIndexH].insert(SymbolT::EPSILON);
+
+					if (p.second) {
+						added = true;
+
+						this->m_Logger.logDebug(
+							std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
+								(std::string)SymbolT::EPSILON,
+								(std::string)head,
+								stringfy(this->FIRST[setIndexH])));
+					}
+				}
+
+			}
+
+			// if does not, continue to the next grammar symbol
+			return false;
+		}
+		else {
+			/**
+				*If S is a terminal T, add T to FIRST(H) and move on to the next production.
+					* If T is added(was not already there), set added to true.
+			*/
+			auto p = this->FIRST[setIndexH].insert(symbol);
+
+			// add epsilon to the FIRST set of the head
+			if (p.second) {
+				added = true;
+
+				this->m_Logger.logDebug(
+					std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
+						(std::string)symbol,
+						(std::string)head,
+						stringfy(this->FIRST[setIndexH])));
+			}
+
+			// continue to the next production
+			return false;
+		}
+
+		// THIS IS UNREACHABLE
+		// go to the next production by default
+		return false;
+	}
+
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
 	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::calculateFOLLOW()
 	{
+
+		// if follow is already calculated, return
+		if (this->m_CalculatedFOLLOW)
+			return true;
+
 	}
 
 }

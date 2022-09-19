@@ -45,8 +45,7 @@ int main(void) {
 
 #elif defined TEST_PARSER
 	
-int main(void) {
-	
+int main(int argc, char** argv) {
 
 	FSMTable<> fsmTable{};
 	initFSMTable_parser(fsmTable);
@@ -55,14 +54,16 @@ int main(void) {
 
 	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
 
-	while (true) {
+	// if no arguments are passed
+	if (argc < 2)
+		while (true) {
 		std::string src;
 		std::cout << ANSI_ESC"[36m""Enter the source code to be parsed : " ANSI_ESC"[0m";
 		std::getline(std::cin, src);
 		std::cout << "\n";
 
 		if (src == "q" || src == "Q")
-			break;
+			return 0;
 		
 		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
@@ -88,13 +89,49 @@ int main(void) {
 		try { 
 			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 			prodVec.calculateFIRST();
+			prodVec.calculateFOLLOW();
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";
 		};
 	};
-	
 
+	{
+
+		// get the source
+		std::string src = argv[1];
+
+		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+
+		LLParsingTable<> table{};
+		define_table_llparser(table);
+
+		// create parser object
+		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+		auto grammar = grammer_expression();
+		m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec{ grammar };
+
+		m0st4fa::LLParser <
+			Symbol,
+			SynthesizedRecord<SynData>,
+			SynData,
+			ActionRecord<ActData>,
+			ActData,
+			Token<_TERMINAL>
+		>
+			parser{ grammar, startSym, table, lexicalAnal_parser };
+
+		// parse entered source
+		try {
+			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+			prodVec.calculateFIRST();
+			prodVec.calculateFOLLOW();
+		}
+		catch (std::exception& e) {
+			std::cout << "Exception : " << e.what() << "\n";
+		};
+
+	}
 
 	return 0;
 }

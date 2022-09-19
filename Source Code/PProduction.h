@@ -85,7 +85,8 @@ namespace m0st4fa {
 			VariableT nonTerminal;
 		} as;
 		
-		static GrammaticalSymbol EPSILON;
+		static const GrammaticalSymbol EPSILON;
+		static const GrammaticalSymbol END_MARKER;
 
 		template <typename TokenT>
 			requires requires (TokenT tok) { tok.name; }
@@ -119,8 +120,12 @@ namespace m0st4fa {
 	};
 
 	template <typename TerminalT, typename VariableT>
-	GrammaticalSymbol<TerminalT, VariableT>
+	const GrammaticalSymbol<TerminalT, VariableT>
 	GrammaticalSymbol<TerminalT, VariableT>::EPSILON = { true, {.terminal = TerminalT::T_EPSILON} };
+
+	template <typename TerminalT, typename VariableT>
+	const GrammaticalSymbol<TerminalT, VariableT>
+		GrammaticalSymbol<TerminalT, VariableT>::END_MARKER = { true, {.terminal = TerminalT::T_EOF} };
 
 	template <typename TerminalT, typename VariableT>
 	using Symbol = GrammaticalSymbol<TerminalT, VariableT>;
@@ -150,9 +155,16 @@ namespace m0st4fa {
 		* Calculates FIRST for the head of a production, using whatever information is currently available.
 		* @return true = continue to the next grammar symbol, false = continue to the next production;
 		*/
-		bool _FIRST_calc_prod(const ProdRec&, const SymbolT&, bool&, size_t);
+		bool _calc_FIRST_of_prod(const ProdRec&, const SymbolT&, bool&, size_t);
+		/**
+		* Augments the follow set of nonterminal N, if possible with currently available data.
+		* @param nonTerminal: VariableT, prodIndex: size_t, nonTerminalIndex: size_t
+		* @return void
+		*/
+		bool _calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal), size_t, size_t);
 
 	public:
+		// TODO: make this private
 		VecType vector;
 		/**
 		* The index of the non-terminal will hold its FIRST or FOLLOW set.
@@ -217,7 +229,7 @@ namespace m0st4fa {
 
 namespace m0st4fa {
 
-	/** 1st Algorithm, assuming non-terminal E and a boolean isCalculated 
+	/** 1st Algorithm, assuming non-terminal E and a boolean isCalculated
 	* If isCaculated, return; else procced.
 	* Go through every production of E.
 	* Take the FIRST set of the first grammar symbol T of that production (and cache it for possible use later).
@@ -244,26 +256,26 @@ namespace m0st4fa {
 		* Loop through every production of the grammar until you cannot add another terminal to the first set of any non-terminal.
 		* Variable added asserts whether we added any terminal in the last iteration to the FIRST set of any non-terminal.
 		* For every production P and its head H:
-			* For every grammar symbol S of the body of P: 
+			* For every grammar symbol S of the body of P:
 				* If S == H, check whether FIRST(H) contains epsilon:
 					* If it does, check whether we are at the end of the body of P:
 						* If we are, add epsilon to FIRST(H) [Note: already added].
 						* If we are not, move on to the next grammar symbol.
 					* If it does not, move on to the next production.
 				* If S is a terminal T, add T to FIRST(H) and move on to the next production.
-					* If T is added (was not already there), set added to true. 
-				* If S is a non-terminal N: 
+					* If T is added (was not already there), set added to true.
+				* If S is a non-terminal N:
 					* F = FIRST(N), FE = F has epsilon?, HE = H has epsilon?
 					* Add the current F to FIRST(H).
-						* If any terminal was added (was not already there) set added to true. 
+						* If any terminal was added (was not already there) set added to true.
 					* If (FE && !HE) remove the epsilon from FIRST(H).
-						* Note: the condition means: if F has epsilon and FIRST(H) didn't have epsilon before mergin the two FIRST sets. 
+						* Note: the condition means: if F has epsilon and FIRST(H) didn't have epsilon before mergin the two FIRST sets.
 					* If FE, check whether we are at the end of the body of P:
 						* If we are, add epsilon to FIRST(H).
-							* If it was added (was not already there) set added to true. 
-						* If we are not, move on to the next grammar symbol of the body of P. 
+							* If it was added (was not already there) set added to true.
+						* If we are not, move on to the next grammar symbol of the body of P.
 				* Move on to the next production.
-		* 
+		*
 		*/
 
 		using SetPair = std::pair<std::set<SymbolT>, bool>;
@@ -272,6 +284,7 @@ namespace m0st4fa {
 		this->FIRST.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_NUM);
 		bool added = false;
 
+		this->m_Logger.logDebug("\nCALCULATING FIRST SET:\n");
 		this->m_Logger.logDebug(std::format("Productions:\n {}", (std::string)*this));
 
 		while (true) {
@@ -280,7 +293,7 @@ namespace m0st4fa {
 			for (const ProdRec& prod : this->vector) {
 
 				// loop through every symbol of the production
-				for (size_t index = 1; const auto& stackElement : prod.prodBody) {
+				for (size_t index = 1; const auto & stackElement : prod.prodBody) {
 
 					// if the current stack element of the production is not a grammar symbol
 					if (stackElement.type != StackElementType::SET_GRAM_SYMBOL)
@@ -293,7 +306,7 @@ namespace m0st4fa {
 					const SymbolT& symbol = stackElement.as.gramSymbol;
 
 					// continue or not?
-					bool cont = _FIRST_calc_prod(prod, symbol, added, index);
+					bool cont = _calc_FIRST_of_prod(prod, symbol, added, index);
 
 					// increment the index of the current element
 					++index;
@@ -316,7 +329,7 @@ namespace m0st4fa {
 				this->m_Logger.logDebug("Finished creating the FIRST set of all non-terminals of this grammar");
 
 
-				for (size_t i = 0; const std::set<SymbolT>& set : this->FIRST) {
+				for (size_t i = 0; const std::set<SymbolT>&set : this->FIRST) {
 
 					// if the set is empty, continue (in this case it does not belong to a non-terminal)
 					if (set.empty()) {
@@ -333,9 +346,8 @@ namespace m0st4fa {
 
 				break;
 			}
-			else
-				added = false;
 
+			added = false;
 		}
 
 		// if we reached here, that means that first has been calculated
@@ -343,7 +355,7 @@ namespace m0st4fa {
 	}
 
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
-	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::_FIRST_calc_prod(const ProdRec& prod, const SymbolT& symbol, bool& added, size_t index)
+	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::_calc_FIRST_of_prod(const ProdRec& prod, const SymbolT& symbol, bool& added, size_t index)
 	{
 
 		const SymbolT& head = prod.prodHead;
@@ -485,6 +497,138 @@ namespace m0st4fa {
 	}
 
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
+	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::_calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal) nonTerminal, size_t prodIndex, size_t variableIndex)
+	{
+
+		/**
+		* Algorithm for getFOLLOWOfNonTerminal:
+			* @input:
+				* Non-terminal N.
+				* Index I1 of the current production P within the production vector.
+				* Index of this non-terminal within this production.
+			* @output: Augments FOLLOW(N) using currently available information.
+			* @method: For every symbol S after N in production P whose index is I2:
+				* If S is a terminal, add S to FOLLOW(N) and return.
+				* If S is a non-terminal, add FIRST(S) to FOLLOW(N), then check whether FOLLOW(N) contains epsilon:
+					* If FOLLOW(N) contains epsilon:
+						* remove epsilon.
+						* Check if we are at the end of P:
+							* If we are, add FOLLOW(H) to FOLLOW(S).
+							* If we are not, continue to the next symbol.
+					* If FOLLOW(N) doesn't contain epsilon, return.
+		*/
+
+		// head-related values
+		const ProdRec& production = this->vector.at(prodIndex);
+		const size_t prodBdySz = production.prodBody.size();
+		const SymbolT& head = production.prodHead;
+		size_t headIndex = (size_t)head.as.nonTerminal;
+		const std::set<SymbolT>& headFollow = this->FOLLOW.at(headIndex);
+
+		// current symbol related values
+		const size_t currSymIndex = (size_t)nonTerminal;
+		std::set<SymbolT>& currSymFollow = this->FOLLOW.at(currSymIndex);
+		bool added = false;
+
+		/**
+		* a lambda to copy a symbol to the follow set of the currently - being - examined non - temrinal
+		* its main purpose is to be used iteratively to copy a list
+		* as a side effect, this function also sets `added`
+		*/ 
+		auto cpyToFollow = [this, currSymIndex, nonTerminal, &currSymFollow, &added](const SymbolT& sym) {
+			auto p = currSymFollow.insert(sym);
+
+			// if a new element was added (exclude epsilon)
+			if (p.second && *p.first != SymbolT::EPSILON) {
+				added = true;
+				this->m_Logger.logDebug(
+					std::format("Added terminal {} to the FOLLOW set of {}, which is now: {}",
+						(std::string)sym,
+						stringfy(nonTerminal),
+						stringfy(this->FOLLOW[currSymIndex])));
+
+			}
+
+		};
+
+
+		// test if this non-terminal is the last of its production body
+		bool lastSymbol = variableIndex == prodBdySz - 1;
+
+		// if this is the last symbol of the production body
+		if (lastSymbol) {
+			// add FOLLOW(head) to FOLLOW(currSymbol)
+			std::for_each(headFollow.begin(), headFollow.end(), cpyToFollow);
+			return added;
+		};
+		
+		for (size_t varIndex = variableIndex + 1; varIndex < prodBdySz; varIndex++) {
+
+			// check if the current symbol we are examining in the production is a grammar symbol 
+			if (production.prodBody.at(varIndex).type != StackElementType::SET_GRAM_SYMBOL) {
+				// check if we are at the end of the production
+				bool atEnd = varIndex + 1 == prodBdySz;
+
+				// continue to the next symbol if we are not at the end of the production
+				if (-not atEnd)
+					continue;
+
+				// if we are at the end of the production add FOLLOW(head) to FOLLOW(currSym)
+				std::for_each(headFollow.begin(), headFollow.end(), cpyToFollow);
+
+				break;
+			}
+
+			const SymbolT symbol = production.prodBody.at(varIndex).as.gramSymbol;
+			size_t symIndex = (size_t)symbol.as.nonTerminal;
+
+			// if the symbol is a terminal
+			if (symbol.isTerminal) {
+				auto p = this->FOLLOW.at(currSymIndex).insert(symbol);
+
+				this->m_Logger.logDebug(
+					std::format("Added terminal {} to the FOLLOW set of {}, which is now: {}",
+						(std::string)symbol,
+						stringfy(nonTerminal),
+						stringfy(this->FOLLOW[currSymIndex])));
+
+				// return whether a new element has been inserted
+				return p.second;
+			}
+
+			// if the symbol is a non-terminal 
+			// assumes that FIRST(symbol) is already calculated
+			const std::set<SymbolT>& symbolFrst = this->FIRST.at(symIndex);
+			std::for_each(symbolFrst.begin(), symbolFrst.end(), cpyToFollow);
+
+			// Try erase epsilon from follow: returns 1 or 0, the number of removed elements
+			// Note: this also indicates whether we had epsilon or not.
+			bool containsEpsilon = currSymFollow.erase(SymbolT::EPSILON);
+
+			// if the FOLLOW set of the curr symbol does not contain epsilon
+			if (-not containsEpsilon)
+				return added;
+
+			/**
+			* Check if we are at the end of P:
+				* If we are, add FOLLOW(H) to FOLLOW(S).
+				* If we are not, continue to the next symbol.
+			*/
+			// check if we are at the end of the production
+			bool atEnd = varIndex + 1 == prodBdySz;
+
+			if (-not atEnd)
+				continue;
+
+			// if we are at the end of the production add FOLLOW(head) to FOLLOW(currSym)
+			std::for_each(headFollow.begin(), headFollow.end(), cpyToFollow);
+			
+		}
+
+		return added;
+	}
+
+	template<typename SymbolT, typename SynthesizedT, typename ActionT>
 	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::calculateFOLLOW()
 	{
 
@@ -492,6 +636,128 @@ namespace m0st4fa {
 		if (this->m_CalculatedFOLLOW)
 			return true;
 
-	}
+		/** Algorithm
+		* Loop through every production of the grammar until you cannot add another terminal to the FOLLOW set of any non-terminal.
+		* Variable added asserts whether we added any terminal in the last iteration to the FOLLOW set of any non-terminal.
+		* For every production P and its head H:
+			* For every grammar symbol S of the body of P:
+				* If S is a terminal, get to the next grammar symbol.
+				* If S is a non-terminal call `getFOLLOWOfNonTerminal`.
+		* Algorithm for getFOLLOWOfNonTerminal:
+			* @input:
+				* Non-terminal N.
+				* Index I1 of the current production P within the production vector.
+				* Index of this non-terminal within this production.
+			* @output: Augments FOLLOW(N) using currently available information.
+			* @method: For every symbol S after N in production P whose index is I2:
+				* If S is a terminal, add S to FOLLOW(N) and return.
+				* If S is a non-terminal, add FIRST(S) to FOLLOW(N), then check whether FOLLOW(N) contains epsilon:
+					* If FOLLOW(N) contains epsilon:
+						* remove epsilon.
+						* Check if we are at the end of P:
+							* If we are, add FOLLOW(H) to FOLLOW(S).
+							* If we are not, continue to the next symbol.
+					* If FOLLOW(N) doesn't contain epsilon, return.
+		*/
 
+		// make sure FOLLOW can hold all the non-terminals
+		this->FOLLOW.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_NUM);
+
+
+		// TODO: check that FIRST is already calculated before proceeding
+		
+		bool added = false;
+		size_t numOfRounds = 2;
+
+		this->m_Logger.logDebug("\nCALCULATING FOLLOW SET:\n");
+		this->m_Logger.logDebug(std::format("Productions:\n {}", (std::string)*this));
+
+		const ProdRec& startProd = vector.at(0);
+		const SymbolT& startSym = startProd.prodHead;
+		size_t startHeadIndex = (size_t)startSym.as.nonTerminal;
+
+		// TODO: add SymbolT::END_MARKER (implement it in terms of EOF)
+		this->FOLLOW.at(startHeadIndex).insert(SymbolT::END_MARKER);
+
+		while (true) {
+
+			/**
+			* Loop through every production of the grammar until you cannot add another terminal to the FOLLOW set of any non-terminal.
+			* Variable added asserts whether we added any terminal in the last iteration to the FOLLOW set of any non-terminal.
+			* For every production P and its head H:
+				* For every grammar symbol S of the body of P:
+					* If S is a terminal, get to the next grammar symbol.
+					* If S is a non-terminal call `getFOLLOWOfNonTerminal`.
+			*/
+
+			for (size_t prodIndex = 0; const auto & prod : this->vector) {
+
+				for (size_t symIndex = 0; const auto& stackElement : prod.prodBody) {
+
+					// if the current stack element of the production is not a grammar symbol
+					if (stackElement.type != StackElementType::SET_GRAM_SYMBOL) {
+						// move on to the next stack element of the production
+						symIndex++;
+						continue;
+					}
+
+					// if the current stack element is a grammar symbol
+
+					// get the symbol and its first set (if any)
+					const SymbolT& symbol = stackElement.as.gramSymbol;
+
+					// if the symbol is a terminal, get to the next symbol
+					if (symbol.isTerminal) {
+						symIndex++;
+						continue;
+					}
+
+					// if the symbol is a non-terminal
+					bool _added = this->_calc_FOLLOW_of_nonTerminal(symbol.as.nonTerminal, prodIndex, symIndex);
+
+					// set added
+					if (_added)
+						added = true;
+
+					// increment the index of the symbol
+					symIndex++;
+				}
+
+				prodIndex++;
+			}
+
+			this->m_Logger.logDebug(std::format("Is there any new terminal added to any FOLLOW set in this round? {}", added ? "true" : "false"));
+			if (-not added) {
+
+				//// if we still have extra rounds
+				//if (extraRound--)
+				//	// reduce the number of rounds and continue to the next iteration
+				//	continue;
+
+				this->m_Logger.logDebug("Finished creating the FOLLOW set of all non-terminals of this grammar");
+
+				for (size_t i = 0; const std::set<SymbolT>&set : this->FOLLOW) {
+
+					// if the set is empty, continue (in this case it does not belong to a non-terminal)
+					if (set.empty()) {
+						i++;
+						continue;
+					}
+
+					// get variable
+					auto variable = (decltype(set.begin()->as.nonTerminal))i++;
+
+					this->m_Logger.logDebug(std::format("{} => {}", stringfy(variable), stringfy(set)));
+
+				}
+
+				break;
+			}
+
+			added = false; numOfRounds--;
+
+		}
+
+		return added;
+	}
 }

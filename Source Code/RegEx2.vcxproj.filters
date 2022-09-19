@@ -99,6 +99,8 @@
     <ClInclude Include="termcolor.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="common.h" />
+    <ClInclude Include="common.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

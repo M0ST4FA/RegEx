@@ -38,5 +38,42 @@ namespace m0st4fa {
 
 	}
 
+	/**
+	* Inserts elements from `from` to `to` except any element that equals `except`
+	* If the type of `except` is nullptr_t, it is ignored and all elements are added
+	*/
+	template <typename IterableT, typename ExceptT>
+	bool insertAndAssert(const IterableT& from, IterableT to, ExceptT except) {
+		bool added = false;
+
+		for (auto element : from) {
+
+			if (element == except)
+				continue;
+
+			auto p = to.insert(element);
+
+			if (p.second)
+				added = true;
+		}
+
+		return added;
+	};
+
+	template <typename IterableT>
+	bool insertAndAssert(const IterableT& from, IterableT to) {
+		bool added = false;
+
+		for (auto element : from) {
+
+			auto p = to.insert(element);
+
+			if (p.second)
+				added = true;
+
+		}
+
+		return added;
+	};
 
 }

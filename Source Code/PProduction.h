@@ -17,16 +17,8 @@ namespace m0st4fa {
 		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
 
 		// TODO: demand that the prodHead be a non-terminal
-		// TODO: enhance the encapsulation of this structure (turn it into a class and modify what is necessary)
 		SymbolT prodHead = SymbolT{};
 		std::vector<StackElement> prodBody;
-
-		// methods
-		//const SetType& calculateFIRST(VecType&, const SymbolT);
-		//bool FIRSTCalculated();
-
-		//const SetType& calculateFOLLOW(VecType&, const SymbolT);
-		//bool FOLLOWCalculated();
 
 		std::string toString() const {
 
@@ -65,8 +57,6 @@ namespace m0st4fa {
 		operator std::string() const {
 			return this->toString();
 		}
-
-
 	};
 
 	template <typename SymbolT, typename SynthesizedT, typename ActionT>
@@ -137,19 +127,22 @@ namespace m0st4fa {
 		
 	}
 
-	// TODO: enhance the encapsulation of this struct
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
 	class ProductionVector {
 		using ProdRec = ProductionRecord<SymbolT, SynthesizedT, ActionT>;
 		using VecType = std::vector<ProdRec>;
 		// TODO: consider making this use terminals instead for storage efficiencey
 		using SetType = std::vector<std::set<SymbolT>>;
+
+
+		/**
+		* The index of the non-terminal will hold its FIRST or FOLLOW set.
+		*/
+		SetType FIRST {0};
+		SetType FOLLOW {0};
 		
 		bool m_CalculatedFIRST = false;
 		bool m_CalculatedFOLLOW = false;
-		Logger m_Logger;
-		SetType FIRST {0};
-		SetType FOLLOW {0};
 
 		/**
 		* Calculates FIRST for the head of a production, using whatever information is currently available.
@@ -163,33 +156,39 @@ namespace m0st4fa {
 		*/
 		bool _calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal), size_t, size_t);
 
+	protected:
+		VecType m_Vector{};
+		Logger m_Logger{};
+
 	public:
-		// TODO: make this private
-		VecType vector;
-		/**
-		* The index of the non-terminal will hold its FIRST or FOLLOW set.
-		*/
 
-		ProductionVector(const VecType& vec) : vector{ vec } {};
+		// constructors
+		ProductionVector() = default;
+		ProductionVector(const VecType& vec) : m_Vector { vec } {};
 
-		ProdRec& operator [] (size_t i) {
-			return this->vector.at(i);
-		};
+		// production vector access methods
+		const VecType& getProdVector() { return this->m_Vector; }
+		void pushProduction(const ProdRec& prod) { this->m_Vector.push_back(prod); }
 
+		// element access methods
+		const ProdRec& operator [] (size_t i) { return this->m_Vector.at(i); }
+		const ProdRec& at(size_t i) { return *this[i]; };
+
+		// conversions methods
 		operator std::string() {
 			return this->toString();
 		}
-
 		std::string toString() {
 
 			std::string str;
 
-			for (const auto& prod : this->vector)
+			for (const auto& prod : this->getProdVector())
 				str += (std::string)prod + "\n";
 
 			return str;
 		}
 
+		// FIRST and FOLLOW calculation methods
 		/**
 		* Calculates FIRST for all non-terminals of this production vector.
 		* @return true if FIRST is calculated, otherwise, calculates FIRST and then returns true.
@@ -202,7 +201,9 @@ namespace m0st4fa {
 			if (this->m_CalculatedFIRST)
 				return this->FIRST[(size_t)nonTerminal];
 
-			// TODO: handle the situation where it is not yet calculated
+			// handle the nonpresence of the FIRST set for this production vector
+			this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, "The FIRST set of the non-terminals of this production vector is yet to be calculated.");
+			throw std::runtime_error("The FIRST set of the non-terminals of this production vector is yet to be calculated.");
 		};
 
 		/**
@@ -214,10 +215,12 @@ namespace m0st4fa {
 		std::set<SymbolT> getFOLLOW(decltype(SymbolT().as.nonTerminal) nonTerminal) {
 
 			// if FOLLOW is already calculated
-			if (this->m_CalucatedFOLLOW)
+			if (this->m_CalculatedFOLLOW)
 				return this->FOLLOW[(size_t)nonTerminal];
 
-			// TODO: handle the situation where it is not yet calculated
+			// handle the nonpresence of the FOLLOW set for this production vector
+			this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, "The FOLLOW set of the non-terminals of this production vector is yet to be calculated.");
+			throw std::runtime_error("The FOLLOW set of the non-terminals of this production vector is yet to be calculated.");
 		};
 
 	};
@@ -249,8 +252,10 @@ namespace m0st4fa {
 	{
 
 		// if FIRST is already calculated, return
-		if (this->m_CalculatedFIRST)
+		if (this->m_CalculatedFIRST) {
+			this->m_Logger.logDebug("FIRST set for this production vector has already been calculated!");
 			return true;
+		}
 
 		/** Algorithm
 		* Loop through every production of the grammar until you cannot add another terminal to the first set of any non-terminal.
@@ -290,7 +295,7 @@ namespace m0st4fa {
 		while (true) {
 
 			// loop through every production
-			for (const ProdRec& prod : this->vector) {
+			for (const ProdRec& prod : this->getProdVector()) {
 
 				// loop through every symbol of the production
 				for (size_t index = 1; const auto & stackElement : prod.prodBody) {
@@ -350,7 +355,7 @@ namespace m0st4fa {
 			added = false;
 		}
 
-		// if we reached here, that means that first has been calculated
+		// if we reached here, that means that FIRST has been calculated
 		return this->m_CalculatedFIRST = true;
 	}
 
@@ -519,7 +524,7 @@ namespace m0st4fa {
 		*/
 
 		// head-related values
-		const ProdRec& production = this->vector.at(prodIndex);
+		const ProdRec& production = this->getProdVector().at(prodIndex);
 		const size_t prodBdySz = production.prodBody.size();
 		const SymbolT& head = production.prodHead;
 		size_t headIndex = (size_t)head.as.nonTerminal;
@@ -633,8 +638,16 @@ namespace m0st4fa {
 	{
 
 		// if follow is already calculated, return
-		if (this->m_CalculatedFOLLOW)
+		if (this->m_CalculatedFOLLOW) {
+			this->m_Logger.logDebug("FOLLOW set for this production vector has already been calculated!");
 			return true;
+		}
+
+		// check that FIRST is calculated before proceeding
+		if (-not this->m_CalculatedFIRST) {
+			this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, "FIRST set is not calculated for the production vector: FIRST set must be calculated for a production vector before proceeding to calculate the FOLLOW set for that production vector.");
+			throw std::runtime_error("FIRST set is not calculated for the production vector!");
+		};
 
 		/** Algorithm
 		* Loop through every production of the grammar until you cannot add another terminal to the FOLLOW set of any non-terminal.
@@ -663,20 +676,16 @@ namespace m0st4fa {
 		// make sure FOLLOW can hold all the non-terminals
 		this->FOLLOW.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_NUM);
 
-
-		// TODO: check that FIRST is already calculated before proceeding
 		
 		bool added = false;
-		size_t numOfRounds = 2;
 
 		this->m_Logger.logDebug("\nCALCULATING FOLLOW SET:\n");
 		this->m_Logger.logDebug(std::format("Productions:\n {}", (std::string)*this));
 
-		const ProdRec& startProd = vector.at(0);
+		const ProdRec& startProd = getProdVector().at(0);
 		const SymbolT& startSym = startProd.prodHead;
 		size_t startHeadIndex = (size_t)startSym.as.nonTerminal;
 
-		// TODO: add SymbolT::END_MARKER (implement it in terms of EOF)
 		this->FOLLOW.at(startHeadIndex).insert(SymbolT::END_MARKER);
 
 		while (true) {
@@ -690,7 +699,7 @@ namespace m0st4fa {
 					* If S is a non-terminal call `getFOLLOWOfNonTerminal`.
 			*/
 
-			for (size_t prodIndex = 0; const auto & prod : this->vector) {
+			for (size_t prodIndex = 0; const auto & prod : this->getProdVector()) {
 
 				for (size_t symIndex = 0; const auto& stackElement : prod.prodBody) {
 
@@ -754,10 +763,11 @@ namespace m0st4fa {
 				break;
 			}
 
-			added = false; numOfRounds--;
+			added = false;
 
 		}
 
-		return added;
+		// if we reached here, that means that FOLLOW has been calculated
+		return this->m_CalculatedFOLLOW = true;
 	}
 }

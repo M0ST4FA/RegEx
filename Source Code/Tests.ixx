@@ -132,6 +132,7 @@ export using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
 export using Action = m0st4fa::ActionRecord<ActData>;
 
 export std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expression();
+export m0st4fa::ProductionVector<Symbol, Synthesized, Action> grammar_expression_LR();
 export void define_table_llparser(m0st4fa::LLParsingTable<>&);
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);

@@ -75,6 +75,8 @@ int main(int argc, char** argv) {
 		auto grammar = grammer_expression();
 		m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec {grammar};
 
+		auto grammarLR = grammar_expression_LR();
+
 		m0st4fa::LLParser <
 			Symbol, 
 			SynthesizedRecord<SynData>, 
@@ -89,7 +91,13 @@ int main(int argc, char** argv) {
 		try { 
 			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 			prodVec.calculateFIRST();
+			prodVec.calculateFIRST();
 			prodVec.calculateFOLLOW();
+			prodVec.getFIRST(_NON_TERMINAL::NT_E);
+			grammarLR.calculateFIRST();
+			grammarLR.calculateFOLLOW();
+			grammarLR.calculateFOLLOW();
+			grammarLR.getFOLLOW(_NON_TERMINAL::NT_E);
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";

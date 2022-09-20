@@ -3,6 +3,7 @@
 #include <set>
 #include <type_traits>
 
+// FUNCTIONS
 namespace m0st4fa {
 
 	template <typename T>
@@ -77,3 +78,4 @@ namespace m0st4fa {
 	};
 
 }
+

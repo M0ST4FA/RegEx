@@ -98,6 +98,9 @@ int main(int argc, char** argv) {
 			grammarLR.calculateFOLLOW();
 			grammarLR.calculateFOLLOW();
 			grammarLR.getFOLLOW(_NON_TERMINAL::NT_E);
+			m0st4fa::SymbolString<_TERMINAL, _NON_TERMINAL> symString{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_NON_TERMINAL::NT_E)};
+			std::cout << "Grammar symbol string: " << symString << std::endl;
+			symString.calculateFIRST(grammarLR.getFIRST());
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";

@@ -126,7 +126,72 @@ namespace m0st4fa {
 		return os << symbol.toString();
 		
 	}
+	
+	// Symbol String
+	template <typename TerminalT, typename VariableT>
+	class GrammaticalSymbolString {
+		using SymbolType = Symbol<TerminalT, VariableT>;
+		using SetType = std::set<SymbolType>;
+		using SymVecType = std::vector<SymbolType>;
+		using FRSTVecType = std::vector<SetType>;
 
+		Logger m_Logger;
+		bool m_CalculatedFIRST = false;
+		SetType FIRST{ };
+
+	public:
+		SymVecType symbols;
+
+		GrammaticalSymbolString() = default;
+
+		GrammaticalSymbolString(const std::initializer_list<SymbolType>& symbols) : symbols{ symbols } 
+		{};
+
+		operator std::string() const {
+			return this->toString();
+		}
+
+		std::string toString() const {
+			std::string temp;
+
+			// if the symbol string is empty
+			if (this->symbols.empty())
+				return temp;
+
+			// if it is not empty (contains at least one element)
+			temp += (std::string)this->symbols.at(0);
+
+			for (size_t i = 0; const auto & sym : symbols) {
+				if (i == 0) {
+					i++;
+					continue;
+				}
+
+				temp += " " + sym.toString();
+			};
+
+			return temp;
+		}
+
+		/**
+		* Calculates the FIRST set for this grammar symbol string.
+		*/
+		bool calculateFIRST(const FRSTVecType&);
+		bool FIRSTCalculated() { return this->m_CalculatedFIRST; };
+	};
+
+	template <typename TerminalT, typename VariableT>
+	using SymbolString = GrammaticalSymbolString<TerminalT, VariableT>;
+
+	template <typename TerminalT, typename VariableT>
+	std::ostream& operator<<(std::ostream& os, const SymbolString<TerminalT, VariableT>& symbolString) {
+
+		std::cout << symbolString.toString();
+
+		return os;
+	}
+
+	// Production Vector
 	template<typename SymbolT, typename SynthesizedT, typename ActionT>
 	class ProductionVector {
 		using ProdRec = ProductionRecord<SymbolT, SynthesizedT, ActionT>;
@@ -205,6 +270,9 @@ namespace m0st4fa {
 			this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, "The FIRST set of the non-terminals of this production vector is yet to be calculated.");
 			throw std::runtime_error("The FIRST set of the non-terminals of this production vector is yet to be calculated.");
 		};
+		const SetType& getFIRST() {
+			return this->FIRST;
+		}
 
 		/**
 		* Calculates FOLLOW for all non-terminals of this production vector.
@@ -222,6 +290,9 @@ namespace m0st4fa {
 			this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, "The FOLLOW set of the non-terminals of this production vector is yet to be calculated.");
 			throw std::runtime_error("The FOLLOW set of the non-terminals of this production vector is yet to be calculated.");
 		};
+		const SetType& getFOLLOW() {
+			return this->FOLLOW;
+		}
 
 	};
 
@@ -333,7 +404,7 @@ namespace m0st4fa {
 
 				this->m_Logger.logDebug("Finished creating the FIRST set of all non-terminals of this grammar");
 
-
+#ifdef _DEBUG	
 				for (size_t i = 0; const std::set<SymbolT>&set : this->FIRST) {
 
 					// if the set is empty, continue (in this case it does not belong to a non-terminal)
@@ -345,8 +416,9 @@ namespace m0st4fa {
 					// get variable
 					auto variable = (decltype(set.begin()->as.nonTerminal))i++;
 
-					this->m_Logger.logDebug(std::format("{} => {}", stringfy(variable), stringfy(set)));
+					this->m_Logger.logDebug(std::format("FIRST({}) = {}", stringfy(variable), stringfy(set)));
 				}
+#endif
 
 
 				break;
@@ -434,7 +506,7 @@ namespace m0st4fa {
 					added = true;
 
 					this->m_Logger.logDebug(
-						std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
+						std::format("Added terminal {} to FIRST({}), which is now: {}",
 							(std::string)symbol,
 							(std::string)head,
 							stringfy(this->FIRST[setIndexH])));
@@ -462,7 +534,7 @@ namespace m0st4fa {
 						added = true;
 
 						this->m_Logger.logDebug(
-							std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
+							std::format("Added terminal {} to FIRST({}), which is now: {}",
 								(std::string)SymbolT::EPSILON,
 								(std::string)head,
 								stringfy(this->FIRST[setIndexH])));
@@ -486,7 +558,7 @@ namespace m0st4fa {
 				added = true;
 
 				this->m_Logger.logDebug(
-					std::format("Added terminal {} to the FIRST set of {}, which is now: {}",
+					std::format("Added terminal {} to FIRST({}), which is now: {}",
 						(std::string)symbol,
 						(std::string)head,
 						stringfy(this->FIRST[setIndexH])));
@@ -547,7 +619,7 @@ namespace m0st4fa {
 			if (p.second && *p.first != SymbolT::EPSILON) {
 				added = true;
 				this->m_Logger.logDebug(
-					std::format("Added terminal {} to the FOLLOW set of {}, which is now: {}",
+					std::format("Added terminal {} to FOLLOW({}), which is now: {}",
 						(std::string)sym,
 						stringfy(nonTerminal),
 						stringfy(this->FOLLOW[currSymIndex])));
@@ -592,7 +664,7 @@ namespace m0st4fa {
 				auto p = this->FOLLOW.at(currSymIndex).insert(symbol);
 
 				this->m_Logger.logDebug(
-					std::format("Added terminal {} to the FOLLOW set of {}, which is now: {}",
+					std::format("Added terminal {} to FOLLOW({}), which is now: {}",
 						(std::string)symbol,
 						stringfy(nonTerminal),
 						stringfy(this->FOLLOW[currSymIndex])));
@@ -744,7 +816,7 @@ namespace m0st4fa {
 				//	continue;
 
 				this->m_Logger.logDebug("Finished creating the FOLLOW set of all non-terminals of this grammar");
-
+#if defined(_DEBUG)
 				for (size_t i = 0; const std::set<SymbolT>&set : this->FOLLOW) {
 
 					// if the set is empty, continue (in this case it does not belong to a non-terminal)
@@ -756,9 +828,10 @@ namespace m0st4fa {
 					// get variable
 					auto variable = (decltype(set.begin()->as.nonTerminal))i++;
 
-					this->m_Logger.logDebug(std::format("{} => {}", stringfy(variable), stringfy(set)));
+					this->m_Logger.logDebug(std::format("FOLLOW({}) = {}", stringfy(variable), stringfy(set)));
 
 				}
+#endif
 
 				break;
 			}
@@ -770,4 +843,102 @@ namespace m0st4fa {
 		// if we reached here, that means that FOLLOW has been calculated
 		return this->m_CalculatedFOLLOW = true;
 	}
+
+	template<typename TerminalT, typename VariableT>
+	bool GrammaticalSymbolString<TerminalT, VariableT>::calculateFIRST(const FRSTVecType& prodVecFIRST)
+	{
+
+		// if FIRST is already calculated, return
+		if (this->m_CalculatedFIRST) {
+			this->m_Logger.logDebug(std::format("FIRST({}) has not already been calculated!", (std::string)*this));
+			return true;
+		}
+
+		/** Algorithm:
+		* For every grammar symbol GS of the string S:
+			* If S is a non-terminal:
+				* Get FIRST(SS) and add it to FIRST(S).
+				* Check whether FIRST(SS) has epsilon and remove the epsilon, if any:
+					* If FIRST(SS) has epsilon check to see if this is the last symbol of the string:
+						* If it does, add epsilon to FIRST(SS)
+						* If it doesn't, continue to the next symbol.
+					* If FIRST(S) does not have epsilon, we are done with FIRST(S).
+			* If S is a terminal, check to see if it is epsilon:
+				* If it is epsilon, check to see if this is the last symbol of the string:
+					* If it is, add epsilon to FIRST(SS).
+					* If it is not, continue to the next symbol.
+				* If it is not epsilon:
+					* Add the terminal to FIRST(SS) and break.
+		*/
+
+		for (size_t i = 0; const SymbolType & symbol : this->symbols) {
+
+			bool isLastSymbol = i == this->symbols.size() - 1;
+
+			// if the symbol is a terminal
+			if (symbol.isTerminal) {
+
+				// check whether the symbol is epsilon
+				bool isEpsilon = symbol == SymbolType::EPSILON;
+
+				// if the symbol is epsilon and is the last symbol of the string or
+				// the symbol is not epsilon, whether the last symbol or not
+				if (not isEpsilon or isLastSymbol)
+					this->FIRST.insert(symbol);
+
+				// if this symbol is not epsilon
+				if (not isEpsilon)
+					break;
+
+				// if we reach here, continue to the next symbol (or break if this is the last)
+				continue;
+			}
+
+			// if the symbol is a non-terminal
+			size_t symIndex = (size_t)symbol.as.nonTerminal;
+
+			// get FIRST(S)
+			const SetType& fset = prodVecFIRST.at(symIndex);
+
+			// check to see if FIRST(S) is empty
+			// in this case there is probably a logic error made by the programmar
+			if (fset.empty()) {
+				std::string msg = (std::string)"FIRST(" + (std::string)symbol + ") is empty.";
+				this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, msg + "\n\t\t\tThis may be due to:\n\t\t\t\t1. A wrong FIRST set (possibly one of a different grammar).\n\t\t\t\t2. An incomplete FIRST set.");
+				throw std::logic_error(msg);
+			}
+
+			// if FIRST(S) is not empty, add it to FIRST(SS)
+			this->FIRST.insert(fset.begin(), fset.end());
+
+			// check if FIRST(SS) contains epsilon
+			bool containsEpsilon = this->FIRST.erase(SymbolType::EPSILON);
+
+			// if it does not contain epsilon, we are done with FIRST(SS)
+			if (not containsEpsilon)
+				break;
+			
+			// if FIRST(SS) contains epsilon
+
+			// check to see if it is the last symbol
+			if (isLastSymbol)
+				this->FIRST.insert(SymbolType::EPSILON);
+
+			// if it contains epsilon, and it is not the last symbol, continue to the next symbol
+			i++;
+		}
+
+#ifdef _DEBUG
+		if (this->FIRST.empty()) {
+			this->m_Logger.logDebug(std::format("FIRST({}) is empty", (std::string)*this));
+			goto epilogue;
+		}
+
+		this->m_Logger.logDebug(std::format("FIRST({}) = {}", (std::string)*this, stringfy(this->FIRST)));
+#endif
+
+	epilogue:
+		return this->m_CalculatedFIRST = true;
+	}
+
 }

@@ -150,10 +150,25 @@ m0st4fa::ProductionVector<Symbol, Synthesized, Action> grammar_expression_LR()
 
 	result.pushProduction(prod);
 
+	// E -> T
+
+	prod = Production{
+		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
+		.prodBody = {se_T} };
+
+	result.pushProduction(prod);
+
 	// T -> T * F
 	prod = Production{
 		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
 		.prodBody = {se_T, se_Act, se_STAR, se_Syn, se_F} };
+
+	result.pushProduction(prod);
+
+	// T -> F
+	prod = Production{
+		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
+		.prodBody = {se_F} };
 
 	result.pushProduction(prod);
 
@@ -310,3 +325,10 @@ std::ostream& operator<<(std::ostream& os, const _NON_TERMINAL variable)
 	return os << stringfy(variable);
 }
 
+Symbol toSymbol(_TERMINAL terminal) {
+	return Symbol{.isTerminal = true, .as = { .terminal = terminal }};
+};
+
+Symbol toSymbol(_NON_TERMINAL nonTerminal) {
+	return Symbol{ .isTerminal = false, .as = {.nonTerminal = nonTerminal } };
+};

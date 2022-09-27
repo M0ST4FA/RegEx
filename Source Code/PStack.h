@@ -80,6 +80,30 @@ namespace m0st4fa {
 			return false;
 		}
 		
+		operator std::string() const {
+			return this->toString();
+		}
+
+		std::string toString() const {
+			static_assert(StackElementType::SET_COUNT == 3);
+
+			switch (this->type) {
+			case SET_GRAM_SYMBOL:
+				return this->as.gramSymbol.toString();
+
+			case SET_SYNTH_RECORD:
+				return this->as.synRecord.toString();
+				
+
+			case SET_ACTION_RECORD:
+				return this->as.actRecord.toString();
+				
+			default:
+				return "Unreachable: Stack element un recognized";
+			}
+
+		}
+
 	};
 
 	template <

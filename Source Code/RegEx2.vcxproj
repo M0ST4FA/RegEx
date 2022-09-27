@@ -153,6 +153,7 @@
     <ClInclude Include="LRParser.hpp" />
     <ClInclude Include="NFA.h" />
     <ClInclude Include="Parser.h" />
+    <ClInclude Include="PItem.h" />
     <ClInclude Include="PProduction.h" />
     <ClInclude Include="PStack.h" />
     <ClInclude Include="PTable.h" />

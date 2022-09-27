@@ -42,6 +42,7 @@ namespace m0st4fa {
 	std::string stringfy(StackElementType type) {
 
 
+		static_assert(StackElementType::SET_COUNT == 3);
 		static constexpr const char* const names[] = {
 			"GRAM_SYMBOL",
 			"SYNTH_RECORD",
@@ -49,8 +50,8 @@ namespace m0st4fa {
 		};
 		
 
-		const char* name = type == StackElementType::SET_NUM ? 
-			std::to_string((unsigned)StackElementType::SET_NUM).data() : names[static_cast<int>(type)];
+		const char* name = type == StackElementType::SET_COUNT ? 
+			std::to_string((unsigned)StackElementType::SET_COUNT).data() : names[static_cast<int>(type)];
 
 		return name;
 	}

@@ -12,6 +12,8 @@ namespace m0st4fa {
 	const LoggerInfo LoggerInfo::ERR_UNXPCTED_TOKEN = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_UNEXCPECTED_TOKEN} };
 	const LoggerInfo LoggerInfo::ERR_RECOV_LIMIT_EXCEEDED = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_ERR_RECOVERY_LIMIT_EXCEEDED} };
 	const LoggerInfo LoggerInfo::ERR_MISSING_VAL = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_MISSING_VAL} };
+	const LoggerInfo LoggerInfo::ERR_INVALID_VAL = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_INVALID_VAL} };
+
 
 
 	// IMPLEMENTATIONS OF Logger FUNCTIONS

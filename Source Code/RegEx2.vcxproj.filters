@@ -102,5 +102,8 @@
     <ClInclude Include="common.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="PItem.h">
+      <Filter>Source Files\Parser</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

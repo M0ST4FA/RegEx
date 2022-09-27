@@ -3,46 +3,55 @@
 #include <vector>
 // TODO: change the implementation to use unordered_set since it has linear access time and is a lot faster.
 #include <set>
+#include <exception>
+#include <type_traits>
 
 #include "PStack.h"
+#include "Logger.h"
 #include "common.h"
 
 namespace m0st4fa {
 
 	// Production
 	template <typename SymbolT, typename SynthesizedT, typename ActionT>
-	struct ProductionRecord {
-
+	class ProductionRecord {
 		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
 		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
 
+		Logger m_Logger;
+
+	public:
 		// TODO: demand that the prodHead be a non-terminal
 		SymbolT prodHead = SymbolT{};
+		// TODO: demand that the body of the procedure be non-empty
 		std::vector<StackElement> prodBody;
+
+		ProductionRecord() = default;
+		ProductionRecord(const SymbolT& head, const std::vector<StackElement>& body) : prodHead{ head }, prodBody{ body } {
+
+			// the head must be a non-terminal
+			if (head.isTerminal) {
+				this->m_Logger.log(LoggerInfo::ERR_INVALID_VAL, "The head of a production must be a non-terminal.");
+
+				throw std::logic_error("The head of a production must be a non-terminal.");
+			}
+
+			// the body cannot be empty
+			if (prodBody.empty()) {
+				this->m_Logger.log(LoggerInfo::ERR_EMPTY_PROD_BODY, "The body of a production cannot be empty.");
+
+				throw std::logic_error("The body of a production cannot be empty.");
+			}
+
+		}
 
 		std::string toString() const {
 
-			std::string str = this->prodHead.toString() + " -> ";
+			std::string str = this->prodHead.toString() + " ->";
 
 			// body
-			for (const StackElement& symbol : this->prodBody) {
-
-				switch (symbol.type) {
-				case SET_GRAM_SYMBOL:
-					str += symbol.as.gramSymbol.toString() + " ";
-					break;
-
-				case SET_SYNTH_RECORD:
-					str += symbol.as.synRecord.toString() + " ";
-					break;
-
-				case SET_ACTION_RECORD:
-					str += symbol.as.actRecord.toString() + " ";
-					break;
-
-				}
-			}
-
+			for (const StackElement& symbol : this->prodBody)
+				str += " " + (std::string)symbol;
 
 			return str;
 		}
@@ -102,9 +111,7 @@ namespace m0st4fa {
 		}
 
 		std::string toString() const {
-
-			return this->isTerminal ? stringfy(this->as.terminal) : stringfy(this->as.nonTerminal);
-
+			return this->isTerminal ? stringfy(this->as.terminal) : std::string("<") + stringfy(this->as.nonTerminal) + ">";
 		}
 
 	};
@@ -237,7 +244,7 @@ namespace m0st4fa {
 
 		// element access methods
 		const ProdRec& operator [] (size_t i) { return this->m_Vector.at(i); }
-		const ProdRec& at(size_t i) { return *this[i]; };
+		const ProdRec& at(size_t i) const { return this->m_Vector.at(i); };
 
 		// conversions methods
 		operator std::string() {

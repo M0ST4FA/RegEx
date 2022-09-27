@@ -63,56 +63,56 @@ std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expr
 
 	// E -> T E'
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
-		.prodBody = {se_T, se_Act, se_EP, se_Syn} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
+		 {se_T, se_Act, se_EP, se_Syn} };
 
 	result.push_back(prod);
 
 	// E' -> + E T
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
-		.prodBody = {se_PLUS, se_T, se_EP} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
+		 {se_PLUS, se_T, se_EP} };
 
 	result.push_back(prod);
 
 	// T -> F T'
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
-		.prodBody = {se_F, se_TP} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
+		 {se_F, se_TP} };
 
 	result.push_back(prod);
 
 
 	// T' -> * F T'
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
-		.prodBody = {se_STAR, se_Act, se_F, se_Syn, se_TP} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
+		 {se_STAR, se_Act, se_F, se_Syn, se_TP} };
 
 	result.push_back(prod);
 
 	// F -> (E)
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		.prodBody = {se_LP, se_E, se_RP} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
+		 {se_LP, se_E, se_RP} };
 
 	result.push_back(prod);
 
 	// F -> ID
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		.prodBody = {se_ID} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
+		 {se_ID} };
 
 	result.push_back(prod);
 
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
-		.prodBody = {se_EPS} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
+		 {se_EPS} };
 
 	result.push_back(prod);
 
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
-		.prodBody = {se_EPS} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
+		 {se_EPS} };
 
 	result.push_back(prod);
 
@@ -145,44 +145,44 @@ m0st4fa::ProductionVector<Symbol, Synthesized, Action> grammar_expression_LR()
 
 	// E -> E + T
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
-		.prodBody = {se_E, se_PLUS, se_T} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
+		 {se_E, se_PLUS, se_T} };
 
 	result.pushProduction(prod);
 
 	// E -> T
 
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
-		.prodBody = {se_T} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
+		 {se_T} };
 
 	result.pushProduction(prod);
 
 	// T -> T * F
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
-		.prodBody = {se_T, se_Act, se_STAR, se_Syn, se_F} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
+		 {se_T, se_Act, se_STAR, se_Syn, se_F} };
 
 	result.pushProduction(prod);
 
 	// T -> F
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
-		.prodBody = {se_F} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
+		 {se_F} };
 
 	result.pushProduction(prod);
 
 	// F -> (E)
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		.prodBody = {se_LP, se_E, se_RP} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
+		 {se_LP, se_E, se_RP} };
 
 	result.pushProduction(prod);
 
 	// F -> ID
 	prod = Production{
-		.prodHead = {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		.prodBody = {se_ID} };
+		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
+		 {se_ID} };
 
 	result.pushProduction(prod);
 

@@ -34,7 +34,7 @@ namespace m0st4fa {
 		SET_GRAM_SYMBOL,
 		SET_SYNTH_RECORD,
 		SET_ACTION_RECORD,
-		SET_NUM
+		SET_COUNT
 	};
 	std::string stringfy(StackElementType);
 	std::ostream& operator<<(std::ostream&, StackElementType);

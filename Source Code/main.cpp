@@ -25,7 +25,7 @@ using m0st4fa::SynthesizedRecord;
 
 
 // #defines
-#define TEST_PARSER
+#define TEST_LR_PARSER
 #define ANSI_ESC "\u001b"
 
 #ifdef TEST_REGEX
@@ -39,6 +39,104 @@ int main(void) {
 	// re.getFlags() => returns the flags applied to the regex
 	// re.getIndex() => returns the index into the string of the next character that will be matched by the regex
 	
+
+	return 0;
+}
+#elif defined TEST_LR_PARSER 
+int main(int argc, char** argv) {
+
+	FSMTable<> fsmTable{};
+	initFSMTable_parser(fsmTable);
+
+	TransitionFunction<FSMTable<>> tf_parser{ fsmTable };
+
+	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
+
+	// if no arguments are passed
+	if (argc < 2)
+		while (true) {
+			std::string src;
+			std::cout << ANSI_ESC"[36m""Enter the source code to be parsed : " ANSI_ESC"[0m";
+			std::getline(std::cin, src);
+			std::cout << "\n";
+
+			if (src == "q" || src == "Q")
+				return 0;
+
+			LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+
+			LLParsingTable<> table{};
+			define_table_llparser(table);
+
+			// create parser object
+			auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+			auto grammar = grammer_expression();
+			m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec{ grammar };
+
+			// LR GRAMMAR
+			auto grammarLR = grammar_expression_LR();
+			std::cout << grammar.at(0);
+			const m0st4fa::Item<Symbol, Synthesized, Action> item{ grammar.at(0), 2, 
+				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) }};
+
+			m0st4fa::LLParser <
+				Symbol,
+				SynthesizedRecord<SynData>,
+				SynData,
+				ActionRecord<ActData>,
+				ActData,
+				Token<_TERMINAL>
+			>
+				parser{ grammar, startSym, table, lexicalAnal_parser };
+
+			// parse entered source
+			try {
+				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+				grammarLR.calculateFIRST();
+				grammarLR.calculateFOLLOW();
+				std::cout << "\n" << (std::string)item << "\n";
+			}
+			catch (std::exception& e) {
+				std::cout << "Exception : " << e.what() << "\n";
+			};
+		};
+
+	{
+
+		// get the source
+		std::string src = argv[1];
+
+		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+
+		LLParsingTable<> table{};
+		define_table_llparser(table);
+
+		// create parser object
+		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+		auto grammar = grammer_expression();
+		m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec{ grammar };
+
+		m0st4fa::LLParser <
+			Symbol,
+			SynthesizedRecord<SynData>,
+			SynData,
+			ActionRecord<ActData>,
+			ActData,
+			Token<_TERMINAL>
+		>
+			parser{ grammar, startSym, table, lexicalAnal_parser };
+
+		// parse entered source
+		try {
+			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+			prodVec.calculateFIRST();
+			prodVec.calculateFOLLOW();
+		}
+		catch (std::exception& e) {
+			std::cout << "Exception : " << e.what() << "\n";
+		};
+
+	}
 
 	return 0;
 }

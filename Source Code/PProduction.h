@@ -63,6 +63,17 @@ namespace m0st4fa {
 			return *this;
 		}
 
+		bool operator==(const ProductionRecord& rhs) const {
+
+			// if their heads are not equal, they are not equal
+			if (this->prodHead != rhs.prodHead)
+				return false;
+
+			// if their heads are equal, then they are equal if their 
+			// bodies are also equal
+			return this->prodBody == rhs.prodBody;
+		}
+
 		operator std::string() const {
 			return this->toString();
 		}
@@ -199,9 +210,9 @@ namespace m0st4fa {
 	}
 
 	// Production Vector
-	template<typename SymbolT, typename SynthesizedT, typename ActionT>
+	template<typename SymbolT, typename ProductionT>
 	class ProductionVector {
-		using ProdRec = ProductionRecord<SymbolT, SynthesizedT, ActionT>;
+		using ProdRec = ProductionT;
 		using VecType = std::vector<ProdRec>;
 		// TODO: consider making this use terminals instead for storage efficiencey
 		using SetType = std::vector<std::set<SymbolT>>;
@@ -304,8 +315,8 @@ namespace m0st4fa {
 	};
 
 	// ALIASES
-	template<typename SymbolT, typename SynthesizedT, typename ActionT>
-	using ProdVec = ProductionVector<SymbolT, SynthesizedT, ActionT>;
+	template<typename SymbolT, typename ProductionT>
+	using ProdVec = ProductionVector<SymbolT, ProductionT>;
 }
 
 namespace m0st4fa {
@@ -325,8 +336,8 @@ namespace m0st4fa {
 	* Set isCalculated to true.
 	*/
 
-	template<typename SymbolT, typename SynthesizedT, typename ActionT>
-	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::calculateFIRST()
+	template<typename SymbolT, typename ProductionT>
+	bool ProductionVector<SymbolT, ProductionT>::calculateFIRST()
 	{
 
 		// if FIRST is already calculated, return
@@ -438,8 +449,8 @@ namespace m0st4fa {
 		return this->m_CalculatedFIRST = true;
 	}
 
-	template<typename SymbolT, typename SynthesizedT, typename ActionT>
-	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::_calc_FIRST_of_prod(const ProdRec& prod, const SymbolT& symbol, bool& added, size_t index)
+	template<typename SymbolT, typename ProductionT>
+	bool ProductionVector<SymbolT, ProductionT>::_calc_FIRST_of_prod(const ProdRec& prod, const SymbolT& symbol, bool& added, size_t index)
 	{
 
 		const SymbolT& head = prod.prodHead;
@@ -580,8 +591,8 @@ namespace m0st4fa {
 		return false;
 	}
 
-	template<typename SymbolT, typename SynthesizedT, typename ActionT>
-	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::_calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal) nonTerminal, size_t prodIndex, size_t variableIndex)
+	template<typename SymbolT, typename ProductionT>
+	bool ProductionVector<SymbolT, ProductionT>::_calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal) nonTerminal, size_t prodIndex, size_t variableIndex)
 	{
 
 		/**
@@ -618,7 +629,7 @@ namespace m0st4fa {
 		* a lambda to copy a symbol to the follow set of the currently - being - examined non - temrinal
 		* its main purpose is to be used iteratively to copy a list
 		* as a side effect, this function also sets `added`
-		*/ 
+		*/
 		auto cpyToFollow = [this, currSymIndex, nonTerminal, &currSymFollow, &added](const SymbolT& sym) {
 			auto p = currSymFollow.insert(sym);
 
@@ -645,7 +656,7 @@ namespace m0st4fa {
 			std::for_each(headFollow.begin(), headFollow.end(), cpyToFollow);
 			return added;
 		};
-		
+
 		for (size_t varIndex = variableIndex + 1; varIndex < prodBdySz; varIndex++) {
 
 			// check if the current symbol we are examining in the production is a grammar symbol 
@@ -706,14 +717,14 @@ namespace m0st4fa {
 
 			// if we are at the end of the production add FOLLOW(head) to FOLLOW(currSym)
 			std::for_each(headFollow.begin(), headFollow.end(), cpyToFollow);
-			
+
 		}
 
 		return added;
 	}
 
-	template<typename SymbolT, typename SynthesizedT, typename ActionT>
-	bool ProductionVector<SymbolT, SynthesizedT, ActionT>::calculateFOLLOW()
+	template<typename SymbolT, typename ProductionT>
+	bool ProductionVector<SymbolT, ProductionT>::calculateFOLLOW()
 	{
 
 		// if follow is already calculated, return

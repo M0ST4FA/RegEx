@@ -113,6 +113,11 @@ export struct SynData {
 	std::string toString() const {
 		return std::string(*this);
 	}
+
+	bool operator== (const SynData& lhs) const {
+		return not (std::strcmp(str, lhs.str));
+	}
+
 };
 
 export struct ActData {
@@ -126,15 +131,19 @@ export struct ActData {
 		return std::string(*this);
 	}
 
+	bool operator== (const ActData& lhs) const {
+		return not (std::strcmp(str, lhs.str));
+	}
 };
 
 using Stack = m0st4fa::Stack<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
 
 export using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
 export using Action = m0st4fa::ActionRecord<ActData>;
+export using ProductionType = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
 
-export std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expression();
-export m0st4fa::ProductionVector<Symbol, Synthesized, Action> grammar_expression_LR();
+export std::vector<ProductionType> grammer_expression();
+export m0st4fa::ProductionVector<Symbol, ProductionType> grammar_expression_LR();
 export void define_table_llparser(m0st4fa::LLParsingTable<>&);
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);

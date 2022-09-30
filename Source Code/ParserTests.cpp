@@ -119,12 +119,12 @@ std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expr
 	return result;
 }
 
-m0st4fa::ProductionVector<Symbol, Synthesized, Action> grammar_expression_LR()
+m0st4fa::ProductionVector<Symbol, ProductionType> grammar_expression_LR()
 {
 	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
 	using StackElement = m0st4fa::StackElement< Symbol, Synthesized, Action>;
 
-	m0st4fa::ProductionVector<Symbol, Synthesized, Action> result;
+	m0st4fa::ProductionVector<Symbol, Production> result;
 
 	Production prod;
 	StackElement se_E = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} } };

@@ -22,7 +22,8 @@ using m0st4fa::LLParsingTable;
 using m0st4fa::TransitionFunction;
 using m0st4fa::ActionRecord;
 using m0st4fa::SynthesizedRecord;
-
+using Item = m0st4fa::Item<ProductionType>;
+using ItemSet = m0st4fa::ItemSet<Item>;
 
 // #defines
 #define TEST_LR_PARSER
@@ -71,13 +72,19 @@ int main(int argc, char** argv) {
 			// create parser object
 			auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 			auto grammar = grammer_expression();
-			m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec{ grammar };
+			m0st4fa::ProdVec<Symbol, ProductionType> prodVec{ grammar };
 
 			// LR GRAMMAR
 			auto grammarLR = grammar_expression_LR();
 			std::cout << grammar.at(0);
-			const m0st4fa::Item<Symbol, Synthesized, Action> item{ grammar.at(0), 2, 
+			const Item item{ grammar.at(0), 2, 
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) }};
+			const Item item2{ grammar.at(1), 2,
+				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
+
+			ItemSet itemSet{ item, item2 };
+
+			itemSet.insert({ grammar.at(1), 2, {toSymbol(_TERMINAL::T_ID)} });
 
 			m0st4fa::LLParser <
 				Symbol,
@@ -94,7 +101,9 @@ int main(int argc, char** argv) {
 				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 				grammarLR.calculateFIRST();
 				grammarLR.calculateFOLLOW();
-				std::cout << "\n" << (std::string)item << "\n";
+				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
+				std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
+				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
 			}
 			catch (std::exception& e) {
 				std::cout << "Exception : " << e.what() << "\n";
@@ -114,7 +123,7 @@ int main(int argc, char** argv) {
 		// create parser object
 		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 		auto grammar = grammer_expression();
-		m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec{ grammar };
+		m0st4fa::ProdVec<Symbol, ProductionType> prodVec{ grammar };
 
 		m0st4fa::LLParser <
 			Symbol,

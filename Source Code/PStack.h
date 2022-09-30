@@ -13,11 +13,11 @@ namespace m0st4fa {
 	
 	// FORWARD DECLARATIONS
 	template <typename DataT>
-		requires requires (DataT data) { std::string(data); }
+		requires requires (DataT data) { std::string(data); data == data; }
 	struct SynthesizedRecord;
 
 	template <typename DataT>
-		requires requires (DataT data) { std::string(data); }
+		requires requires (DataT data) { std::string(data); data == data; }
 	struct ActionRecord;
 
 	template <typename SymbolT, typename SynthesizedT, typename ActionT>
@@ -59,7 +59,7 @@ namespace m0st4fa {
 
 			return *this;
 		}
-		bool operator==(const StackElement& other) {
+		bool operator==(const StackElement& other) const {
 
 			if (this->type != other.type)
 				return false;
@@ -117,7 +117,7 @@ namespace m0st4fa {
 	* @brief A simple base class for synthesized records from which you can derive more complex classes.
 	*/
 	template <typename DataT>
-		requires requires (DataT data) { std::string(data); }
+		requires requires (DataT data) { std::string(data); data == data; }
 	struct SynthesizedRecord {
 		DataT data;
 
@@ -130,14 +130,14 @@ namespace m0st4fa {
 			std::stringstream ss;
 			ss << action;
 
-			return std::string("{ data: ") + std::string(data) + ", action: " + ss.str() + " }";
+			return std::string("{ data: ") + std::string(data) + ", action: 0x" + ss.str() + " }";
 		}
 
 		std::string toString() const {
 			return std::string(*this);
 		}
 
-		bool operator==(const SynthesizedRecord& other) {
+		bool operator==(const SynthesizedRecord& other) const {
 			return this->action == other.action && this->data == other.data;
 		}
 
@@ -149,7 +149,7 @@ namespace m0st4fa {
 	* @brief A simple base class for action records from which you can derive more complex classes.
 	*/
 	template <typename DataT>
-		requires requires (DataT data) { std::string(data); }
+		requires requires (DataT data) { std::string(data); data == data; }
 	struct ActionRecord {
 		DataT data;
 
@@ -162,14 +162,14 @@ namespace m0st4fa {
 			std::stringstream ss;
 			ss << action;
 
-			return std::string("{ data: ") + std::string(data) + ", action: " + ss.str() + " }";
+			return std::string("{ data: ") + std::string(data) + ", action: 0x" + ss.str() + " }";
 		}
 
 		std::string toString() const {
 			return std::string(*this);
 		}
 
-		bool operator==(const ActionRecord& other) {
+		bool operator==(const ActionRecord& other) const {
 			return this->action == other.action && this->data == other.data;
 		}
 

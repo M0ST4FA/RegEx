@@ -19,6 +19,10 @@ namespace m0st4fa {
 		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
 
 		Logger m_Logger;
+		/**
+		* stores the number of grammar symbols in the production body.
+		*/
+		size_t m_Size = 0;
 
 	public:
 		// TODO: demand that the prodHead be a non-terminal
@@ -43,6 +47,40 @@ namespace m0st4fa {
 				throw std::logic_error("The body of a production cannot be empty.");
 			}
 
+			this->m_Size = std::count_if(prodBody.begin(), prodBody.end(), [this](const StackElement& stackElement) {
+				// count an element only if it is a grammar symbol
+				return stackElement.type == StackElementType::SET_GRAM_SYMBOL;
+				});
+
+		}
+
+		// operators
+		ProductionRecord& operator=(const ProductionRecord& other) {
+			prodHead = other.prodHead;
+			prodBody = other.prodBody;
+			m_Size = other.m_Size;
+			return *this;
+		}
+		bool operator==(const ProductionRecord& rhs) const {
+
+			// if their heads are not equal, they are not equal
+			if (this->prodHead != rhs.prodHead)
+				return false;
+
+			// if their heads are equal, then they are equal if their 
+			// bodies are also equal
+			return this->prodBody == rhs.prodBody;
+		}
+		operator std::string() const {
+			return this->toString();
+		}
+		auto begin() const { return this->prodBody.begin(); }
+		auto end()   const { return this->prodBody.end(); }
+		StackElement& at(size_t index) {
+			return this->prodBody.at(index);
+		}
+		const StackElement& at(size_t index) const {
+			return this->prodBody.at(index);
 		}
 
 		std::string toString() const {
@@ -56,27 +94,13 @@ namespace m0st4fa {
 			return str;
 		}
 
-		// operators
-		ProductionRecord& operator=(const ProductionRecord& other) {
-			prodHead = other.prodHead;
-			prodBody = other.prodBody;
-			return *this;
+		/**
+		* returns the number of grammar symbols in the production body.
+		*/
+		size_t size() const {
+			return this->m_Size;
 		}
 
-		bool operator==(const ProductionRecord& rhs) const {
-
-			// if their heads are not equal, they are not equal
-			if (this->prodHead != rhs.prodHead)
-				return false;
-
-			// if their heads are equal, then they are equal if their 
-			// bodies are also equal
-			return this->prodBody == rhs.prodBody;
-		}
-
-		operator std::string() const {
-			return this->toString();
-		}
 	};
 
 	template <typename SymbolT, typename SynthesizedT, typename ActionT>
@@ -146,11 +170,12 @@ namespace m0st4fa {
 	}
 	
 	// Symbol String
-	template <typename TerminalT, typename VariableT>
-	class GrammaticalSymbolString {
-		using SymbolType = Symbol<TerminalT, VariableT>;
+	template <typename SymbolT>
+class GrammaticalSymbolString {
+		using SymbolType = SymbolT;
 		using SetType = std::set<SymbolType>;
 		using SymVecType = std::vector<SymbolType>;
+		using SymVecItType = std::vector<SymbolType>::iterator;
 		using FRSTVecType = std::vector<SetType>;
 
 		Logger m_Logger;
@@ -164,7 +189,10 @@ namespace m0st4fa {
 
 		GrammaticalSymbolString(const std::initializer_list<SymbolType>& symbols) : symbols{ symbols } 
 		{};
+		GrammaticalSymbolString(const SymVecItType begin, const SymVecItType end) : symbols{ begin, end }
+		{};
 
+		// conversion functions
 		operator std::string() const {
 			return this->toString();
 		}
@@ -174,7 +202,7 @@ namespace m0st4fa {
 
 			// if the symbol string is empty
 			if (this->symbols.empty())
-				return temp;
+				return R"("")";
 
 			// if it is not empty (contains at least one element)
 			temp += (std::string)this->symbols.at(0);
@@ -191,18 +219,39 @@ namespace m0st4fa {
 			return temp;
 		}
 
+		void push_back(const SymbolType& symbol) {
+			this->symbols.push_back(symbol);
+		}
+		
+		void pop_back() {
+			this->symbols.pop_back();
+		}
+
 		/**
 		* Calculates the FIRST set for this grammar symbol string.
+		* @input the FIRST set of a particular grammar.
 		*/
 		bool calculateFIRST(const FRSTVecType&);
 		bool FIRSTCalculated() { return this->m_CalculatedFIRST; };
+		const SetType& getFIRST() const { 
+
+			// if FIRST is already calcualted
+			if (this->m_CalculatedFIRST)
+				return this->FIRST; 
+
+			static std::string msg = "The FIRST set of the non-terminals of this grammar symbol string is yet to be calculated.";
+
+			// if FIRST is not already calculated
+			this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, msg);
+			throw std::runtime_error(msg);
+		}
 	};
 
-	template <typename TerminalT, typename VariableT>
-	using SymbolString = GrammaticalSymbolString<TerminalT, VariableT>;
+	template <typename SymbolT>
+	using SymbolString = GrammaticalSymbolString<SymbolT>;
 
 	template <typename TerminalT, typename VariableT>
-	std::ostream& operator<<(std::ostream& os, const SymbolString<TerminalT, VariableT>& symbolString) {
+	std::ostream& operator<<(std::ostream& os, const SymbolString<Symbol<TerminalT, VariableT>>& symbolString) {
 
 		std::cout << symbolString.toString();
 
@@ -210,13 +259,13 @@ namespace m0st4fa {
 	}
 
 	// Production Vector
-	template<typename SymbolT, typename ProductionT>
+	template<typename ProductionT>
 	class ProductionVector {
 		using ProdRec = ProductionT;
+		using SymbolT = decltype(ProductionT{}.prodHead);
 		using VecType = std::vector<ProdRec>;
 		// TODO: consider making this use terminals instead for storage efficiencey
 		using SetType = std::vector<std::set<SymbolT>>;
-
 
 		/**
 		* The index of the non-terminal will hold its FIRST or FOLLOW set.
@@ -254,10 +303,13 @@ namespace m0st4fa {
 		void pushProduction(const ProdRec& prod) { this->m_Vector.push_back(prod); }
 
 		// element access methods
-		const ProdRec& operator [] (size_t i) { return this->m_Vector.at(i); }
+		const ProdRec& operator [] (size_t i) const { return this->m_Vector.at(i); }
 		const ProdRec& at(size_t i) const { return this->m_Vector.at(i); };
+		const auto& getVector() const { return this->m_Vector; }
+		auto begin() const { return this->m_Vector.begin(); }
+		auto end() const { return this->m_Vector.end(); }
 
-		// conversions methods
+		// conversion methods
 		operator std::string() {
 			return this->toString();
 		}
@@ -315,8 +367,8 @@ namespace m0st4fa {
 	};
 
 	// ALIASES
-	template<typename SymbolT, typename ProductionT>
-	using ProdVec = ProductionVector<SymbolT, ProductionT>;
+	template<typename ProductionT>
+	using ProdVec = ProductionVector<ProductionT>;
 }
 
 namespace m0st4fa {
@@ -336,8 +388,8 @@ namespace m0st4fa {
 	* Set isCalculated to true.
 	*/
 
-	template<typename SymbolT, typename ProductionT>
-	bool ProductionVector<SymbolT, ProductionT>::calculateFIRST()
+	template<typename ProductionT>
+	bool ProductionVector<ProductionT>::calculateFIRST()
 	{
 
 		// if FIRST is already calculated, return
@@ -375,7 +427,7 @@ namespace m0st4fa {
 		using SetPair = std::pair<std::set<SymbolT>, bool>;
 
 		// resize the FIRST set to accomdate an entry for all non-terminals
-		this->FIRST.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_NUM);
+		this->FIRST.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_COUNT);
 		bool added = false;
 
 		this->m_Logger.logDebug("\nCALCULATING FIRST SET:\n");
@@ -449,8 +501,8 @@ namespace m0st4fa {
 		return this->m_CalculatedFIRST = true;
 	}
 
-	template<typename SymbolT, typename ProductionT>
-	bool ProductionVector<SymbolT, ProductionT>::_calc_FIRST_of_prod(const ProdRec& prod, const SymbolT& symbol, bool& added, size_t index)
+	template<typename ProductionT>
+	bool ProductionVector<ProductionT>::_calc_FIRST_of_prod(const ProdRec& prod, const SymbolT& symbol, bool& added, size_t index)
 	{
 
 		const SymbolT& head = prod.prodHead;
@@ -591,8 +643,8 @@ namespace m0st4fa {
 		return false;
 	}
 
-	template<typename SymbolT, typename ProductionT>
-	bool ProductionVector<SymbolT, ProductionT>::_calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal) nonTerminal, size_t prodIndex, size_t variableIndex)
+	template<typename ProductionT>
+	bool ProductionVector<ProductionT>::_calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal) nonTerminal, size_t prodIndex, size_t variableIndex)
 	{
 
 		/**
@@ -723,8 +775,8 @@ namespace m0st4fa {
 		return added;
 	}
 
-	template<typename SymbolT, typename ProductionT>
-	bool ProductionVector<SymbolT, ProductionT>::calculateFOLLOW()
+	template<typename ProductionT>
+	bool ProductionVector<ProductionT>::calculateFOLLOW()
 	{
 
 		// if follow is already calculated, return
@@ -764,7 +816,7 @@ namespace m0st4fa {
 		*/
 
 		// make sure FOLLOW can hold all the non-terminals
-		this->FOLLOW.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_NUM);
+		this->FOLLOW.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_COUNT);
 
 		
 		bool added = false;
@@ -862,8 +914,8 @@ namespace m0st4fa {
 		return this->m_CalculatedFOLLOW = true;
 	}
 
-	template<typename TerminalT, typename VariableT>
-	bool GrammaticalSymbolString<TerminalT, VariableT>::calculateFIRST(const FRSTVecType& prodVecFIRST)
+	template<typename SymbolT>
+	bool GrammaticalSymbolString<SymbolT>::calculateFIRST(const FRSTVecType& prodVecFIRST)
 	{
 
 		// if FIRST is already calculated, return

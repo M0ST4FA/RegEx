@@ -72,13 +72,13 @@ int main(int argc, char** argv) {
 			// create parser object
 			auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 			auto grammar = grammer_expression();
-			m0st4fa::ProdVec<Symbol, ProductionType> prodVec{ grammar };
+			m0st4fa::ProdVec<ProductionType> prodVec{ grammar };
 
 			// LR GRAMMAR
 			auto grammarLR = grammar_expression_LR();
 			std::cout << grammar.at(0);
-			const Item item{ grammar.at(0), 2, 
-				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) }};
+			const Item item{ grammar.at(0), 2,
+				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) } };
 			const Item item2{ grammar.at(1), 2,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
 
@@ -104,6 +104,8 @@ int main(int argc, char** argv) {
 				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
 				std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
 				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
+				itemSet.CLOSURE(grammar);
+				//itemSet.GOTO(toSymbol(_TERMINAL::T_PLUS), grammar);
 			}
 			catch (std::exception& e) {
 				std::cout << "Exception : " << e.what() << "\n";
@@ -123,7 +125,7 @@ int main(int argc, char** argv) {
 		// create parser object
 		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 		auto grammar = grammer_expression();
-		m0st4fa::ProdVec<Symbol, ProductionType> prodVec{ grammar };
+		m0st4fa::ProdVec<ProductionType> prodVec{ grammar };
 
 		m0st4fa::LLParser <
 			Symbol,

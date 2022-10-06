@@ -18,7 +18,9 @@ namespace m0st4fa {
 		requires requires (T iterable) {
 		{*iterable.begin()} -> ConvertableToString;
 	}
-	std::string stringfy(const T& iterable) {
+	std::string stringfy(const T& iterable, bool asList = true) {
+
+		std::string separator = asList ? ", " : "\n";
 
 		std::string temp = "{ ";
 
@@ -34,7 +36,7 @@ namespace m0st4fa {
 				continue;
 			}
 
-			temp += ", " + (std::string)element;
+			temp += separator + (std::string)element;
 		}
 
 		return temp+= " }";

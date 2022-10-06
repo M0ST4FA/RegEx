@@ -18,8 +18,8 @@ namespace m0st4fa {
 			void* action;
 		};
 
-		template<typename SymbolT, typename ProductionT>
-		std::ostream& toString(ProdVec<SymbolT, ProductionT>& prodVec) {
+		template<typename ProductionT>
+		std::ostream& toString(ProdVec<ProductionT>& prodVec) {
 
 			std::string msg = isError ? "Error Entry\n" : std::format("Production Index of table entry: {}\n", prodIndex);
 

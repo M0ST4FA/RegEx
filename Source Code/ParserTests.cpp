@@ -119,12 +119,12 @@ std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expr
 	return result;
 }
 
-m0st4fa::ProductionVector<Symbol, ProductionType> grammar_expression_LR()
+m0st4fa::ProductionVector<ProductionType> grammar_expression_LR()
 {
 	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
 	using StackElement = m0st4fa::StackElement< Symbol, Synthesized, Action>;
 
-	m0st4fa::ProductionVector<Symbol, Production> result;
+	m0st4fa::ProductionVector<Production> result;
 
 	Production prod;
 	StackElement se_E = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} } };
@@ -284,7 +284,7 @@ Token<_TERMINAL> token_fact_parser(m0st4fa::state_t state, std::string lexeme) {
 
 std::string stringfy(const _TERMINAL terminal) {
 
-	_ASSERT_EXPR(terminal >= _TERMINAL::T_ID && terminal < _TERMINAL::T_NUM, "There is no such terminal");
+	_ASSERT_EXPR(terminal >= _TERMINAL::T_ID && terminal < _TERMINAL::T_COUNT, "There is no such terminal");
 
 	static const std::map<_TERMINAL, std::string> terminal_to_string = {
 		{ _TERMINAL::T_ID, "ID" },
@@ -307,7 +307,7 @@ std::ostream& operator<<(std::ostream& os, const _TERMINAL terminal)
 
 std::string stringfy(const _NON_TERMINAL variable) {
 	
-	_ASSERT_EXPR(variable >= _NON_TERMINAL::NT_E && variable < _NON_TERMINAL::NT_NUM, "There is no such non-terminal");
+	_ASSERT_EXPR(variable >= _NON_TERMINAL::NT_E && variable < _NON_TERMINAL::NT_COUNT, "There is no such non-terminal");
 
 	static const std::map<_NON_TERMINAL, std::string> variable_to_string = {
 		{ _NON_TERMINAL::NT_E, "E" },

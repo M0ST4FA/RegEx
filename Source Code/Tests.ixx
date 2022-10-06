@@ -73,7 +73,7 @@ export enum struct _TERMINAL {
 	T_RIGHT_PAREN,
 	T_EOF,
 	T_EPSILON,
-	T_NUM
+	T_COUNT
 };
 
 export std::string stringfy(_TERMINAL);
@@ -81,12 +81,12 @@ export std::ostream& operator<<(std::ostream&, const _TERMINAL);
 
 // so that no collisions occur with map
 export enum struct _NON_TERMINAL {
-	NT_E = (unsigned)_TERMINAL::T_NUM,
+	NT_E = (unsigned)_TERMINAL::T_COUNT,
 	NT_EP,
 	NT_T,
 	NT_TP,
 	NT_F,
-	NT_NUM
+	NT_COUNT
 };
 
 export std::string stringfy(_NON_TERMINAL);
@@ -143,7 +143,7 @@ export using Action = m0st4fa::ActionRecord<ActData>;
 export using ProductionType = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
 
 export std::vector<ProductionType> grammer_expression();
-export m0st4fa::ProductionVector<Symbol, ProductionType> grammar_expression_LR();
+export m0st4fa::ProductionVector<ProductionType> grammar_expression_LR();
 export void define_table_llparser(m0st4fa::LLParsingTable<>&);
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);

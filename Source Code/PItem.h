@@ -213,7 +213,8 @@ namespace m0st4fa {
 			return str;
 		};
 
-		std::vector<ItemT> getItemVector() const { return this->m_Set; };
+		std::vector<ItemT> getItemVector() const { return this->m_Set; }
+		const ItemT& at(size_t index) const { return this->m_Set.at(index); }
 
 		/**
 		* insert a new item into the item set.
@@ -393,6 +394,7 @@ namespace m0st4fa {
 
 		// check if the set is not empty (its closure would therefore be empty)
 		if (this->m_Set.size() == 0) {
+			this->p_Logger.log(LoggerInfo::WARNING, "Item set is emtpy. Returning empty CLOSURE!");
 			return *this;
 		}
 
@@ -405,7 +407,7 @@ namespace m0st4fa {
 		}
 
 		this->p_Logger.logDebug("\nCALCULATING CLOSURE SET:\n");
-		this->p_Logger.logDebug(std::format("Items:\n {}", (std::string)*this));
+		this->p_Logger.logDebug(std::format("Items set:\n {}", (std::string)*this));
 
 		// initialize the closure to the item set
 		this->m_Closure = ItemSet{this->m_Set};
@@ -419,7 +421,8 @@ namespace m0st4fa {
 		this->p_Logger.logDebug(std::format("The items in this set are LR({})", isLR0 ? "0" : "1"));
 
 		// for every item of the closure, calculate the closure of that item
-		for (const ItemT item : this->m_Closure) {
+		for (size_t i = 0; i < this->m_Closure.size(); i++) {
+			const ItemT item = this->m_Closure.at(i);
 			this->p_Logger.logDebug(std::format("Current item being scanned for CLOSURE:{}",item.toString()));
 			const ProductionType& itemProd = item.production;
 
@@ -501,28 +504,49 @@ namespace m0st4fa {
 	template<typename ItemT>
 	ItemSet<ItemT> ItemSet<ItemT>::GOTO(const SymbolType& symbol, ProdVecType grammar)
 	{
-		//ItemSet<ItemT> result = ItemSet{};
 
-		//// figure out whether this symbol exists after a dot
-		//const auto itemIt = std::find_if(this->m_Closure.begin(), this->m_Closure.end(),
-		//	[&symbol](const ItemT& item) {
-		//		size_t dotPos = item.getActualDotPosition();
-		//		const SymbolType& sym = item.production.prodBody.at(dotPos).as.gramSymbol;
-		//		return sym == symbol;
-		//	});
+		this->p_Logger.logDebug("\nCALCULATING GOTO SET:\n");
+		this->p_Logger.logDebug(std::format("Item set:\n {}", (std::string)*this));
+		this->p_Logger.logDebug(std::format("GOTO symbol is {}", (std::string)symbol));
 
-		//bool found = itemIt == this->m_Closure.end();
+		ItemSet<ItemT> result = ItemSet{};
 
-		//if (found) {
-		//	const ProductionType& prod = itemIt->production;
-		//	size_t dotPos = itemIt->dotPos + 1;
-		//	ItemT kernelItem = ItemT{ prod, dotPos, itemIt->lookaheads };
+		/* assuming symbol is `B`
+			figure out whether there exists an item of the form:
+			[A -> alpha .B beta, a]
+		*/
+		std::vector<ItemT> temp{ ItemT{} };
+		std::copy_if(this->m_Closure.begin(), this->m_Closure.end(),
+			temp.begin(),
+			[&symbol](const ItemT& item) {
+			size_t dotPos = item.getActualDotPosition();
+			const SymbolType& sym = item.production.prodBody.at(dotPos).as.gramSymbol;
+			return sym == symbol;
+			});
+		ItemSet<ItemT> foundItems{ temp };
 
+		// figure out whether such an item exists
+		bool found = foundItems.at(0) != ItemT{};
 
-		//}
+		// if such an item is found
+		if (found) {
 
-		//const ItemSet<ItemT>& resClosure = result.CLOSURE(grammar);
-		//return result;
+			const auto& itemVec = foundItems.getItemVector();
+			for (const ItemT& item : itemVec) {
+				// create new item
+				size_t newDotPos = item.dotPos + 1;
+				ItemT kernelItem = ItemT{ item.production, newDotPos, item.lookaheads };
+
+				// inser the item in `result`
+				result.insert(kernelItem);
+				this->p_Logger.log(LoggerInfo::DEBUG, std::format("Inserting kernel item {} to the GOTO set.", kernelItem.toString()));
+			}
+
+		}
+
+		const ItemSet<ItemT> resultClosure = result.CLOSURE(grammar);
+		this->p_Logger.logDebug(std::format("GOTO Set for the items: \n{}", (std::string)resultClosure));
+		return resultClosure;
 	}
 
 }

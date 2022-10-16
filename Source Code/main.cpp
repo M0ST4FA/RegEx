@@ -33,6 +33,9 @@ using ItemSet = m0st4fa::ItemSet<Item>;
 
 int main(void) {
 	
+	regex re = "^mos.*";
+	re.match(re, "mostafa");
+
 	regex re; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
 	regexRes reres; // re.exec(string); // you execute the compiled regular expression against the string
 	bool match; // re.match(string);    // asserts that the string matches the regular expression
@@ -84,7 +87,7 @@ int main(int argc, char** argv) {
 
 			ItemSet itemSet{ item, item2 };
 
-			itemSet.insert({ grammar.at(1), 2, {toSymbol(_TERMINAL::T_ID)} });
+			itemSet.insert({ grammar.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
 
 			m0st4fa::LLParser <
 				Symbol,
@@ -105,7 +108,7 @@ int main(int argc, char** argv) {
 				std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
 				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
 				itemSet.CLOSURE(grammar);
-				//itemSet.GOTO(toSymbol(_TERMINAL::T_PLUS), grammar);
+				itemSet.GOTO(toSymbol(_TERMINAL::T_PLUS), grammar);
 			}
 			catch (std::exception& e) {
 				std::cout << "Exception : " << e.what() << "\n";

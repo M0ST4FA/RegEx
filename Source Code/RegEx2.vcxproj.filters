@@ -105,5 +105,8 @@
     <ClInclude Include="PItem.h">
       <Filter>Source Files\Parser</Filter>
     </ClInclude>
+    <ClInclude Include="LLPGenerator.h">
+      <Filter>Source Files\Parser</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

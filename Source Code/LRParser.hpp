@@ -5,12 +5,13 @@
 namespace m0st4fa {
 
 
-	template <typename SymbolT, typename TokenT,
-		typename ParsingTableT = LLParsingTable<>, typename FSMTableT = FSMTable<>,
+	template <typename GrammarT, typename LexicalAnalyzerT,
+		typename SymbolT,
+		typename ParsingTableT = LLParsingTable<GrammarT>, typename FSMTableT = FSMTable<>,
 		typename InputT = std::string>
-	class LRParser : public Parser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT> {
+	class LRParser : public Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT> {
 
-		using ParserBase = Parser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>;
+		using ParserBase = Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>;
 
 
 	public:

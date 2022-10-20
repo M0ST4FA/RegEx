@@ -106,12 +106,8 @@ namespace m0st4fa {
 
 	};
 
-	template <
-		typename SymbolT,
-		typename SynthesizedT,
-		typename ActionT
-	>
-	using Stack = std::vector<StackElement<SymbolT, SynthesizedT, ActionT>>;
+	template <typename StackElementT>
+	using Stack = std::vector<StackElementT>;
 
 	/**
 	* @brief A simple base class for synthesized records from which you can derive more complex classes.

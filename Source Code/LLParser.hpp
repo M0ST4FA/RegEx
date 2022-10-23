@@ -8,27 +8,33 @@
 
 namespace m0st4fa {
 
-	template <typename SymbolT, 
-		typename SynthesizedT, typename SynDataT,
-		typename ActionT, typename ActDataT,
-		typename TokenT,
-		typename ParsingTableT = LLParsingTable<>, typename FSMTableT = FSMTable<>,
+	template <typename GrammarT,
+		typename LexicalAnalyzerT,
+		typename SymbolT,
+		typename ParsingTableT = LLParsingTable<GrammarT>, typename FSMTableT = FSMTable<>,
 		typename InputT = std::string>
-	class LLParser : public Parser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT> {
+	class LLParser : public Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT> {
+		using ProductionType = decltype(GrammarT{}.getProdVector().at(0));
+		using StackElemType = decltype(ProductionType{}.get(0));
+		using SynthesizedType = decltype(StackElemType{}.as.synRecord);
+		using SynDataType = decltype(SynthesizedType{}.data);
+		using ActionType = decltype(StackElemType{}.as.actRecord);
+		using ActDataType = decltype(ActionType{}.data);
+		using ParserBase = Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>;
+		using TokenType = decltype(LexicalAnalyzerT{}.getNextToken());
 
-		using ParserBase = Parser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>;
 
 		// a parsing table entry should contain indecies into this vector of productions
-		mutable std::vector<ProductionRecord<SymbolT, SynthesizedT, ActionT>> m_ProdRecords;
-		mutable std::vector<StackElement<SymbolT, SynthesizedT, ActionT>> m_Stack;
-		mutable StackElement<SymbolT, SynthesizedT, ActionT> m_CurrTopElement;
-		mutable TokenT m_CurrInputToken;
+		GrammarT& m_ProdRecords;
+		mutable std::vector<StackElemType> m_Stack;
+		mutable StackElemType m_CurrTopElement;
+		mutable TokenType m_CurrInputToken;
 		
 		// PARSER FUNCTIONS
 		void reset_parser_state(bool resetProductions = false) {
 			m_Stack.clear();
-			m_CurrTopElement = StackElement<SymbolT, SynthesizedT, ActionT>{};
-			m_CurrInputToken = TokenT{};
+			m_CurrTopElement = StackElemType{};
+			m_CurrInputToken = TokenType{};
 
 			if (resetProductions)
 				m_ProdRecords.clear();
@@ -103,7 +109,7 @@ namespace m0st4fa {
 		* @brief implements panic mode error recovery.
 		*/
 		bool panic_mode();
-		bool panic_mode_try_sync_variable(TokenT&);
+		bool panic_mode_try_sync_variable(TokenType&);
 
 		// TODO: implement phrase level and global error recovery
 		bool phrase_level() const { return false; };
@@ -115,7 +121,7 @@ namespace m0st4fa {
 		* Checks that the body of the given production is not empty.
 		* If it is empty, the function reports the error and throws a logic_exception.
 		*/
-		void check_prod_body(const ProductionRecord<SymbolT, SynthesizedT, ActionT>&) const;
+		void check_prod_body(const ProductionType&) const;
 		void print_sync_msg(const std::pair<size_t, size_t> pos) const {
 			
 			static constexpr LoggerInfo info = { .level = LOG_LEVEL::LL_INFO, .info = {.noVal = 0} };
@@ -133,14 +139,13 @@ namespace m0st4fa {
 		// constructors
 		LLParser() = default;
 		LLParser(
-			const std::vector<ProductionRecord<SymbolT, SynthesizedT, ActionT>>& prodRecords,
 			const SymbolT& startSymbol,
 			const ParsingTableT& parsingTable,
-			const LexicalAnalyzer<TokenT, FSMTableT>& lexer
+			const LexicalAnalyzer<TokenType, FSMTableT>& lexer
 		) :
-			Parser<SymbolT, TokenT, ParsingTableT, FSMTableT, InputT>
+			Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>
 		{ lexer, parsingTable, startSymbol },
-			m_ProdRecords{ prodRecords },
+			m_ProdRecords{ this->m_Table.grammar },
 			m_Stack{},
 			m_CurrInputToken{},
 			m_CurrTopElement{}
@@ -162,14 +167,13 @@ namespace m0st4fa {
 
 
 	// IMPLEMENTATIONS
-	template<typename SymbolT, typename SynthesizedT, typename SynDataT, typename ActionT, typename ActDataT,
-		typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
-
-	ParserResult LLParser<SymbolT, SynthesizedT, SynDataT, ActionT, ActDataT, 
-	TokenT, ParsingTableT, FSMTableT, InputT>::parse(ErrorRecoveryType errRecoveryType)
+	template<typename GrammarT, typename LexicalAnalyzerT, 
+		typename SymbolT, 
+		typename ParsingTableT, typename FSMTableT, 
+		typename InputT>
+	ParserResult LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::parse(ErrorRecoveryType errRecoveryType)
 	{
-		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
-		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
+		using StackType = std::vector<StackElemType>;
 
 		ParserResult res;
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
@@ -207,8 +211,8 @@ namespace m0st4fa {
 		*/
 			case SET_SYNTH_RECORD: {
 				// extract the record
-				SynthesizedT topRecord = m_CurrTopElement.as.synRecord;
-				auto action = static_cast<void(*)(Stack&, SynDataT&)>(topRecord.action);
+				SynthesizedType topRecord = m_CurrTopElement.as.synRecord;
+				auto action = static_cast<void(*)(StackType&, SynDataType&)>(topRecord.action);
 
 				// execute the action if any
 				if (action)
@@ -218,8 +222,8 @@ namespace m0st4fa {
 
 			case SET_ACTION_RECORD: {
 				// extract the record
-				ActionT topRecord = m_CurrTopElement.as.actRecord;
-				auto action = static_cast<void(*)(Stack&, ActDataT&)>(topRecord.action);
+				ActionType topRecord = m_CurrTopElement.as.actRecord;
+				auto action = static_cast<void(*)(StackType&, ActDataType&)>(topRecord.action);
 
 				// execute the action if any
 				if (action)
@@ -241,13 +245,13 @@ namespace m0st4fa {
 
 
 
-	template<typename SymbolT, typename SynthesizedT, typename SynDataT, typename ActionT, typename ActDataT,
-		typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
-
-	void LLParser<SymbolT, SynthesizedT, SynDataT, ActionT, ActDataT,
-	TokenT, ParsingTableT, FSMTableT, InputT>::parse_grammar_symbol(ErrorRecoveryType errRecoveryType) {
+	template<typename GrammarT, typename LexicalAnalyzerT,
+		typename SymbolT,
+		typename ParsingTableT, typename FSMTableT,
+		typename InputT>
+	void LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::parse_grammar_symbol(ErrorRecoveryType errRecoveryType) {
 			
-		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
+		using StackElement = StackElemType;
 
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 		const SymbolT topSymbol = m_CurrTopElement.as.gramSymbol;
@@ -257,7 +261,7 @@ namespace m0st4fa {
 		if (topSymbol.isTerminal) {
 
 			// epsilon matches with nothing
-			if (topSymbol == TokenT::EPSILON)
+			if (topSymbol == TokenType::EPSILON)
 				return;
 
 			// match it explicitly
@@ -311,15 +315,14 @@ namespace m0st4fa {
 	}
 
 
-	template<typename SymbolT, typename SynthesizedT, typename SynDataT, typename ActionT, typename ActDataT,
-		typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
-
-	bool LLParser<SymbolT, SynthesizedT, SynDataT, ActionT, ActDataT,
-	TokenT, ParsingTableT, FSMTableT, InputT>::panic_mode()
+	template<typename GrammarT, typename LexicalAnalyzerT,
+		typename SymbolT,
+		typename ParsingTableT, typename FSMTableT,
+		typename InputT>
+	bool LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::panic_mode()
 	{
 
-		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
-		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
+		using Stack = Stack<StackElemType>;
 
 		// get top stack element
 		auto currInputToken = this->m_CurrInputToken;
@@ -364,7 +367,7 @@ namespace m0st4fa {
 					break;
 
 				// if we've reached the end of the input and could not sync with this token
-				if (m_CurrInputToken == TokenT{}) {
+				if (m_CurrInputToken == TokenType{}) {
 					// pop this element since there is no way to syncronize using it
 					m_Stack.pop_back();
 
@@ -388,25 +391,23 @@ namespace m0st4fa {
 		return true;
 	}
 
-
 	/** Actions:
 	* If the non-terminal has an epsilon production, make it the default.
 	* If there is a token whose associated table entry has an error action, execute it.
 	* If we find a token that is in the first set of the currunt token, expand by it.
 	*/
-	template<typename SymbolT, typename SynthesizedT, typename SynDataT, typename ActionT, typename ActDataT,
-		typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
+	template<typename GrammarT, typename LexicalAnalyzerT,
+		typename SymbolT,
+		typename ParsingTableT, typename FSMTableT,
+		typename InputT>
+	bool LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::panic_mode_try_sync_variable(TokenType& currInputToken) {
 
-	bool LLParser<SymbolT, SynthesizedT, SynDataT, ActionT, ActDataT,
-		TokenT, ParsingTableT, FSMTableT, InputT>::panic_mode_try_sync_variable(TokenT& currInputToken) {
-
-		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
-		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
+		using Stack = Stack<StackElemType>;
 
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 
 		// Check for whether the non-terminal has an epsilon production and use it to reduce that non-terminal.
-		LLTableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)TokenT::EPSILON.name];
+		LLTableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)TokenType::EPSILON.name];
 
 		// if it is not an err, there is an epsilon production
 		if (-not tableEntry.isError) {
@@ -422,7 +423,7 @@ namespace m0st4fa {
 
 			// push the body of the production on top of the stack
 			for (auto it = prodBody.rbegin(); it != prodBody.rend(); ++it) {
-				StackElement se = *it;
+				StackElemType se = *it;
 				m_Stack.push_back(se);
 			};
 
@@ -452,7 +453,7 @@ namespace m0st4fa {
 
 			// if the entry has an action
 			if (tableEntry.action) {
-				auto action = static_cast<bool (*)(Stack, StackElement, TokenT)>(tableEntry.action);
+				auto action = static_cast<bool (*)(Stack, StackElemType, TokenType)>(tableEntry.action);
 
 				// if the action results in a syncronization
 				if (action(m_Stack, m_CurrTopElement, currInputToken)) {
@@ -488,12 +489,11 @@ namespace m0st4fa {
 		return true;
 	}
 
-
-	template<typename SymbolT, typename SynthesizedT, typename SynDataT, typename ActionT, typename ActDataT,
-		typename TokenT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	
-	void inline LLParser<SymbolT, SynthesizedT, SynDataT, ActionT, ActDataT,
-	TokenT, ParsingTableT, FSMTableT, InputT>::check_prod_body(const ProductionRecord<SymbolT, SynthesizedT, ActionT>& prod) const {
+	template<typename GrammarT, typename LexicalAnalyzerT,
+		typename SymbolT,
+		typename ParsingTableT, typename FSMTableT,
+		typename InputT>
+	void LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::check_prod_body(const ProductionType& prod) const {
 
 		LoggerInfo errorInfo { .level = LOG_LEVEL::LL_ERROR, .info {.errorType = ERROR_TYPE::ET_PROD_BODY_EMPTY } };
 

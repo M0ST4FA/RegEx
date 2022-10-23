@@ -14,9 +14,11 @@ namespace m0st4fa {
 		bool isError = true;
 
 		union {
-			size_t prodIndex = 0;
+			size_t prodIndex = SIZE_MAX;
 			void* action;
 		};
+
+		bool isEmpty = true;
 
 		template<typename ProductionT>
 		std::ostream& toString(ProdVec<ProductionT>& prodVec) {
@@ -27,8 +29,9 @@ namespace m0st4fa {
 		};
 	};
 
-	template <size_t VariableCount = 20, size_t TerminalCount = 127>
+	template <typename GrammarT, size_t VariableCount = 20, size_t TerminalCount = 127>
 	struct LLParsingTable {
+		GrammarT grammar;
 		std::array<std::array<LLTableEntry, TerminalCount>, VariableCount> table;
 
 		std::array<LLTableEntry, TerminalCount>& operator[](size_t index) {

@@ -34,7 +34,7 @@ void actDataAct(Stack& stack, ActData& data) {
 	printf("[Action at index: %u] Assigned data to synthesized record at index: %u\n\n", currIndex, actIndex);
 }
 
-std::vector<m0st4fa::ProductionRecord<Symbol, Synthesized, Action>> grammer_expression() {
+GrammarType grammer_expression() {
 	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
 	using StackElement = m0st4fa::StackElement< Symbol, Synthesized, Action>;
 
@@ -190,12 +190,12 @@ m0st4fa::ProductionVector<ProductionType> grammar_expression_LR()
 	return result;
 }
 
-void define_table_llparser(m0st4fa::LLParsingTable<>& table)
+void define_table_llparser(m0st4fa::LLParsingTable<GrammarType>& table)
 {
 	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
 	using StackElement = m0st4fa::StackElement<Symbol, Synthesized, Action>;
 
-	std::vector<Production> grammer = grammer_expression();
+	GrammarType grammer = grammer_expression();
 
 	Production prod;
 	StackElement se_E = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };

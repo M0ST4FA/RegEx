@@ -17,7 +17,7 @@ namespace m0st4fa {
 		std::string m_Source;
 		index_t m_Index;
 		flag_t m_Flags;
-		LRParser<size_t, size_t, size_t, size_t> m_Parser;
+		//LRParser<size_t, size_t, size_t, size_t> m_Parser;
 
 		// private methods
 

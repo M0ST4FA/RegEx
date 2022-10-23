@@ -136,15 +136,17 @@ export struct ActData {
 	}
 };
 
-using Stack = m0st4fa::Stack<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
+using StackElementType = m0st4fa::StackElement<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
+using Stack = m0st4fa::Stack<StackElementType>;
 
 export using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
 export using Action = m0st4fa::ActionRecord<ActData>;
 export using ProductionType = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
+using GrammarType = m0st4fa::ProductionVector<ProductionType>;
 
-export std::vector<ProductionType> grammer_expression();
-export m0st4fa::ProductionVector<ProductionType> grammar_expression_LR();
-export void define_table_llparser(m0st4fa::LLParsingTable<>&);
+export GrammarType grammer_expression();
+export GrammarType grammar_expression_LR();
+export void define_table_llparser(m0st4fa::LLParsingTable<GrammarType>&);
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);
 

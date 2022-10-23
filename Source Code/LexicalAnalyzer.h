@@ -38,6 +38,8 @@ namespace m0st4fa {
 
 	public:
 
+		LexicalAnalyzer() = default;
+
 		LexicalAnalyzer(
 			DFA<TransFn<TableT>, InputT> automaton,
 			TokenFactoryT<TokenT, InputT> tokenFactory,

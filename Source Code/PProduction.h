@@ -12,11 +12,15 @@
 
 namespace m0st4fa {
 
+	template <typename SymbolT>
+	class GrammaticalSymbolString;
+
 	// Production
 	template <typename SymbolT, typename SynthesizedT, typename ActionT>
 	class ProductionRecord {
-		using StackElement = StackElement<SymbolT, SynthesizedT, ActionT>;
-		using Stack = Stack<SymbolT, SynthesizedT, ActionT>;
+		using StackElemType = StackElement<SymbolT, SynthesizedT, ActionT>;
+		using Stack = Stack<StackElemType>;
+		using SymbolString = GrammaticalSymbolString<SymbolT>;
 
 		Logger m_Logger;
 		/**
@@ -28,10 +32,10 @@ namespace m0st4fa {
 		// TODO: demand that the prodHead be a non-terminal
 		SymbolT prodHead = SymbolT{};
 		// TODO: demand that the body of the procedure be non-empty
-		std::vector<StackElement> prodBody;
+		std::vector<StackElemType> prodBody;
 
 		ProductionRecord() = default;
-		ProductionRecord(const SymbolT& head, const std::vector<StackElement>& body) : prodHead{ head }, prodBody{ body } {
+		ProductionRecord(const SymbolT& head, const std::vector<StackElemType>& body) : prodHead{ head }, prodBody{ body } {
 
 			// the head must be a non-terminal
 			if (head.isTerminal) {
@@ -47,7 +51,7 @@ namespace m0st4fa {
 				throw std::logic_error("The body of a production cannot be empty.");
 			}
 
-			this->m_Size = std::count_if(prodBody.begin(), prodBody.end(), [this](const StackElement& stackElement) {
+			this->m_Size = std::count_if(prodBody.begin(), prodBody.end(), [this](const StackElemType& stackElement) {
 				// count an element only if it is a grammar symbol
 				return stackElement.type == StackElementType::SET_GRAM_SYMBOL;
 				});
@@ -74,13 +78,19 @@ namespace m0st4fa {
 		operator std::string() const {
 			return this->toString();
 		}
+		operator SymbolString() const {
+			return this->toSymbolString();
+		}
 		auto begin() const { return this->prodBody.begin(); }
 		auto end()   const { return this->prodBody.end(); }
-		StackElement& at(size_t index) {
+		StackElemType& at(size_t index) {
 			return this->prodBody.at(index);
 		}
-		const StackElement& at(size_t index) const {
+		const StackElemType& at(size_t index) const {
 			return this->prodBody.at(index);
+		}
+		StackElemType get(size_t index) const {
+			return this->at(index);
 		}
 
 		std::string toString() const {
@@ -88,10 +98,23 @@ namespace m0st4fa {
 			std::string str = this->prodHead.toString() + " ->";
 
 			// body
-			for (const StackElement& symbol : this->prodBody)
+			for (const StackElemType& symbol : this->prodBody)
 				str += " " + (std::string)symbol;
 
 			return str;
+		}
+		SymbolString toSymbolString() const {
+			SymbolString string{};
+
+			for (const StackElemType& se : this->prodBody) {
+
+				if (se.type != StackElementType::SET_GRAM_SYMBOL)
+					continue;
+
+				string.push_back(se.as.gramSymbol);
+			}
+
+			return string;
 		}
 
 		/**
@@ -99,6 +122,26 @@ namespace m0st4fa {
 		*/
 		size_t size() const {
 			return this->m_Size;
+		}
+
+		bool contains(const SymbolT& symbol) const {
+
+			for (const auto& stackElement : this->prodBody) {
+
+				if (stackElement.type != StackElementType::SET_GRAM_SYMBOL)
+					continue;
+
+				// the stack element is a grammar symbol
+				if (stackElement.as.gramSymbol == symbol)
+					return true;
+			}
+
+			// if we reach here, we didn't find the symbol (otherwise, we would've returned from the loop with `true`)
+			return false;
+		}
+
+		bool isEpsilon() const {
+			return this->contains(SymbolT::EPSILON);
 		}
 
 	};
@@ -171,7 +214,7 @@ namespace m0st4fa {
 	
 	// Symbol String
 	template <typename SymbolT>
-class GrammaticalSymbolString {
+	class GrammaticalSymbolString {
 		using SymbolType = SymbolT;
 		using SetType = std::set<SymbolType>;
 		using SymVecType = std::vector<SymbolType>;
@@ -245,7 +288,7 @@ class GrammaticalSymbolString {
 			this->m_Logger.log(LoggerInfo::ERR_MISSING_VAL, msg);
 			throw std::runtime_error(msg);
 		}
-	};
+		};
 
 	template <typename SymbolT>
 	using SymbolString = GrammaticalSymbolString<SymbolT>;
@@ -263,9 +306,11 @@ class GrammaticalSymbolString {
 	class ProductionVector {
 		using ProdRec = ProductionT;
 		using SymbolT = decltype(ProductionT{}.prodHead);
+		using VariableType = decltype(SymbolT{}.as.nonTerminal);
 		using VecType = std::vector<ProdRec>;
 		// TODO: consider making this use terminals instead for storage efficiencey
 		using SetType = std::vector<std::set<SymbolT>>;
+		using SymbolString = SymbolString<SymbolT>;
 
 		/**
 		* The index of the non-terminal will hold its FIRST or FOLLOW set.
@@ -286,7 +331,7 @@ class GrammaticalSymbolString {
 		* @param nonTerminal: VariableT, prodIndex: size_t, nonTerminalIndex: size_t
 		* @return void
 		*/
-		bool _calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal), size_t, size_t);
+		bool _calc_FOLLOW_of_nonTerminal(VariableType, size_t, size_t);
 
 	protected:
 		VecType m_Vector{};
@@ -306,18 +351,22 @@ class GrammaticalSymbolString {
 		const ProdRec& operator [] (size_t i) const { return this->m_Vector.at(i); }
 		const ProdRec& at(size_t i) const { return this->m_Vector.at(i); };
 		const auto& getVector() const { return this->m_Vector; }
+
+		// other methods
 		auto begin() const { return this->m_Vector.begin(); }
 		auto end() const { return this->m_Vector.end(); }
+		size_t size() const { return this->m_Vector.size(); }
+		void clear() { this->m_Vector.clear(); this->FIRST.clear(); this->FOLLOW.clear(); }
 
 		// conversion methods
-		operator std::string() {
+		operator std::string() const {
 			return this->toString();
 		}
-		std::string toString() {
+		std::string toString() const {
 
 			std::string str;
 
-			for (const auto& prod : this->getProdVector())
+			for (const auto& prod : this->m_Vector)
 				str += (std::string)prod + "\n";
 
 			return str;
@@ -350,7 +399,7 @@ class GrammaticalSymbolString {
 		*/
 		bool calculateFOLLOW();
 		bool FOLLOWCalculated() { return this->m_CalculatedFOLLOW; };
-		std::set<SymbolT> getFOLLOW(decltype(SymbolT().as.nonTerminal) nonTerminal) {
+		std::set<SymbolT> getFOLLOW(const decltype(SymbolT().as.nonTerminal) nonTerminal) {
 
 			// if FOLLOW is already calculated
 			if (this->m_CalculatedFOLLOW)
@@ -644,7 +693,7 @@ namespace m0st4fa {
 	}
 
 	template<typename ProductionT>
-	bool ProductionVector<ProductionT>::_calc_FOLLOW_of_nonTerminal(decltype(SymbolT().as.nonTerminal) nonTerminal, size_t prodIndex, size_t variableIndex)
+	bool ProductionVector<ProductionT>::_calc_FOLLOW_of_nonTerminal(VariableType nonTerminal, size_t prodIndex, size_t variableIndex)
 	{
 
 		/**

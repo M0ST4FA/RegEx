@@ -6,24 +6,33 @@
 #include "regex.h"
 #include "DFA.h"
 #include "LLParser.hpp"
+#include "LLPGenerator.h"
 #include "LexicalAnalyzer.h"
 
 import Tests;
 
 // using declaraEtions
+using m0st4fa::TransitionFunction;
 using m0st4fa::DFA;
 using m0st4fa::FSMTable;
-using m0st4fa::LexicalAnalyzer;
 using m0st4fa::state_set_t;
 using m0st4fa::state_t;
+using m0st4fa::LexicalAnalyzer;
 using m0st4fa::Token;
-using m0st4fa::LLParser;
-using m0st4fa::LLParsingTable;
-using m0st4fa::TransitionFunction;
-using m0st4fa::ActionRecord;
-using m0st4fa::SynthesizedRecord;
+using LexicalAnalyzerType = LexicalAnalyzer<Token<_TERMINAL>>;
+
 using Item = m0st4fa::Item<ProductionType>;
 using ItemSet = m0st4fa::ItemSet<Item>;
+
+using m0st4fa::ActionRecord;
+using m0st4fa::SynthesizedRecord;
+
+using GrammarType = m0st4fa::ProductionVector<ProductionType>;
+using FirstType = std::vector<std::set<Symbol>>;
+
+using LLParserType = m0st4fa::LLParser <GrammarType, LexicalAnalyzerType, Symbol>;
+using LLParsingTableType = m0st4fa::LLParsingTable<GrammarType>;
+using LLParserGeneratorType = m0st4fa::LLParserGenerator<GrammarType, LLParsingTableType>;
 
 // #defines
 #define TEST_LR_PARSER
@@ -67,48 +76,51 @@ int main(int argc, char** argv) {
 			if (src == "q" || src == "Q")
 				return 0;
 
-			LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+			LexicalAnalyzerType lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
-			LLParsingTable<> table{};
-			define_table_llparser(table);
-
-			// create parser object
 			auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+
+			// LL GRAMMAR
 			auto grammar = grammer_expression();
-			m0st4fa::ProdVec<ProductionType> prodVec{ grammar };
+			LLParsingTableType table{grammar};
+			LLParserGeneratorType parserGenerator{grammar, startSym};
 
 			// LR GRAMMAR
 			auto grammarLR = grammar_expression_LR();
 			std::cout << grammar.at(0);
+			const LLParserGeneratorType LRParserGenerator{ grammarLR, startSym };
+
+			// ITEM
 			const Item item{ grammar.at(0), 2,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) } };
 			const Item item2{ grammar.at(1), 2,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
-
 			ItemSet itemSet{ item, item2 };
-
 			itemSet.insert({ grammar.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
-
-			m0st4fa::LLParser <
-				Symbol,
-				SynthesizedRecord<SynData>,
-				SynData,
-				ActionRecord<ActData>,
-				ActData,
-				Token<_TERMINAL>
-			>
-				parser{ grammar, startSym, table, lexicalAnal_parser };
 
 			// parse entered source
 			try {
+
+				// LL GRAMMAR TESTS
+				LLParsingTableType table = parserGenerator.generateLLParser();
+				LLParserType parser{ startSym, table, lexicalAnal_parser };
 				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+				parserGenerator.generateLLParser();
+
+				// LR GRAMMAR TESTS
 				grammarLR.calculateFIRST();
 				grammarLR.calculateFOLLOW();
+				std::cout << "TRYING CREATE PARSING TABLE FOR LR GRAMMAR:\n";
+				LRParserGenerator.generateLLParser();
+
+				// ITEM TESTS
 				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
 				std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
 				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
 				itemSet.CLOSURE(grammar);
 				itemSet.GOTO(toSymbol(_TERMINAL::T_PLUS), grammar);
+
+				
 			}
 			catch (std::exception& e) {
 				std::cout << "Exception : " << e.what() << "\n";
@@ -122,29 +134,21 @@ int main(int argc, char** argv) {
 
 		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
-		LLParsingTable<> table{};
-		define_table_llparser(table);
-
 		// create parser object
 		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
-		auto grammar = grammer_expression();
-		m0st4fa::ProdVec<ProductionType> prodVec{ grammar };
 
-		m0st4fa::LLParser <
-			Symbol,
-			SynthesizedRecord<SynData>,
-			SynData,
-			ActionRecord<ActData>,
-			ActData,
-			Token<_TERMINAL>
-		>
-			parser{ grammar, startSym, table, lexicalAnal_parser };
+		// LL GRAMMAR
+		auto grammar = grammer_expression();
+		LLParsingTableType table{ grammar };
+		LLParserGeneratorType parserGenerator{ grammar, startSym };
+
+		LLParserType parser{ startSym, table, lexicalAnal_parser };
 
 		// parse entered source
 		try {
 			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
-			prodVec.calculateFIRST();
-			prodVec.calculateFOLLOW();
+			grammar.calculateFIRST();
+			grammar.calculateFOLLOW();
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";

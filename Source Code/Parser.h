@@ -8,8 +8,8 @@ namespace m0st4fa {
 	// Parser class
 
 	// TODO: work on this concept
-	template <typename ParsingTableT, typename SymbolT, typename TokenT>
-	concept ParserRequirments = requires (SymbolT gramSym, TokenT token, ParsingTableT table) {
+	template <typename ParsingTableT>
+	concept ParserRequirments = requires (ParsingTableT table) {
 		//require the parsing table to be callable
 		//table[EXTRACT_VARIABLE(gramSym)][EXTRACT_TERMINAL(token)];
 
@@ -24,29 +24,32 @@ namespace m0st4fa {
 	/**
 	* @input Input buffer w (managed by the lexical analyzer) and parsing table M for grammer G.
 	*/
-	template <typename SymbolT, typename TokenT, 
+	template <typename LexicalAnalyzerT,
+		typename SymbolT,
 		typename ParsingTableT, typename FSMTableT = FSMTable<>, // set them to have a default value
 		typename InputT = std::string>
-		requires ParserRequirments<ParsingTableT, SymbolT, TokenT>
+		requires ParserRequirments<ParsingTableT>
 	class Parser {
-		LexicalAnalyzer<TokenT, FSMTableT> m_LexicalAnalyzer;
+		using TokenType = decltype(LexicalAnalyzerT{}.getNextToken());
+
+		LexicalAnalyzerT m_LexicalAnalyzer;
 		SymbolT m_StartSymbol;
 
 	protected:
-		ParsingTableT m_Table;
+		mutable ParsingTableT m_Table;
 		Logger m_Logger;
 
 		// set the maximum number of errors that you recover from
 		static constexpr size_t ERR_RECOVERY_LIMIT = 5;
 
-		LexicalAnalyzer<TokenT, FSMTableT>& getLexicalAnalyzer() { return m_LexicalAnalyzer; }
+		LexicalAnalyzerT& getLexicalAnalyzer() { return m_LexicalAnalyzer; }
 		SymbolT getStartSymbol() { return m_StartSymbol; }
 
 	public:
 
 		Parser() = default;
 		Parser(
-			const LexicalAnalyzer<TokenT, FSMTableT>& lexer, 
+			const LexicalAnalyzerT& lexer, 
 			const ParsingTableT& parsingTable, 
 			const SymbolT& startSymbol) :
 			m_LexicalAnalyzer{ lexer }, m_Table{ parsingTable }, m_StartSymbol{ startSymbol }

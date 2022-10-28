@@ -15,11 +15,14 @@ namespace m0st4fa {
 	template <typename SymbolT>
 	class GrammaticalSymbolString;
 
+	// TODO: REFACTOR ProductionRecord SO THAT IT WORKS WITH BOTH LL AND LR PARSING
+	// Make it does not depend on StackElement (one way is to remove StackElementType and to put the type of ProductionElement as a constant within it itself).
+
 	// Production
-	template <typename SymbolT, typename SynthesizedT, typename ActionT>
+	template <typename SymbolT, typename ProductionElementT>
 	class ProductionRecord {
-		using StackElemType = StackElement<SymbolT, SynthesizedT, ActionT>;
-		using Stack = Stack<StackElemType>;
+		using ProdElementType = ProductionElementT;
+		using Stack = LLStackType<ProdElementType>;
 		using SymbolString = GrammaticalSymbolString<SymbolT>;
 
 		Logger m_Logger;
@@ -32,10 +35,10 @@ namespace m0st4fa {
 		// TODO: demand that the prodHead be a non-terminal
 		SymbolT prodHead = SymbolT{};
 		// TODO: demand that the body of the procedure be non-empty
-		std::vector<StackElemType> prodBody;
+		std::vector<ProdElementType> prodBody;
 
 		ProductionRecord() = default;
-		ProductionRecord(const SymbolT& head, const std::vector<StackElemType>& body) : prodHead{ head }, prodBody{ body } {
+		ProductionRecord(const SymbolT& head, const std::vector<ProdElementType>& body) : prodHead{ head }, prodBody{ body } {
 
 			// the head must be a non-terminal
 			if (head.isTerminal) {
@@ -51,9 +54,9 @@ namespace m0st4fa {
 				throw std::logic_error("The body of a production cannot be empty.");
 			}
 
-			this->m_Size = std::count_if(prodBody.begin(), prodBody.end(), [this](const StackElemType& stackElement) {
+			this->m_Size = std::count_if(prodBody.begin(), prodBody.end(), [this](const ProdElementType& prodElement) {
 				// count an element only if it is a grammar symbol
-				return stackElement.type == StackElementType::SET_GRAM_SYMBOL;
+				return prodElement.type == ProductionElementT::SET_GRAM_SYMBOL;
 				});
 
 		}
@@ -83,13 +86,13 @@ namespace m0st4fa {
 		}
 		auto begin() const { return this->prodBody.begin(); }
 		auto end()   const { return this->prodBody.end(); }
-		StackElemType& at(size_t index) {
+		ProdElementType& at(size_t index) {
 			return this->prodBody.at(index);
 		}
-		const StackElemType& at(size_t index) const {
+		const ProdElementType& at(size_t index) const {
 			return this->prodBody.at(index);
 		}
-		StackElemType get(size_t index) const {
+		ProdElementType get(size_t index) const {
 			return this->at(index);
 		}
 
@@ -98,20 +101,20 @@ namespace m0st4fa {
 			std::string str = this->prodHead.toString() + " ->";
 
 			// body
-			for (const StackElemType& symbol : this->prodBody)
-				str += " " + (std::string)symbol;
+			for (const ProductionElementT& prodElement : this->prodBody)
+				str += " " + (std::string)prodElement;
 
 			return str;
 		}
 		SymbolString toSymbolString() const {
 			SymbolString string{};
 
-			for (const StackElemType& se : this->prodBody) {
+			for (const ProductionElementT& pe : this->prodBody) {
 
-				if (se.type != StackElementType::SET_GRAM_SYMBOL)
+				if (pe.type != ProductionElementT::SET_GRAM_SYMBOL)
 					continue;
 
-				string.push_back(se.as.gramSymbol);
+				string.push_back(pe.as.gramSymbol);
 			}
 
 			return string;
@@ -126,13 +129,13 @@ namespace m0st4fa {
 
 		bool contains(const SymbolT& symbol) const {
 
-			for (const auto& stackElement : this->prodBody) {
+			for (const auto& prodElement : this->prodBody) {
 
-				if (stackElement.type != StackElementType::SET_GRAM_SYMBOL)
+				if (prodElement.type != ProductionElementT::SET_GRAM_SYMBOL)
 					continue;
 
 				// the stack element is a grammar symbol
-				if (stackElement.as.gramSymbol == symbol)
+				if (prodElement.as.gramSymbol == symbol)
 					return true;
 			}
 
@@ -146,8 +149,8 @@ namespace m0st4fa {
 
 	};
 
-	template <typename SymbolT, typename SynthesizedT, typename ActionT>
-	std::ostream& operator<<(std::ostream& os, const ProductionRecord<SymbolT, SynthesizedT, ActionT>& prod) {
+	template <typename SymbolT, typename ProductionElementT>
+	std::ostream& operator<<(std::ostream& os, const ProductionRecord<SymbolT, ProductionElementT>& prod) {
 
 		return std::cout << prod.toString() << "\n";
 	};

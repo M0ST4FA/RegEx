@@ -136,12 +136,12 @@ export struct ActData {
 	}
 };
 
-using StackElementType = m0st4fa::StackElement<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
-using Stack = m0st4fa::Stack<StackElementType>;
+using StackElementType = m0st4fa::LLStackElement<Symbol, m0st4fa::SynthesizedRecord<SynData>, m0st4fa::ActionRecord<ActData>>;
+using Stack = m0st4fa::LLStackType<StackElementType>;
 
 export using Synthesized = m0st4fa::SynthesizedRecord<SynData>;
 export using Action = m0st4fa::ActionRecord<ActData>;
-export using ProductionType = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
+export using ProductionType = m0st4fa::ProductionRecord<Symbol, StackElementType>;
 using GrammarType = m0st4fa::ProductionVector<ProductionType>;
 
 export GrammarType grammer_expression();

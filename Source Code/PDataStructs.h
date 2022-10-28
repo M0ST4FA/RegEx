@@ -14,6 +14,10 @@ namespace m0st4fa {
 
 	};
 
-	
+	template<typename ...Args>
+	struct LRParserState {
+		size_t state = SIZE_MAX;
+		void(*action)(Args...) = nullptr;
+	};
 	
 }

@@ -9,8 +9,10 @@
 #define EXTRACT_TERMINAL(stackElement) (size_t)stackElement.as.gramSymbol.as.terminal
 #define EXTRACT_VARIABLE(stackElement) (size_t)stackElement.as.gramSymbol.as.nonTerminal
 
+// LL PARSING
 namespace m0st4fa {
 	
+
 	// FORWARD DECLARATIONS
 	template <typename DataT>
 		requires requires (DataT data) { std::string(data); data == data; }
@@ -29,8 +31,15 @@ namespace m0st4fa {
 		typename ActionT
 	>
 		requires StackElementConstraints<SymbolT, SynthesizedT, ActionT>
-	struct StackElement {
+	struct LLStackElement {
 
+		enum StackElementType {
+			SET_GRAM_SYMBOL,
+			SET_SYNTH_RECORD,
+			SET_ACTION_RECORD,
+			SET_COUNT
+		};
+		
 		StackElementType type;
 
 		// TODO: try enhance this
@@ -40,7 +49,7 @@ namespace m0st4fa {
 			ActionT actRecord;
 		} as;
 
-		StackElement& operator=(const StackElement& other) {
+		LLStackElement& operator=(const LLStackElement& other) {
 			type = other.type;
 			switch (type) {
 
@@ -59,7 +68,7 @@ namespace m0st4fa {
 
 			return *this;
 		}
-		bool operator==(const StackElement& other) const {
+		bool operator==(const LLStackElement& other) const {
 
 			if (this->type != other.type)
 				return false;
@@ -106,8 +115,42 @@ namespace m0st4fa {
 
 	};
 
+	template <
+		typename SymbolT,
+		typename SynthesizedT,
+		typename ActionT
+	>
+	std::string stringfy(
+		typename LLStackElement<SymbolT, SynthesizedT, ActionT>::StackElementType type) 
+	{
+		using StackElementType = LLStackElement<SymbolT, SynthesizedT, ActionT>::StackElementType;
+
+		static_assert(StackElementType::SET_COUNT == 3);
+		static constexpr const char* const names[] = {
+			"GRAM_SYMBOL",
+			"SYNTH_RECORD",
+			"ACTION_RECORD",
+		};
+
+
+		const char* name = type == StackElementType::SET_COUNT ?
+			std::to_string((unsigned)StackElementType::SET_COUNT).data() : names[static_cast<int>(type)];
+
+		return name;
+	};
+
+	template <
+		typename SymbolT,
+		typename SynthesizedT,
+		typename ActionT
+	>
+	std::ostream& operator<<(std::ostream& os, 
+		typename LLStackElement<SymbolT, SynthesizedT, ActionT>::StackElementType type) {
+		return os << stringfy(type);
+	};
+
 	template <typename StackElementT>
-	using Stack = std::vector<StackElementT>;
+	using LLStackType = std::vector<StackElementT>;
 
 	/**
 	* @brief A simple base class for synthesized records from which you can derive more complex classes.
@@ -139,8 +182,6 @@ namespace m0st4fa {
 
 	};
 
-
-
 	/**
 	* @brief A simple base class for action records from which you can derive more complex classes.
 	*/
@@ -170,5 +211,13 @@ namespace m0st4fa {
 		}
 
 	};
+
+}
+
+// LR PARSING 
+namespace m0st4fa {
+
+
+
 
 }

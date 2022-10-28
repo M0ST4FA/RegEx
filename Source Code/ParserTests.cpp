@@ -35,30 +35,30 @@ void actDataAct(Stack& stack, ActData& data) {
 }
 
 GrammarType grammer_expression() {
-	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
-	using StackElement = m0st4fa::StackElement< Symbol, Synthesized, Action>;
+	using StackElement = m0st4fa::LLStackElement<Symbol, Synthesized, Action>;
+	using Production = m0st4fa::ProductionRecord<Symbol, StackElement>;
 
 
 	std::vector<Production> result;
 
 	Production prod;
-	StackElement se_E = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} } };
-	StackElement se_EP = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} } };
-	StackElement se_T = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} } };
-	StackElement se_TP = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} } };
-	StackElement se_F = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} } };
+	StackElement se_E = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} } };
+	StackElement se_EP = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} } };
+	StackElement se_T = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} } };
+	StackElement se_TP = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} } };
+	StackElement se_F = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} } };
 
-	StackElement se_ID = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_ID}} } };
-	StackElement se_PLUS = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_PLUS}} } };
-	StackElement se_STAR = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_STAR}} } };
-	StackElement se_LP = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} } };
-	StackElement se_RP = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} } };
-	StackElement se_EPS = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} } };
-	StackElement se_EOF = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EOF}} } };
+	StackElement se_ID = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_ID}} } };
+	StackElement se_PLUS = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_PLUS}} } };
+	StackElement se_STAR = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_STAR}} } };
+	StackElement se_LP = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} } };
+	StackElement se_RP = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} } };
+	StackElement se_EPS = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} } };
+	StackElement se_EOF = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EOF}} } };
 
 
-	StackElement se_Syn = { .type = m0st4fa::StackElementType::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::SynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
-	StackElement se_Act = { .type = m0st4fa::StackElementType::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::ActionRecord<ActData> {.action
+	StackElement se_Syn = { .type = StackElement::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::SynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
+	StackElement se_Act = { .type = StackElement::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::ActionRecord<ActData> {.action
 		= (void*)actDataAct}} };
 
 	// E -> T E'
@@ -121,26 +121,26 @@ GrammarType grammer_expression() {
 
 m0st4fa::ProductionVector<ProductionType> grammar_expression_LR()
 {
-	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
-	using StackElement = m0st4fa::StackElement< Symbol, Synthesized, Action>;
+	using StackElement = m0st4fa::LLStackElement< Symbol, Synthesized, Action>;
+	using Production = m0st4fa::ProductionRecord<Symbol, StackElement>;
 
 	m0st4fa::ProductionVector<Production> result;
 
 	Production prod;
-	StackElement se_E = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} } };
-	StackElement se_T = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} } };
-	StackElement se_F = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} } };
+	StackElement se_E = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} } };
+	StackElement se_T = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} } };
+	StackElement se_F = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} } };
 
-	StackElement se_ID = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_ID}} } };
-	StackElement se_PLUS = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_PLUS}} } };
-	StackElement se_STAR = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_STAR}} } };
-	StackElement se_LP = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} } };
-	StackElement se_RP = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} } };
-	StackElement se_EPS = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} } };
-	StackElement se_EOF = { .type = m0st4fa::StackElementType::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EOF}} } };
+	StackElement se_ID = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_ID}} } };
+	StackElement se_PLUS = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_PLUS}} } };
+	StackElement se_STAR = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_STAR}} } };
+	StackElement se_LP = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} } };
+	StackElement se_RP = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} } };
+	StackElement se_EPS = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} } };
+	StackElement se_EOF = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EOF}} } };
 
-	StackElement se_Syn = { .type = m0st4fa::StackElementType::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::SynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
-	StackElement se_Act = { .type = m0st4fa::StackElementType::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::ActionRecord<ActData> {.action
+	StackElement se_Syn = { .type = StackElement::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::SynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
+	StackElement se_Act = { .type = StackElement::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::ActionRecord<ActData> {.action
 		= (void*)actDataAct}} };
 
 	// E -> E + T
@@ -192,25 +192,25 @@ m0st4fa::ProductionVector<ProductionType> grammar_expression_LR()
 
 void define_table_llparser(m0st4fa::LLParsingTable<GrammarType>& table)
 {
-	using Production = m0st4fa::ProductionRecord<Symbol, Synthesized, Action>;
-	using StackElement = m0st4fa::StackElement<Symbol, Synthesized, Action>;
+	using StackElement = m0st4fa::LLStackElement<Symbol, Synthesized, Action>;
+	using Production = m0st4fa::ProductionRecord<Symbol, StackElement>;
 
 	GrammarType grammer = grammer_expression();
 
 	Production prod;
-	StackElement se_E = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
-	StackElement se_EP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
-	StackElement se_T = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
-	StackElement se_TP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
-	StackElement se_F = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
+	StackElement se_E = { StackElement::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
+	StackElement se_EP = { StackElement::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
+	StackElement se_T = { StackElement::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
+	StackElement se_TP = { StackElement::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
+	StackElement se_F = { StackElement::SET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
 
-	StackElement se_ID = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_ID}} };
-	StackElement se_PLUS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_PLUS}} };
-	StackElement se_STAR = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_STAR}} };
-	StackElement se_LP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
-	StackElement se_RP = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
-	StackElement se_EPS = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} };
-	StackElement se_EOF = { m0st4fa::StackElementType::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EOF}} };
+	StackElement se_ID = { StackElement::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_ID}} };
+	StackElement se_PLUS = { StackElement::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_PLUS}} };
+	StackElement se_STAR = { StackElement::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_STAR}} };
+	StackElement se_LP = { StackElement::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
+	StackElement se_RP = { StackElement::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
+	StackElement se_EPS = { StackElement::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} };
+	StackElement se_EOF = { StackElement::SET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EOF}} };
 
 	auto token_id = Token{ _TERMINAL::T_ID, "id" };
 

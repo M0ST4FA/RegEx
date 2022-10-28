@@ -6,6 +6,7 @@
 #include "regex.h"
 #include "DFA.h"
 #include "LLParser.hpp"
+#include "LRParser.hpp"
 #include "LLPGenerator.h"
 #include "LexicalAnalyzer.h"
 
@@ -35,7 +36,7 @@ using LLParsingTableType = m0st4fa::LLParsingTable<GrammarType>;
 using LLParserGeneratorType = m0st4fa::LLParserGenerator<GrammarType, LLParsingTableType>;
 
 // #defines
-#define TEST_LR_PARSER
+#define TEST_LL_PARSER
 #define ANSI_ESC "\u001b"
 
 #ifdef TEST_REGEX
@@ -56,6 +57,93 @@ int main(void) {
 	return 0;
 }
 #elif defined TEST_LR_PARSER 
+
+int main(int argc, char** argv) {
+
+	FSMTable<> fsmTable{};
+	initFSMTable_parser(fsmTable);
+
+	TransitionFunction<FSMTable<>> tf_parser{ fsmTable };
+
+	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
+
+	// if no arguments are passed
+	if (argc < 2)
+		while (true) {
+			std::string src;
+			std::cout << ANSI_ESC"[36m""Enter the source code to be parsed : " ANSI_ESC"[0m";
+			std::getline(std::cin, src);
+			std::cout << "\n";
+
+			if (src == "q" || src == "Q")
+				return 0;
+
+			LexicalAnalyzerType lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+
+			auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+
+			// LR GRAMMAR
+			auto grammarLR = grammar_expression_LR();
+			std::cout << grammarLR.at(0);
+			const LLParserGeneratorType LRParserGenerator{ grammarLR, startSym };
+
+			// ITEM
+			const Item item{ grammarLR.at(0), 1,
+				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) } };
+			const Item item2{ grammarLR.at(1), 1,
+				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
+			ItemSet itemSet{ item, item2 };
+			itemSet.insert({ grammarLR.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
+
+
+
+			// parse entered source
+			try {
+
+
+				//m0st4fa::LRParser<GrammarType, LexicalAnalyzerType, Symbol> parser{};
+
+				// LR GRAMMAR TESTS
+				grammarLR.calculateFIRST();
+				grammarLR.calculateFOLLOW();
+				std::cout << "TRYING CREATE PARSING TABLE FOR LR GRAMMAR:\n";
+				LRParserGenerator.generateLLParser();
+
+				// ITEM TESTS
+				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
+				std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
+				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
+
+			}
+			catch (std::exception& e) {
+				std::cout << "Exception : " << e.what() << "\n";
+			};
+		};
+
+	{
+
+		// get the source
+		std::string src = argv[1];
+
+		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+
+		// create parser object
+		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+
+		// parse entered source
+		try {
+		}
+		catch (std::exception& e) {
+			std::cout << "Exception : " << e.what() << "\n";
+		};
+
+	}
+
+	return 0;
+}
+
+
+#elif defined TEST_LL_PARSER 
 int main(int argc, char** argv) {
 
 	FSMTable<> fsmTable{};

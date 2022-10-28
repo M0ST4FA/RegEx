@@ -15,10 +15,10 @@ namespace m0st4fa {
 		typename InputT = std::string>
 	class LLParser : public Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT> {
 		using ProductionType = decltype(GrammarT{}.getProdVector().at(0));
-		using StackElemType = decltype(ProductionType{}.get(0));
-		using SynthesizedType = decltype(StackElemType{}.as.synRecord);
+		using StackElementType = decltype(ProductionType{}.get(0));
+		using SynthesizedType = decltype(StackElementType{}.as.synRecord);
 		using SynDataType = decltype(SynthesizedType{}.data);
-		using ActionType = decltype(StackElemType{}.as.actRecord);
+		using ActionType = decltype(StackElementType{}.as.actRecord);
 		using ActDataType = decltype(ActionType{}.data);
 		using ParserBase = Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>;
 		using TokenType = decltype(LexicalAnalyzerT{}.getNextToken());
@@ -26,14 +26,14 @@ namespace m0st4fa {
 
 		// a parsing table entry should contain indecies into this vector of productions
 		GrammarT& m_ProdRecords;
-		mutable std::vector<StackElemType> m_Stack;
-		mutable StackElemType m_CurrTopElement;
+		mutable std::vector<StackElementType> m_Stack;
+		mutable StackElementType m_CurrTopElement;
 		mutable TokenType m_CurrInputToken;
 		
 		// PARSER FUNCTIONS
 		void reset_parser_state(bool resetProductions = false) {
 			m_Stack.clear();
-			m_CurrTopElement = StackElemType{};
+			m_CurrTopElement = StackElementType{};
 			m_CurrInputToken = TokenType{};
 
 			if (resetProductions)
@@ -173,17 +173,15 @@ namespace m0st4fa {
 		typename InputT>
 	ParserResult LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::parse(ErrorRecoveryType errRecoveryType)
 	{
-		using StackType = std::vector<StackElemType>;
+		using StackType = std::vector<StackElementType>;
 
 		ParserResult res;
-		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
+		LoggerInfo info{ LoggerInfo::INFO };
 
 		// Initalize the algorithm, such that the parser is in the initial configuration
-		m_Stack.push_back({ .type = SET_GRAM_SYMBOL, .as = { .gramSymbol = this->getStartSymbol() } });
+		m_Stack.push_back({ .type = StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = this->getStartSymbol() } });
 
 		this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
-		SymbolT topSymbol{};
-		void(*topAction) = nullptr;
 
 		/** Basic algorithm:
 		* Loop until the stack is empty.
@@ -251,7 +249,7 @@ namespace m0st4fa {
 		typename InputT>
 	void LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::parse_grammar_symbol(ErrorRecoveryType errRecoveryType) {
 			
-		using StackElement = StackElemType;
+		using StackElement = StackElementType;
 
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 		const SymbolT topSymbol = m_CurrTopElement.as.gramSymbol;
@@ -322,7 +320,7 @@ namespace m0st4fa {
 	bool LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::panic_mode()
 	{
 
-		using Stack = Stack<StackElemType>;
+		using Stack = LLStackType<StackElementType>;
 
 		// get top stack element
 		auto currInputToken = this->m_CurrInputToken;
@@ -402,7 +400,7 @@ namespace m0st4fa {
 		typename InputT>
 	bool LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::panic_mode_try_sync_variable(TokenType& currInputToken) {
 
-		using Stack = Stack<StackElemType>;
+		using Stack = LLStackType<StackElementType>;
 
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 
@@ -423,7 +421,7 @@ namespace m0st4fa {
 
 			// push the body of the production on top of the stack
 			for (auto it = prodBody.rbegin(); it != prodBody.rend(); ++it) {
-				StackElemType se = *it;
+				StackElementType se = *it;
 				m_Stack.push_back(se);
 			};
 
@@ -453,7 +451,7 @@ namespace m0st4fa {
 
 			// if the entry has an action
 			if (tableEntry.action) {
-				auto action = static_cast<bool (*)(Stack, StackElemType, TokenType)>(tableEntry.action);
+				auto action = static_cast<bool (*)(Stack, StackElementType, TokenType)>(tableEntry.action);
 
 				// if the action results in a syncronization
 				if (action(m_Stack, m_CurrTopElement, currInputToken)) {

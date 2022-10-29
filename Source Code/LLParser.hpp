@@ -320,7 +320,7 @@ namespace m0st4fa {
 	bool LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::panic_mode()
 	{
 
-		using Stack = LLStackType<StackElementType>;
+		using StackType = StackType<StackElementType>;
 
 		// get top stack element
 		auto currInputToken = this->m_CurrInputToken;
@@ -400,7 +400,7 @@ namespace m0st4fa {
 		typename InputT>
 	bool LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::panic_mode_try_sync_variable(TokenType& currInputToken) {
 
-		using Stack = LLStackType<StackElementType>;
+		using StackType = StackType<StackElementType>;
 
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 
@@ -451,7 +451,7 @@ namespace m0st4fa {
 
 			// if the entry has an action
 			if (tableEntry.action) {
-				auto action = static_cast<bool (*)(Stack, StackElementType, TokenType)>(tableEntry.action);
+				auto action = static_cast<bool (*)(StackType, StackElementType, TokenType)>(tableEntry.action);
 
 				// if the action results in a syncronization
 				if (action(m_Stack, m_CurrTopElement, currInputToken)) {

@@ -25,8 +25,8 @@ using LexicalAnalyzerType = LexicalAnalyzer<Token<_TERMINAL>>;
 using Item = m0st4fa::Item<ProductionType>;
 using ItemSet = m0st4fa::ItemSet<Item>;
 
-using m0st4fa::ActionRecord;
-using m0st4fa::SynthesizedRecord;
+using m0st4fa::LLActionRecord;
+using m0st4fa::LLSynthesizedRecord;
 
 using GrammarType = m0st4fa::ProductionVector<ProductionType>;
 using FirstType = std::vector<std::set<Symbol>>;
@@ -34,6 +34,13 @@ using FirstType = std::vector<std::set<Symbol>>;
 using LLParserType = m0st4fa::LLParser <GrammarType, LexicalAnalyzerType, Symbol>;
 using LLParsingTableType = m0st4fa::LLParsingTable<GrammarType>;
 using LLParserGeneratorType = m0st4fa::LLParserGenerator<GrammarType, LLParsingTableType>;
+
+using LRStackType = m0st4fa::LRStackType;
+using m0st4fa::LRState;
+
+void stateAct(LRStackType& stack, LRState<size_t>& thisState) {
+	std::cout << "Hello world\n";
+}
 
 // #defines
 #define TEST_LL_PARSER
@@ -186,6 +193,11 @@ int main(int argc, char** argv) {
 			ItemSet itemSet{ item, item2 };
 			itemSet.insert({ grammar.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
 
+			// STATE
+			m0st4fa::LRState<size_t> state{0, 0, stateAct};
+			LRStackType stack = LRStackType{};
+			state(stack);
+
 			// parse entered source
 			try {
 
@@ -283,9 +295,9 @@ int main(int argc, char** argv) {
 
 		m0st4fa::LLParser <
 			Symbol, 
-			SynthesizedRecord<SynData>, 
+			LLSynthesizedRecord<SynData>, 
 			SynData,
-			ActionRecord<ActData>,
+			LLActionRecord<ActData>,
 			ActData,
 			Token<_TERMINAL>
 		> 
@@ -328,9 +340,9 @@ int main(int argc, char** argv) {
 
 		m0st4fa::LLParser <
 			Symbol,
-			SynthesizedRecord<SynData>,
+			LLSynthesizedRecord<SynData>,
 			SynData,
-			ActionRecord<ActData>,
+			LLActionRecord<ActData>,
 			ActData,
 			Token<_TERMINAL>
 		>

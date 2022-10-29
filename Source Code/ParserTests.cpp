@@ -12,12 +12,12 @@ module Tests;
 
 using m0st4fa::Token;
 
-void synDataAct(Stack& stack, SynData& data) {
+void synDataAct(StackType& stack, SynData& data) {
 	
 	std::cout << data.str << ", stack size: " << stack.size() + 1 << "\n\n";
 }
 
-void actDataAct(Stack& stack, ActData& data) {
+void actDataAct(StackType& stack, ActData& data) {
 
 	unsigned currIndex = stack.size() + 1;
 	unsigned actIndex = currIndex - 3;
@@ -57,8 +57,8 @@ GrammarType grammer_expression() {
 	StackElement se_EOF = { .type = StackElement::SET_GRAM_SYMBOL, .as = { .gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EOF}} } };
 
 
-	StackElement se_Syn = { .type = StackElement::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::SynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
-	StackElement se_Act = { .type = StackElement::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::ActionRecord<ActData> {.action
+	StackElement se_Syn = { .type = StackElement::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::LLSynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
+	StackElement se_Act = { .type = StackElement::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::LLActionRecord<ActData> {.action
 		= (void*)actDataAct}} };
 
 	// E -> T E'
@@ -139,8 +139,8 @@ m0st4fa::ProductionVector<ProductionType> grammar_expression_LR()
 	StackElement se_EPS = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} } };
 	StackElement se_EOF = { .type = StackElement::SET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {true, {.terminal = _TERMINAL::T_EOF}} } };
 
-	StackElement se_Syn = { .type = StackElement::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::SynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
-	StackElement se_Act = { .type = StackElement::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::ActionRecord<ActData> {.action
+	StackElement se_Syn = { .type = StackElement::SET_SYNTH_RECORD, .as {.synRecord = m0st4fa::LLSynthesizedRecord<SynData> {.action = (void*)synDataAct} } };
+	StackElement se_Act = { .type = StackElement::SET_ACTION_RECORD, .as {.actRecord = m0st4fa::LLActionRecord<ActData> {.action
 		= (void*)actDataAct}} };
 
 	// E -> E + T

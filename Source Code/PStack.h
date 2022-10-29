@@ -9,18 +9,25 @@
 #define EXTRACT_TERMINAL(stackElement) (size_t)stackElement.as.gramSymbol.as.terminal
 #define EXTRACT_VARIABLE(stackElement) (size_t)stackElement.as.gramSymbol.as.nonTerminal
 
+// SHARED (LL AND LR)
+namespace m0st4fa {
+
+	template <typename StackElementT>
+	using StackType = std::vector<StackElementT>;
+
+}
+
 // LL PARSING
 namespace m0st4fa {
-	
 
 	// FORWARD DECLARATIONS
 	template <typename DataT>
 		requires requires (DataT data) { std::string(data); data == data; }
-	struct SynthesizedRecord;
+	struct LLSynthesizedRecord;
 
 	template <typename DataT>
 		requires requires (DataT data) { std::string(data); data == data; }
-	struct ActionRecord;
+	struct LLActionRecord;
 
 	template <typename SymbolT, typename SynthesizedT, typename ActionT>
 	concept StackElementConstraints = requires (SymbolT sym1, SymbolT sym2) { sym1 = sym2; } && std::is_trivially_destructible_v<SynthesizedT> && std::is_trivially_destructible_v<ActionT>;
@@ -149,15 +156,12 @@ namespace m0st4fa {
 		return os << stringfy(type);
 	};
 
-	template <typename StackElementT>
-	using LLStackType = std::vector<StackElementT>;
-
 	/**
 	* @brief A simple base class for synthesized records from which you can derive more complex classes.
 	*/
 	template <typename DataT>
 		requires requires (DataT data) { std::string(data); data == data; }
-	struct SynthesizedRecord {
+	struct LLSynthesizedRecord {
 		DataT data;
 
 		/**
@@ -176,7 +180,7 @@ namespace m0st4fa {
 			return std::string(*this);
 		}
 
-		bool operator==(const SynthesizedRecord& other) const {
+		bool operator==(const LLSynthesizedRecord& other) const {
 			return this->action == other.action && this->data == other.data;
 		}
 
@@ -187,7 +191,7 @@ namespace m0st4fa {
 	*/
 	template <typename DataT>
 		requires requires (DataT data) { std::string(data); data == data; }
-	struct ActionRecord {
+	struct LLActionRecord {
 		DataT data;
 
 		/**
@@ -206,7 +210,7 @@ namespace m0st4fa {
 			return std::string(*this);
 		}
 
-		bool operator==(const ActionRecord& other) const {
+		bool operator==(const LLActionRecord& other) const {
 			return this->action == other.action && this->data == other.data;
 		}
 
@@ -217,7 +221,33 @@ namespace m0st4fa {
 // LR PARSING 
 namespace m0st4fa {
 
+	template<typename DataT>
+	struct LRState;
+	using lrstate_t = size_t;
+	using LRStackType = StackType<LRState<lrstate_t>>;
 
+	template<typename DataT>
+	struct LRState {
+		using ActionType = void(*)(LRStackType&, LRState&);
 
+		lrstate_t state = SIZE_MAX;
+		DataT data{};
+		ActionType action = nullptr;
 
+		void operator()(LRStackType& stack) {
+			action(stack, *this);
+		}
+		operator std::string() const {
+			return this->toString();
+		}
+		bool operator==(const LRState& rhs) {
+			return this->state == rhs.state && this->action == rhs.action && this->data == rhs.data;
+		}
+
+		std::string toString() const {
+			// TODO: IMPLEMENT THIS
+			return "";
+		}
+
+	};
 }

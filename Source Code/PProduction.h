@@ -22,8 +22,8 @@ namespace m0st4fa {
 	template <typename SymbolT, typename ProductionElementT>
 	class ProductionRecord {
 		using ProdElementType = ProductionElementT;
-		using Stack = LLStackType<ProdElementType>;
-		using SymbolString = GrammaticalSymbolString<SymbolT>;
+		using StackType = StackType<ProdElementType>;
+		using SymbolStringType = GrammaticalSymbolString<SymbolT>;
 
 		Logger m_Logger;
 		/**
@@ -32,13 +32,13 @@ namespace m0st4fa {
 		size_t m_Size = 0;
 
 	public:
-		// TODO: demand that the prodHead be a non-terminal
 		SymbolT prodHead = SymbolT{};
-		// TODO: demand that the body of the procedure be non-empty
 		std::vector<ProdElementType> prodBody;
+		// action (StackType&, LRState&)
+		void* postfixAction = nullptr;
 
 		ProductionRecord() = default;
-		ProductionRecord(const SymbolT& head, const std::vector<ProdElementType>& body) : prodHead{ head }, prodBody{ body } {
+		ProductionRecord(const SymbolT& head, const std::vector<ProdElementType>& body, void* postfixAct = nullptr) : prodHead{ head }, prodBody{ body }, postfixAction{ postfixAct } {
 
 			// the head must be a non-terminal
 			if (head.isTerminal) {
@@ -81,7 +81,7 @@ namespace m0st4fa {
 		operator std::string() const {
 			return this->toString();
 		}
-		operator SymbolString() const {
+		operator SymbolStringType() const {
 			return this->toSymbolString();
 		}
 		auto begin() const { return this->prodBody.begin(); }
@@ -106,8 +106,8 @@ namespace m0st4fa {
 
 			return str;
 		}
-		SymbolString toSymbolString() const {
-			SymbolString string{};
+		SymbolStringType toSymbolString() const {
+			SymbolStringType string{};
 
 			for (const ProductionElementT& pe : this->prodBody) {
 

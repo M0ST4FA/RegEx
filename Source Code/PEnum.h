@@ -30,13 +30,15 @@ namespace m0st4fa {
 	std::ostream& operator<<(std::ostream&, ErrorRecoveryType);
 
 	// Parser Stack
-	enum StackElementType {
-		SET_GRAM_SYMBOL,
-		SET_SYNTH_RECORD,
-		SET_ACTION_RECORD,
-		SET_COUNT
+	enum class ProdElementType {
+		PET_GRAM_SYMBOL,
+		PET_SYNTH_RECORD,
+		PET_ACTION_RECORD,
+		PET_COUNT
 	};
-	std::string stringfy(StackElementType);
-	std::ostream& operator<<(std::ostream&, StackElementType);
+	std::string stringfy(ProdElementType);
+	std::ostream& operator<<(std::ostream&, ProdElementType);
+
+
 
 }

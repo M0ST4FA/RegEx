@@ -183,7 +183,6 @@ int main(int argc, char** argv) {
 			// LR GRAMMAR
 			auto grammarLR = grammar_expression_LR();
 			std::cout << grammar.at(0);
-			const LLParserGeneratorType LRParserGenerator{ grammarLR, startSym };
 
 			// ITEM
 			const Item item{ grammar.at(0), 2,
@@ -194,9 +193,7 @@ int main(int argc, char** argv) {
 			itemSet.insert({ grammar.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
 
 			// STATE
-			m0st4fa::LRState<size_t> state{0, 0, stateAct};
-			LRStackType stack = LRStackType{};
-			state(stack);
+			m0st4fa::LRState<size_t> state{0, 0};
 
 			// parse entered source
 			try {
@@ -211,7 +208,6 @@ int main(int argc, char** argv) {
 				grammarLR.calculateFIRST();
 				grammarLR.calculateFOLLOW();
 				std::cout << "TRYING CREATE PARSING TABLE FOR LR GRAMMAR:\n";
-				LRParserGenerator.generateLLParser();
 
 				// ITEM TESTS
 				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
@@ -219,7 +215,6 @@ int main(int argc, char** argv) {
 				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
 				itemSet.CLOSURE(grammar);
 				itemSet.GOTO(toSymbol(_TERMINAL::T_PLUS), grammar);
-
 				
 			}
 			catch (std::exception& e) {

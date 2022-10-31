@@ -43,7 +43,7 @@ namespace m0st4fa {
 			const auto& prodBody = this->production.prodBody;
 			size_t psize = std::count_if(
 				prodBody.begin(), prodBody.end(), 
-				[](const auto& element) {return element.type == StackElementType::SET_GRAM_SYMBOL; }
+				[](const auto& element) {return element.type == ProdElementType::PET_GRAM_SYMBOL; }
 			);
 
 			// check that the dot position is within range
@@ -55,7 +55,7 @@ namespace m0st4fa {
 			pos_t encountered = 0;
 			while (encountered != this->dotPos) {
 
-				bool isSymbol = this->production.prodBody.at(this->m_ActualDotPos).type == StackElementType::SET_GRAM_SYMBOL;
+				bool isSymbol = this->production.prodBody.at(this->m_ActualDotPos).type == ProdElementType::PET_GRAM_SYMBOL;
 
 				if (isSymbol)
 					encountered++;
@@ -87,7 +87,7 @@ namespace m0st4fa {
 			for (size_t i = 0; const auto& element : this->production.prodBody) {
 
 				// skip non-grammar-symbol objects
-				if (element.type != StackElementType::SET_GRAM_SYMBOL) {
+				if (element.type != ProdElementType::PET_GRAM_SYMBOL) {
 					msg += " " + (std::string)element;
 					continue;
 				}
@@ -457,7 +457,7 @@ namespace m0st4fa {
 			else // it is LR(1)
 			{
 				auto predIsGramSymbol = [](const auto& stackElement) {
-					return stackElement.type == StackElementType::SET_GRAM_SYMBOL;
+					return stackElement.type == ProdElementType::PET_GRAM_SYMBOL;
 				};
 
 				// calculate the lookaheads

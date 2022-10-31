@@ -39,15 +39,8 @@ namespace m0st4fa {
 	>
 		requires StackElementConstraints<SymbolT, SynthesizedT, ActionT>
 	struct LLStackElement {
-
-		enum StackElementType {
-			SET_GRAM_SYMBOL,
-			SET_SYNTH_RECORD,
-			SET_ACTION_RECORD,
-			SET_COUNT
-		};
 		
-		StackElementType type;
+		ProdElementType type;
 
 		// TODO: try enhance this
 		struct {
@@ -60,15 +53,15 @@ namespace m0st4fa {
 			type = other.type;
 			switch (type) {
 
-			case SET_GRAM_SYMBOL:
+			case ProdElementType::PET_GRAM_SYMBOL:
 				as.gramSymbol = other.as.gramSymbol;
 				break;
 
-			case SET_SYNTH_RECORD:
+			case ProdElementType::PET_SYNTH_RECORD:
 				as.synRecord = other.as.synRecord;
 				break;
 
-			case SET_ACTION_RECORD:
+			case ProdElementType::PET_ACTION_RECORD:
 				as.actRecord = other.as.actRecord;
 				break;
 			}
@@ -82,13 +75,13 @@ namespace m0st4fa {
 
 			switch (type) {
 
-			case SET_GRAM_SYMBOL:
+			case ProdElementType::PET_GRAM_SYMBOL:
 				return as.gramSymbol == other.as.gramSymbol;
 
-			case SET_SYNTH_RECORD:
+			case ProdElementType::PET_SYNTH_RECORD:
 				return as.synRecord == other.as.synRecord;
 
-			case SET_ACTION_RECORD:
+			case ProdElementType::PET_ACTION_RECORD:
 				return as.actRecord == other.as.actRecord;
 
 			}
@@ -101,17 +94,17 @@ namespace m0st4fa {
 		}
 
 		std::string toString() const {
-			static_assert(StackElementType::SET_COUNT == 3);
+			static_assert((size_t)ProdElementType::PET_COUNT == 3);
 
 			switch (this->type) {
-			case SET_GRAM_SYMBOL:
+			case ProdElementType::PET_GRAM_SYMBOL:
 				return this->as.gramSymbol.toString();
 
-			case SET_SYNTH_RECORD:
+			case ProdElementType::PET_SYNTH_RECORD:
 				return this->as.synRecord.toString();
 				
 
-			case SET_ACTION_RECORD:
+			case ProdElementType::PET_ACTION_RECORD:
 				return this->as.actRecord.toString();
 				
 			default:
@@ -226,22 +219,37 @@ namespace m0st4fa {
 	using lrstate_t = size_t;
 	using LRStackType = StackType<LRState<lrstate_t>>;
 
+	template<typename SymbolT>
+	struct LRProductionElement {
+		union {
+			SymbolT gramSymbol;
+		} as;
+		ProdElementType type = ProdElementType::PET_GRAM_SYMBOL;
+
+		LRProductionElement() = default;
+		LRProductionElement(const LRProductionElement&) = default;
+		LRProductionElement(const SymbolT& symbol) : as{ symbol } {};
+
+		operator std::string() const {
+			return this->toString();
+		};
+		std::string toString() const {
+			return this->as.gramSymbol.toString();
+		}
+	};
+
 	template<typename DataT>
 	struct LRState {
 		using ActionType = void(*)(LRStackType&, LRState&);
 
 		lrstate_t state = SIZE_MAX;
 		DataT data{};
-		ActionType action = nullptr;
 
-		void operator()(LRStackType& stack) {
-			action(stack, *this);
-		}
 		operator std::string() const {
 			return this->toString();
 		}
 		bool operator==(const LRState& rhs) {
-			return this->state == rhs.state && this->action == rhs.action && this->data == rhs.data;
+			return this->state == rhs.state && this->data == rhs.data;
 		}
 
 		std::string toString() const {

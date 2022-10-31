@@ -90,16 +90,23 @@ namespace m0st4fa {
 	struct LRParsingTable {
 		static constexpr const size_t VariableCount = (size_t)VariableT::NT_COUNT;
 		static constexpr const size_t TerminalCount = (size_t)TerminalT::T_COUNT;
+		using ActionArrayType = std::array<LRTableEntry, TerminalCount>;
+		using GotoArrayType = std::array<LRTableEntry, VariableCount>;
 
 		GrammarT grammar;
-		std::vector<std::array<LRTableEntry, TerminalCount>> actionTable;
-		std::vector<std::array<LRTableEntry, VariableCount>> gotoTable;
+		std::vector<ActionArrayType> actionTable;
+		std::vector<GotoArrayType> gotoTable;
 
-		auto& operator[](VariableT index) {
-			return this->gotoTable[(size_t)index];
-		}
-		auto& operator[](TerminalT index) {
-			return this->actionTable[(size_t)index];
+		LRTableEntry& atAction(size_t state, TerminalT terminal) {
+			return this->actionTable[state][(size_t)terminal];
+		};
+		LRTableEntry& atGoto(size_t state, VariableT nonTerminal) {
+			return this->gotoTable[state][(size_t)nonTerminal];
+		};
+
+		void reserveRows(size_t newRowNum) {
+			this->actionTable.reserve(newRowNum);
+			this->gotoTable.reserve(newRowNum);
 		}
 
 	};

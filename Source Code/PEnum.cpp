@@ -39,10 +39,10 @@ namespace m0st4fa {
 		return os << stringfy(type);
 	};
 	
-	std::string stringfy(StackElementType type) {
+	std::string stringfy(ProdElementType type) {
 
 
-		static_assert(StackElementType::SET_COUNT == 3);
+		static_assert((size_t)ProdElementType::PET_COUNT == 3);
 		static constexpr const char* const names[] = {
 			"GRAM_SYMBOL",
 			"SYNTH_RECORD",
@@ -50,12 +50,12 @@ namespace m0st4fa {
 		};
 		
 
-		const char* name = type == StackElementType::SET_COUNT ? 
-			std::to_string((unsigned)StackElementType::SET_COUNT).data() : names[static_cast<int>(type)];
+		const char* name = type == ProdElementType::PET_COUNT ? 
+			std::to_string((unsigned)ProdElementType::PET_COUNT).data() : names[static_cast<int>(type)];
 
 		return name;
 	}
-	std::ostream& operator<<(std::ostream& os, StackElementType type) {
+	std::ostream& operator<<(std::ostream& os, ProdElementType type) {
 		return os << stringfy(type);
 	};
 	

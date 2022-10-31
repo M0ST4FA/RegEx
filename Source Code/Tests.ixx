@@ -142,10 +142,12 @@ using StackType = m0st4fa::StackType<StackElementType>;
 export using Synthesized = m0st4fa::LLSynthesizedRecord<SynData>;
 export using Action = m0st4fa::LLActionRecord<ActData>;
 export using ProductionType = m0st4fa::ProductionRecord<Symbol, StackElementType>;
+export using LRProductionType = m0st4fa::ProductionRecord<Symbol, m0st4fa::LRProductionElement<Symbol>>;
 using GrammarType = m0st4fa::ProductionVector<ProductionType>;
+using LRGrammarType = m0st4fa::ProductionVector<LRProductionType>;
 
 export GrammarType grammer_expression();
-export GrammarType grammar_expression_LR();
+export LRGrammarType grammar_expression_LR();
 export void define_table_llparser(m0st4fa::LLParsingTable<GrammarType>&);
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);

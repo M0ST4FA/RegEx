@@ -179,7 +179,7 @@ namespace m0st4fa {
 		LoggerInfo info{ LoggerInfo::INFO };
 
 		// Initalize the algorithm, such that the parser is in the initial configuration
-		m_Stack.push_back({ .type = StackElementType::SET_GRAM_SYMBOL, .as = { .gramSymbol = this->getStartSymbol() } });
+		m_Stack.push_back({ .type = ProdElementType::PET_GRAM_SYMBOL, .as = { .gramSymbol = this->getStartSymbol() } });
 
 		this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
 
@@ -199,7 +199,7 @@ namespace m0st4fa {
 			// switch on the type of the top symbol
 
 			switch (m_CurrTopElement.type) {
-			case SET_GRAM_SYMBOL:
+			case ProdElementType::PET_GRAM_SYMBOL:
 				parse_grammar_symbol(errRecoveryType);
 				continue;
 
@@ -207,7 +207,7 @@ namespace m0st4fa {
 		* When you come to execute the action on a record, recall that the synthesized record is already poped off the stack.
 		* This affects the stack size as well as indecies you use to access other records.
 		*/
-			case SET_SYNTH_RECORD: {
+			case ProdElementType::PET_SYNTH_RECORD: {
 				// extract the record
 				SynthesizedType topRecord = m_CurrTopElement.as.synRecord;
 				auto action = static_cast<void(*)(StackType&, SynDataType&)>(topRecord.action);
@@ -218,7 +218,7 @@ namespace m0st4fa {
 				continue; 
 			}
 
-			case SET_ACTION_RECORD: {
+			case ProdElementType::PET_ACTION_RECORD: {
 				// extract the record
 				ActionType topRecord = m_CurrTopElement.as.actRecord;
 				auto action = static_cast<void(*)(StackType&, ActDataType&)>(topRecord.action);

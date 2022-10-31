@@ -21,8 +21,7 @@ namespace m0st4fa {
 	// Production
 	template <typename SymbolT, typename ProductionElementT>
 	class ProductionRecord {
-		using ProdElementType = ProductionElementT;
-		using StackType = StackType<ProdElementType>;
+		using StackType = StackType<ProductionElementT>;
 		using SymbolStringType = GrammaticalSymbolString<SymbolT>;
 
 		Logger m_Logger;
@@ -33,12 +32,12 @@ namespace m0st4fa {
 
 	public:
 		SymbolT prodHead = SymbolT{};
-		std::vector<ProdElementType> prodBody;
+		std::vector<ProductionElementT> prodBody;
 		// action (StackType&, LRState&)
 		void* postfixAction = nullptr;
 
 		ProductionRecord() = default;
-		ProductionRecord(const SymbolT& head, const std::vector<ProdElementType>& body, void* postfixAct = nullptr) : prodHead{ head }, prodBody{ body }, postfixAction{ postfixAct } {
+		ProductionRecord(const SymbolT& head, const std::vector<ProductionElementT>& body, void* postfixAct = nullptr) : prodHead{ head }, prodBody{ body }, postfixAction{ postfixAct } {
 
 			// the head must be a non-terminal
 			if (head.isTerminal) {
@@ -54,9 +53,9 @@ namespace m0st4fa {
 				throw std::logic_error("The body of a production cannot be empty.");
 			}
 
-			this->m_Size = std::count_if(prodBody.begin(), prodBody.end(), [this](const ProdElementType& prodElement) {
+			this->m_Size = std::count_if(prodBody.begin(), prodBody.end(), [this](const ProductionElementT& prodElement) {
 				// count an element only if it is a grammar symbol
-				return prodElement.type == ProductionElementT::SET_GRAM_SYMBOL;
+				return prodElement.type == ProdElementType::PET_GRAM_SYMBOL;
 				});
 
 		}
@@ -86,13 +85,13 @@ namespace m0st4fa {
 		}
 		auto begin() const { return this->prodBody.begin(); }
 		auto end()   const { return this->prodBody.end(); }
-		ProdElementType& at(size_t index) {
+		ProductionElementT& at(size_t index) {
 			return this->prodBody.at(index);
 		}
-		const ProdElementType& at(size_t index) const {
+		const ProductionElementT& at(size_t index) const {
 			return this->prodBody.at(index);
 		}
-		ProdElementType get(size_t index) const {
+		ProductionElementT get(size_t index) const {
 			return this->at(index);
 		}
 
@@ -111,7 +110,7 @@ namespace m0st4fa {
 
 			for (const ProductionElementT& pe : this->prodBody) {
 
-				if (pe.type != ProductionElementT::SET_GRAM_SYMBOL)
+				if (pe.type != ProdElementType::PET_GRAM_SYMBOL)
 					continue;
 
 				string.push_back(pe.as.gramSymbol);
@@ -131,7 +130,7 @@ namespace m0st4fa {
 
 			for (const auto& prodElement : this->prodBody) {
 
-				if (prodElement.type != ProductionElementT::SET_GRAM_SYMBOL)
+				if (prodElement.type != ProdElementType::PET_GRAM_SYMBOL)
 					continue;
 
 				// the stack element is a grammar symbol
@@ -494,7 +493,7 @@ namespace m0st4fa {
 				for (size_t index = 1; const auto & stackElement : prod.prodBody) {
 
 					// if the current stack element of the production is not a grammar symbol
-					if (stackElement.type != StackElementType::SET_GRAM_SYMBOL)
+					if (stackElement.type != ProdElementType::PET_GRAM_SYMBOL)
 						// move on to the next stack element of the production
 						continue;
 
@@ -764,7 +763,7 @@ namespace m0st4fa {
 		for (size_t varIndex = variableIndex + 1; varIndex < prodBdySz; varIndex++) {
 
 			// check if the current symbol we are examining in the production is a grammar symbol 
-			if (production.prodBody.at(varIndex).type != StackElementType::SET_GRAM_SYMBOL) {
+			if (production.prodBody.at(varIndex).type != ProdElementType::PET_GRAM_SYMBOL) {
 				// check if we are at the end of the production
 				bool atEnd = varIndex + 1 == prodBdySz;
 
@@ -898,7 +897,7 @@ namespace m0st4fa {
 				for (size_t symIndex = 0; const auto& stackElement : prod.prodBody) {
 
 					// if the current stack element of the production is not a grammar symbol
-					if (stackElement.type != StackElementType::SET_GRAM_SYMBOL) {
+					if (stackElement.type != ProdElementType::PET_GRAM_SYMBOL) {
 						// move on to the next stack element of the production
 						symIndex++;
 						continue;

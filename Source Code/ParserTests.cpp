@@ -13,12 +13,12 @@ module Tests;
 using m0st4fa::Token;
 using m0st4fa::ProdElementType;
 
-void synDataAct(StackType& stack, SynData& data) {
+void synDataAct(LLStackType& stack, SynData& data) {
 	
 	std::cout << data.str << ", stack size: " << stack.size() + 1 << "\n\n";
 }
 
-void actDataAct(StackType& stack, ActData& data) {
+void actDataAct(LLStackType& stack, ActData& data) {
 
 	unsigned currIndex = stack.size() + 1;
 	unsigned actIndex = currIndex - 3;
@@ -191,25 +191,25 @@ void define_table_llparser(m0st4fa::LLParsingTable<GrammarType>& table)
 	GrammarType grammer = grammer_expression();
 
 	Production prod;
-	StackElement se_E = {ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
-	StackElement se_EP = {ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
-	StackElement se_T = {ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
-	StackElement se_TP = {ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
-	StackElement se_F = {ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
+	StackElement se_E = { ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} };
+	StackElement se_EP = { ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_EP}} };
+	StackElement se_T = { ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_T}} };
+	StackElement se_TP = { ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_TP}} };
+	StackElement se_F = { ProdElementType::PET_GRAM_SYMBOL, Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_F}} };
 
-	StackElement se_ID = {ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_ID}} };
-	StackElement se_PLUS = {ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_PLUS}} };
-	StackElement se_STAR = {ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_STAR}} };
-	StackElement se_LP = {ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
-	StackElement se_RP = {ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
-	StackElement se_EPS = {ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} };
-	StackElement se_EOF = {ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EOF}} };
+	StackElement se_ID = { ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_ID}} };
+	StackElement se_PLUS = { ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_PLUS}} };
+	StackElement se_STAR = { ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_STAR}} };
+	StackElement se_LP = { ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_LEFT_PAREN}} };
+	StackElement se_RP = { ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_RIGHT_PAREN}} };
+	StackElement se_EPS = { ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EPSILON}} };
+	StackElement se_EOF = { ProdElementType::PET_GRAM_SYMBOL, Symbol {true, {.terminal = _TERMINAL::T_EOF}} };
 
 	auto token_id = Token{ _TERMINAL::T_ID, "id" };
 
-	table[EXTRACT_VARIABLE(se_E)][EXTRACT_TERMINAL(se_ID)] = {false, 0};
+	table[EXTRACT_VARIABLE(se_E)][EXTRACT_TERMINAL(se_ID)] = { false, 0 };
 	table[EXTRACT_VARIABLE(se_E)][EXTRACT_TERMINAL(se_LP)] = { false, 0 };
-	
+
 	table[EXTRACT_VARIABLE(se_EP)][EXTRACT_TERMINAL(se_PLUS)] = { false, 1 };
 
 	table[EXTRACT_VARIABLE(se_EP)][EXTRACT_TERMINAL(se_RP)] = { false, 6 };
@@ -223,10 +223,127 @@ void define_table_llparser(m0st4fa::LLParsingTable<GrammarType>& table)
 	table[EXTRACT_VARIABLE(se_TP)][EXTRACT_TERMINAL(se_PLUS)] = { false, 7 };
 	table[EXTRACT_VARIABLE(se_TP)][EXTRACT_TERMINAL(se_RP)] = { false, 7 };
 	table[EXTRACT_VARIABLE(se_TP)][EXTRACT_TERMINAL(se_EOF)] = { false, 7 };
-	
+
 	table[EXTRACT_VARIABLE(se_F)][EXTRACT_TERMINAL(se_ID)] = { false, 5 };
 	table[EXTRACT_VARIABLE(se_F)][EXTRACT_TERMINAL(se_LP)] = { false, 4 };
 
+};
+
+void define_table_lrparser(m0st4fa::LRParsingTable<LRGrammarType>& table)
+{
+	table.reserveRows(50);
+	using StackElementType = LRStateType;
+	using ProductionType = LRProductionType;
+	GrammarType grammer = grammer_expression();
+
+	// table[0][id] = s5
+	table.atAction(0, _TERMINAL::T_ID) = TE_SHIFT(5);
+
+	// table[0][(] = s4
+	table.atAction(0, _TERMINAL::T_LEFT_PAREN) = TE_SHIFT(4);
+
+	// table[1][+] = s6
+	table.atAction(1, _TERMINAL::T_PLUS) = TE_SHIFT(6);
+
+	// table[1][$] = acc
+	table.atAction(1, _TERMINAL::T_EOF) = TE_ACCEPT();
+
+	// table[2][+] = r2
+	table.atAction(2, _TERMINAL::T_PLUS) = TE_REDUCE(2);
+
+	// table[2][*] = s7
+	table.atAction(2, _TERMINAL::T_STAR) = TE_SHIFT(7);
+
+	// table[2][)/$] = r2
+	table.atAction(2, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(2);
+	table.atAction(2, _TERMINAL::T_EOF) = TE_REDUCE(2);
+
+	// table[3][+/*/)/$] = r4
+	table.atAction(3, _TERMINAL::T_PLUS) = TE_REDUCE(4);
+	table.atAction(3, _TERMINAL::T_STAR) = TE_REDUCE(4);
+	table.atAction(3, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(4);
+	table.atAction(3, _TERMINAL::T_EOF) = TE_REDUCE(4);
+
+	// table[4][id] = s5
+	table.atAction(4, _TERMINAL::T_ID) = TE_SHIFT(5);
+
+	// table[4][(] = s4
+	table.atAction(4, _TERMINAL::T_LEFT_PAREN) = TE_SHIFT(4);
+
+	// table[5][+/*/)/$] = r6
+	table.atAction(5, _TERMINAL::T_PLUS) = TE_REDUCE(6);
+	table.atAction(5, _TERMINAL::T_STAR) = TE_REDUCE(6);
+	table.atAction(5, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(6);
+	table.atAction(5, _TERMINAL::T_EOF) = TE_REDUCE(6);
+
+
+	// table[6][id] = s5
+	table.atAction(6, _TERMINAL::T_ID) = TE_SHIFT(5);
+
+	// table[6][(] = s4
+	table.atAction(6, _TERMINAL::T_LEFT_PAREN) = TE_SHIFT(4);
+
+
+	// table[7][id] = s5
+	table.atAction(7, _TERMINAL::T_ID) = TE_SHIFT(5);
+
+	// table[7][(] = s4
+	table.atAction(7, _TERMINAL::T_LEFT_PAREN) = TE_SHIFT(4);
+
+	// table[8][+] = s6
+	table.atAction(8, _TERMINAL::T_PLUS) = TE_SHIFT(6);
+
+	// table[8][)] = s11
+	table.atAction(8, _TERMINAL::T_RIGHT_PAREN) = TE_SHIFT(11);
+
+	// table[9][+] = r1
+	table.atAction(9, _TERMINAL::T_PLUS) = TE_REDUCE(1);
+
+	// table[9][*] = s7
+	table.atAction(9, _TERMINAL::T_STAR) = TE_SHIFT(7);
+
+	// table[9][)/$] = r1
+	table.atAction(9, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(1);
+	table.atAction(9, _TERMINAL::T_EOF) = TE_REDUCE(1);
+
+	// table[10][+/*/)/$] = r3
+	table.atAction(10, _TERMINAL::T_PLUS) = TE_REDUCE(3);
+	table.atAction(10, _TERMINAL::T_STAR) = TE_REDUCE(3);
+	table.atAction(10, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(3);
+	table.atAction(10, _TERMINAL::T_EOF) = TE_REDUCE(3);
+
+	// table[11][+/*/)/$] = r5
+	table.atAction(11, _TERMINAL::T_PLUS) = TE_REDUCE(5);
+	table.atAction(11, _TERMINAL::T_STAR) = TE_REDUCE(5);
+	table.atAction(11, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(5);
+	table.atAction(11, _TERMINAL::T_EOF) = TE_REDUCE(5);
+
+	// table[1][E] = 1
+	table.atGoto(1, _NON_TERMINAL::NT_E) = TE_GOTO(1);
+
+	// table[1][T] = 2
+	table.atGoto(1, _NON_TERMINAL::NT_T) = TE_GOTO(2);
+
+	// table[1][F] = 3
+	table.atGoto(1, _NON_TERMINAL::NT_F) = TE_GOTO(3);
+
+	// table[4][E] = 8
+	table.atGoto(4, _NON_TERMINAL::NT_E) = TE_GOTO(8);
+
+	// table[4][T] = 2
+	table.atGoto(4, _NON_TERMINAL::NT_T) = TE_GOTO(2);
+
+	// table[4][F] = 3
+	table.atGoto(4, _NON_TERMINAL::NT_F) = TE_GOTO(3);
+
+	// table[6][T] = 9
+	table.atGoto(6, _NON_TERMINAL::NT_T) = TE_GOTO(9);
+
+	// table[6][F] = 3
+	table.atGoto(6, _NON_TERMINAL::NT_F) = TE_GOTO(3);
+
+	// table[7][F] = 10
+	table.atGoto(7, _NON_TERMINAL::NT_F) = TE_GOTO(10);
 }
 
 void initFSMTable_parser(m0st4fa::FSMTable<>& table)

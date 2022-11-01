@@ -103,6 +103,9 @@ export bool operator<(const Symbol lhs,  const Symbol other) {
 }
 
 // IMPORTANT: these two data structures cause problems if they do not have trivial destructors.
+
+
+// LL PARSER DATA STRUCTURES
 export struct SynData {
 	const char* str = "[SynData] Hello world from Synthesized Data";
 
@@ -119,7 +122,6 @@ export struct SynData {
 	}
 
 };
-
 export struct ActData {
 	const char* str = "[ActData] Hello world from Action Data";
 
@@ -135,24 +137,37 @@ export struct ActData {
 		return not (std::strcmp(str, lhs.str));
 	}
 };
-
-using StackElementType = m0st4fa::LLStackElement<Symbol, m0st4fa::LLSynthesizedRecord<SynData>, m0st4fa::LLActionRecord<ActData>>;
-using StackType = m0st4fa::StackType<StackElementType>;
-
 export using Synthesized = m0st4fa::LLSynthesizedRecord<SynData>;
 export using Action = m0st4fa::LLActionRecord<ActData>;
-export using ProductionType = m0st4fa::ProductionRecord<Symbol, StackElementType>;
-export using LRProductionType = m0st4fa::ProductionRecord<Symbol, m0st4fa::LRProductionElement<Symbol>>;
-using GrammarType = m0st4fa::ProductionVector<ProductionType>;
-using LRGrammarType = m0st4fa::ProductionVector<LRProductionType>;
 
+using LLStackElementType = m0st4fa::LLStackElement<Symbol, m0st4fa::LLSynthesizedRecord<SynData>, m0st4fa::LLActionRecord<ActData>>;
+using LLStackType = m0st4fa::StackType<LLStackElementType>;
+
+export using ProductionType = m0st4fa::ProductionRecord<Symbol, LLStackElementType>;
+using GrammarType = m0st4fa::ProductionVector<ProductionType>;
+
+// LR PARSER DATA STRUCTURES
+export using LRProductionType = m0st4fa::ProductionRecord<Symbol, m0st4fa::LRProductionElement<Symbol>>;
+export using LRGrammarType = m0st4fa::ProductionVector<LRProductionType>;
+export using LRDataType = size_t;
+export using LRStateType = m0st4fa::LRParserState<LRDataType>;
+
+// FUNCTION SIGNATURES
+
+// LL PARSER FUNCTIONS
 export GrammarType grammer_expression();
-export LRGrammarType grammar_expression_LR();
 export void define_table_llparser(m0st4fa::LLParsingTable<GrammarType>&);
+
+// LR PARSER FUNCTIONS
+export LRGrammarType grammar_expression_LR();
+export void define_table_lrparser(m0st4fa::LRParsingTable<LRGrammarType>&);
+
+// FSM FOR PARSERS
 export void initFSMTable_parser(m0st4fa::FSMTable<>&);
 export m0st4fa::Token<_TERMINAL> token_fact_parser(m0st4fa::state_t, std::string);
 
-export void synDataAct(StackType&, SynData&);
+// ACTIONS
+export void synDataAct(LLStackType&, SynData&);
 
-export void actDataAct(StackType&, ActData&);
+export void actDataAct(LLStackType&, ActData&);
 

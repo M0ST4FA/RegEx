@@ -6,14 +6,15 @@
 namespace m0st4fa {
 
 	template <typename GrammarT, typename LexicalAnalyzerT,
-		typename SymbolT,
+		typename SymbolT, typename StateT,
 		// TODO: ADD A TEMPLATE PARAMETER FOR THE STACK ELEMENT TYPE (DataT or StaclElementT)
 		typename ParsingTableT, 
 		typename FSMTableT = FSMTable<>,
 		typename InputT = std::string>
 	class LRParser : public Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT> {
 		using ParserBase = Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>;
-		using StackElementType = LRParserState<>;
+		using StackElementType = StateT;
+		using DataType = decltype(StackElementType{}.data);
 		using ParserStackType = std::vector<StackElementType>;
 		using TokenType = decltype(LexicalAnalyzerT{}.getNextToken());
 
@@ -42,8 +43,8 @@ namespace m0st4fa {
 	
 	// IMPLEMENTATION
 	
-	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	inline void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::_reduce(StackElementType& state)
+	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
+	inline void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_reduce(StackElementType& state)
 	{
 		// get the production
 		const auto& production = this->m_Table.grammar.at(state.state);
@@ -73,8 +74,13 @@ namespace m0st4fa {
 		this->m_Stack.push_back(currState);
 	};
 
-	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	ParserResult LRParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::parse(ErrorRecoveryType errorRecoveryType)
+	template<typename GrammarT, typename LexicalAnalyzerT, typename		SymbolT, typename StateT, 
+		typename ParsingTableT, 
+		typename FSMTableT, typename InputT>
+	ParserResult LRParser<GrammarT, LexicalAnalyzerT, 
+		SymbolT, StateT, 
+		ParsingTableT, FSMTableT, InputT>::
+		parse(ErrorRecoveryType errorRecoveryType)
 	{
 		ParserResult result{};
 

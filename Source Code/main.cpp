@@ -22,8 +22,8 @@ using m0st4fa::LexicalAnalyzer;
 using m0st4fa::Token;
 using LexicalAnalyzerType = LexicalAnalyzer<Token<_TERMINAL>>;
 
-using Item = m0st4fa::Item<ProductionType>;
-using ItemSet = m0st4fa::ItemSet<Item>;
+using ItemType = m0st4fa::Item<LRProductionType>;
+using ItemSet = m0st4fa::ItemSet<ItemType>;
 
 using m0st4fa::LLActionRecord;
 using m0st4fa::LLSynthesizedRecord;
@@ -31,10 +31,12 @@ using m0st4fa::LLSynthesizedRecord;
 using GrammarType = m0st4fa::ProductionVector<ProductionType>;
 using FirstType = std::vector<std::set<Symbol>>;
 
-using LLParserType = m0st4fa::LLParser <GrammarType, LexicalAnalyzerType, Symbol>;
+using LLParserType = m0st4fa::LLParser<GrammarType, LexicalAnalyzerType, Symbol>;
 using LLParsingTableType = m0st4fa::LLParsingTable<GrammarType>;
 using LLParserGeneratorType = m0st4fa::LLParserGenerator<GrammarType, LLParsingTableType>;
 
+using LRParsingTableType = m0st4fa::LRParsingTable<LRGrammarType>;
+using LRparserType = m0st4fa::LRParser<GrammarType, LexicalAnalyzerType, Symbol, LRStateType, LRParsingTableType>;
 using LRStackType = m0st4fa::LRStackType;
 using m0st4fa::LRState;
 
@@ -43,7 +45,7 @@ void stateAct(LRStackType& stack, LRState<size_t>& thisState) {
 }
 
 // #defines
-#define TEST_LL_PARSER
+#define TEST_LR_PARSER
 #define ANSI_ESC "\u001b"
 
 #ifdef TEST_REGEX
@@ -92,19 +94,21 @@ int main(int argc, char** argv) {
 			// LR GRAMMAR
 			auto grammarLR = grammar_expression_LR();
 			std::cout << grammarLR.at(0);
-			const LLParserGeneratorType LRParserGenerator{ grammarLR, startSym };
+
 
 			// ITEM
-			const Item item{ grammarLR.at(0), 1,
+			const ItemType item{ grammarLR.at(0), 1,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) } };
-			const Item item2{ grammarLR.at(1), 1,
+			const ItemType item2{ grammarLR.at(1), 1,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
 			ItemSet itemSet{ item, item2 };
 			itemSet.insert({ grammarLR.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
 
+			LRParsingTableType LRParsingTable; 
+			define_table_lrparser(LRParsingTable);
 
+			// parse entered source+		grammarLR	{FIRST={ size=0 } FOLLOW={ size=0 } m_CalculatedFIRST=false ...}	m0st4fa::ProductionVector<m0st4fa::ProductionRecord<m0st4fa::GrammaticalSymbol<enum _TERMINAL,enum _NON_TERMINAL>,m0st4fa::LRProductionElement<m0st4fa::GrammaticalSymbol<enum _TERMINAL,enum _NON_TERMINAL>>>>
 
-			// parse entered source
 			try {
 
 
@@ -114,7 +118,6 @@ int main(int argc, char** argv) {
 				grammarLR.calculateFIRST();
 				grammarLR.calculateFOLLOW();
 				std::cout << "TRYING CREATE PARSING TABLE FOR LR GRAMMAR:\n";
-				LRParserGenerator.generateLLParser();
 
 				// ITEM TESTS
 				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
@@ -185,9 +188,9 @@ int main(int argc, char** argv) {
 			std::cout << grammar.at(0);
 
 			// ITEM
-			const Item item{ grammar.at(0), 2,
+			const ItemType item{ grammar.at(0), 2,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) } };
-			const Item item2{ grammar.at(1), 2,
+			const ItemType item2{ grammar.at(1), 2,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
 			ItemSet itemSet{ item, item2 };
 			itemSet.insert({ grammar.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });

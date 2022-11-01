@@ -233,9 +233,14 @@ namespace m0st4fa {
 		operator std::string() const {
 			return this->toString();
 		};
+		bool operator==(const LRProductionElement& rhs) const {
+			return this->type == rhs.type && this->as.gramSymbol == rhs.as.gramSymbol;
+		}
+
 		std::string toString() const {
 			return this->as.gramSymbol.toString();
 		}
+
 	};
 
 	template<typename DataT>

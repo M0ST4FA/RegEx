@@ -6,9 +6,8 @@
 #include "PStack.h"
 #include "PProduction.h"
 
+// LL PARSER
 namespace m0st4fa {
-
-	// LL TABLE
 
 	struct LLTableEntry {
 		bool isError = true;
@@ -38,10 +37,12 @@ namespace m0st4fa {
 		}
 
 	};
+}
 
+// LR PARSER
+namespace m0st4fa {
 
-	// LR TABLE
-
+	// LR TABLE ENTRY
 	enum class LRTableEntryType
 	{
 		TET_ACTION_SHIFT,
@@ -91,12 +92,14 @@ namespace m0st4fa {
 		}
 	};
 
+	// TABLE ENTRY MACROS
 #define TE_SHIFT(state) m0st4fa::LRTableEntry{false, m0st4fa::LRTableEntryType::TET_ACTION_SHIFT, state}
 #define TE_REDUCE(prodNum) m0st4fa::LRTableEntry{false, m0st4fa::LRTableEntryType::TET_ACTION_REDUCE, prodNum}
 #define TE_GOTO(state) m0st4fa::LRTableEntry{false, m0st4fa::LRTableEntryType::TET_GOTO, state}
 #define TE_ACCEPT() m0st4fa::LRTableEntry{false, m0st4fa::LRTableEntryType::TET_ACCEPT}
 #define TE_ERROR() m0st4fa::LRTableEntry{false, m0st4fa::LRTableEntryType::TET_ERROR}
 
+	// LR PARSING TABLE
 	template <typename GrammarT>
 	struct LRParsingTable {
 		using ProductionType = decltype(GrammarT{}.at(0));
@@ -112,6 +115,13 @@ namespace m0st4fa {
 		GrammarT grammar;
 		std::vector<ActionArrayType> actionTable;
 		std::vector<GotoArrayType> gotoTable;
+
+		LRParsingTable() = default;
+		LRParsingTable(const GrammarT& grammar,
+			const std::vector<ActionArrayType>& actionTable,
+			const std::vector<GotoArrayType>& gotoTable)
+			: grammar{ grammar }, actionTable{ actionTable }, gotoTable{ gotoTable }
+		{}
 
 		LRTableEntry& at(size_t state, SymbolType symbol) {
 			if (symbol.isTerminal)

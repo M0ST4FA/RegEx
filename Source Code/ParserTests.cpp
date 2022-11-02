@@ -234,7 +234,8 @@ void define_table_lrparser(m0st4fa::LRParsingTable<LRGrammarType>& table)
 	table.reserveRows(50);
 	using StackElementType = LRStateType;
 	using ProductionType = LRProductionType;
-	GrammarType grammer = grammer_expression();
+	LRGrammarType grammar = grammar_expression_LR();
+	table.grammar = grammar;
 
 	// table[0][id] = s5
 	table.atAction(0, _TERMINAL::T_ID) = TE_SHIFT(5);
@@ -249,20 +250,20 @@ void define_table_lrparser(m0st4fa::LRParsingTable<LRGrammarType>& table)
 	table.atAction(1, _TERMINAL::T_EOF) = TE_ACCEPT();
 
 	// table[2][+] = r2
-	table.atAction(2, _TERMINAL::T_PLUS) = TE_REDUCE(2);
+	table.atAction(2, _TERMINAL::T_PLUS) = TE_REDUCE(2 - 1);
 
 	// table[2][*] = s7
 	table.atAction(2, _TERMINAL::T_STAR) = TE_SHIFT(7);
 
 	// table[2][)/$] = r2
-	table.atAction(2, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(2);
-	table.atAction(2, _TERMINAL::T_EOF) = TE_REDUCE(2);
+	table.atAction(2, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(2 - 1);
+	table.atAction(2, _TERMINAL::T_EOF) = TE_REDUCE(2 - 1);
 
 	// table[3][+/*/)/$] = r4
-	table.atAction(3, _TERMINAL::T_PLUS) = TE_REDUCE(4);
-	table.atAction(3, _TERMINAL::T_STAR) = TE_REDUCE(4);
-	table.atAction(3, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(4);
-	table.atAction(3, _TERMINAL::T_EOF) = TE_REDUCE(4);
+	table.atAction(3, _TERMINAL::T_PLUS) = TE_REDUCE(4 - 1);
+	table.atAction(3, _TERMINAL::T_STAR) = TE_REDUCE(4 - 1);
+	table.atAction(3, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(4 - 1);
+	table.atAction(3, _TERMINAL::T_EOF) = TE_REDUCE(4 - 1);
 
 	// table[4][id] = s5
 	table.atAction(4, _TERMINAL::T_ID) = TE_SHIFT(5);
@@ -271,10 +272,10 @@ void define_table_lrparser(m0st4fa::LRParsingTable<LRGrammarType>& table)
 	table.atAction(4, _TERMINAL::T_LEFT_PAREN) = TE_SHIFT(4);
 
 	// table[5][+/*/)/$] = r6
-	table.atAction(5, _TERMINAL::T_PLUS) = TE_REDUCE(6);
-	table.atAction(5, _TERMINAL::T_STAR) = TE_REDUCE(6);
-	table.atAction(5, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(6);
-	table.atAction(5, _TERMINAL::T_EOF) = TE_REDUCE(6);
+	table.atAction(5, _TERMINAL::T_PLUS) = TE_REDUCE(6 - 1);
+	table.atAction(5, _TERMINAL::T_STAR) = TE_REDUCE(6 - 1);
+	table.atAction(5, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(6 - 1);
+	table.atAction(5, _TERMINAL::T_EOF) = TE_REDUCE(6 - 1);
 
 
 	// table[6][id] = s5
@@ -303,29 +304,29 @@ void define_table_lrparser(m0st4fa::LRParsingTable<LRGrammarType>& table)
 	table.atAction(9, _TERMINAL::T_STAR) = TE_SHIFT(7);
 
 	// table[9][)/$] = r1
-	table.atAction(9, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(1);
-	table.atAction(9, _TERMINAL::T_EOF) = TE_REDUCE(1);
+	table.atAction(9, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(1 - 1);
+	table.atAction(9, _TERMINAL::T_EOF) = TE_REDUCE(1 - 1);
 
 	// table[10][+/*/)/$] = r3
-	table.atAction(10, _TERMINAL::T_PLUS) = TE_REDUCE(3);
-	table.atAction(10, _TERMINAL::T_STAR) = TE_REDUCE(3);
-	table.atAction(10, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(3);
-	table.atAction(10, _TERMINAL::T_EOF) = TE_REDUCE(3);
+	table.atAction(10, _TERMINAL::T_PLUS) = TE_REDUCE(3 - 1);
+	table.atAction(10, _TERMINAL::T_STAR) = TE_REDUCE(3 - 1);
+	table.atAction(10, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(3 - 1);
+	table.atAction(10, _TERMINAL::T_EOF) = TE_REDUCE(3 - 1);
 
 	// table[11][+/*/)/$] = r5
-	table.atAction(11, _TERMINAL::T_PLUS) = TE_REDUCE(5);
-	table.atAction(11, _TERMINAL::T_STAR) = TE_REDUCE(5);
-	table.atAction(11, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(5);
-	table.atAction(11, _TERMINAL::T_EOF) = TE_REDUCE(5);
+	table.atAction(11, _TERMINAL::T_PLUS) = TE_REDUCE(5 - 1);
+	table.atAction(11, _TERMINAL::T_STAR) = TE_REDUCE(5 - 1);
+	table.atAction(11, _TERMINAL::T_RIGHT_PAREN) = TE_REDUCE(5 - 1);
+	table.atAction(11, _TERMINAL::T_EOF) = TE_REDUCE(5 - 1);
 
-	// table[1][E] = 1
-	table.atGoto(1, _NON_TERMINAL::NT_E) = TE_GOTO(1);
+	// table[0][E] = 1
+	table.atGoto(0, _NON_TERMINAL::NT_E) = TE_GOTO(1);
 
-	// table[1][T] = 2
-	table.atGoto(1, _NON_TERMINAL::NT_T) = TE_GOTO(2);
+	// table[0][T] = 2
+	table.atGoto(0, _NON_TERMINAL::NT_T) = TE_GOTO(2);
 
-	// table[1][F] = 3
-	table.atGoto(1, _NON_TERMINAL::NT_F) = TE_GOTO(3);
+	// table[0][F] = 3
+	table.atGoto(0, _NON_TERMINAL::NT_F) = TE_GOTO(3);
 
 	// table[4][E] = 8
 	table.atGoto(4, _NON_TERMINAL::NT_E) = TE_GOTO(8);

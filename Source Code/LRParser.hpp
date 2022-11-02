@@ -13,12 +13,19 @@ namespace m0st4fa {
 		typename InputT = std::string>
 	class LRParser : public Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT> {
 		using ParserBase = Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>;
+
+		using ProductionType = decltype(GrammarT{}.at(0));
+		using SymbolType = decltype(ProductionType{}.prodHead);
+		using TerminalType = decltype(SymbolType{}.as.terminal);
+		using VariableType = decltype(SymbolType{}.as.nonTerminal);
+
 		using StackElementType = StateT;
 		using DataType = decltype(StackElementType{}.data);
-		using ParserStackType = std::vector<StackElementType>;
+		using StackType = StackType<StackElementType>;
+
 		using TokenType = decltype(LexicalAnalyzerT{}.getNextToken());
 
-		mutable ParserStackType m_Stack{10};
+		mutable StackType m_Stack{0};
 		mutable StackElementType m_CurrTopState{ START_STATE };
 		mutable TokenType m_CurrInputToken{ TokenType{} };
 
@@ -28,50 +35,79 @@ namespace m0st4fa {
 			m_CurrInputToken = TokenType{};
 		}
 
-		void _reduce(StackElementType&);
+		void _reduce(size_t);
+
+		void _push_state(const StateT& state) {
+			this->m_CurrTopState = state;
+			this->m_Stack.push_back(state);
+		}
+
+		void _pop_state() {
+
+			if (this->m_Stack.size() <= 1) {
+				assert("TODO: handle poping elements from the stack when it has size zero");
+			}
+
+			this->m_CurrTopState = this->m_Stack.back();
+			this->m_Stack.pop_back();
+		}
+
+		void _pop_states(size_t num) {
+
+			if (this->m_Stack.size() < num + 1) {
+				assert("TODO: handle poping elements from the stack when it has insufficient elements && the stack cannot be empty after popping from it");
+			}
+
+			const auto end = this->m_Stack.end();
+			this->m_Stack.erase(end - num, end);
+
+			this->m_CurrTopState = this->m_Stack.back();
+		}
 
 	protected:
-		static constexpr const StackElementType START_STATE = ParserStackType{0};
+		static constexpr const StateT START_STATE{ 0, DataType{} };
 
 	public:
 		
 		LRParser() = default;
+		LRParser(const LexicalAnalyzerT& lexer,
+			const ParsingTableT& parsingTable,
+			const SymbolT& startSymbol) : ParserBase{lexer, parsingTable, startSymbol} {};
 		ParserResult parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
 		
 	};
 
-	
+	/*template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
+	const StateT LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::START_STATE { 0, 0 };
+	*/
 	// IMPLEMENTATION
 	
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	inline void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_reduce(StackElementType& state)
+	inline void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_reduce(size_t prodNumber)
 	{
 		// get the production
-		const auto& production = this->m_Table.grammar.at(state.state);
+		const auto& production = this->m_Table.grammar.at(prodNumber);
 
 		// exeucte the action, if any
 		void(*action)(StackType&, StackElementType&) = static_cast<void(*)(StackType&, StackElementType&)>(production.postfixAction);
-		action(this->m_Stack, this->m_CurrTopState);
+
+		if (action != nullptr)
+			action(this->m_Stack, this->m_CurrTopState);
 
 		// determine the length of the body of the production
 		const size_t prodBodyLength = production.prodBody.size();
 
-		// pop prodBodyLength elements from the top of the stack
-		const auto stackEnd = this->m_Stack.end();
-		this->m_Stack.erase(stackEnd - prodBodyLength - 1, stackEnd);
-
-		// get the state to be pushed on top of the stack
-		this->m_CurrTopState = this->m_Stack.back();
+		// pop prodBodyLength elements from the top of the stack and get the next entry
+		this->_pop_states(prodBodyLength);
 		size_t stateNum = this->m_CurrTopState.state;
-		LRTableEntry currEntry = this->m_Table[stateNum][this->m_CurrInputToken.name];
+		LRTableEntry currEntry = this->m_Table.atGoto(stateNum, production.prodHead.as.nonTerminal);
 
-		if (currEntry.type == LRTableEntryType::TET_ERROR) {
+		if (currEntry.type != LRTableEntryType::TET_GOTO) {
 			assert("TODO: the current LR table entry is an error. this is a temporary handle of such an error and a more sofisticated one should be created!");
 		}
 
 		// if the current entry is not an error
-		StackElementType currState = StackElementType{currEntry.number};
-		this->m_Stack.push_back(currState);
+		this->_push_state(StackElementType{ currEntry.number });
 	};
 
 	template<typename GrammarT, typename LexicalAnalyzerT, typename		SymbolT, typename StateT, 
@@ -106,15 +142,15 @@ namespace m0st4fa {
 		* _error_recovery(errorRecoveryType): TBD.
 		*/
 
-		this->m_Stack.push_back(START_STATE);
+		this->_push_state(START_STATE);
 		this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+		TerminalType currTokenName = this->m_CurrInputToken.name;
 
 		while (true) {
 
-			this->m_CurrTopState = this->m_Stack.back();
-			this->m_Stack.pop_back();
+			size_t currStateNum = this->m_CurrTopState.state;
 			
-			LRTableEntry currEntry = this->m_Table[this->m_CurrTopState][this->m_CurrInputToken];
+			LRTableEntry currEntry = this->m_Table.atAction(currStateNum, currTokenName);
 			
 			// TODO: CHECK THE ENTRY IS NOT EMPTY
 
@@ -125,17 +161,20 @@ namespace m0st4fa {
 
 			switch (currEntry.type)
 			{
-			case LRTableEntryType::TET_ACTION_SHIFT:
-				LRState newState = LRState{ currEntry.number };
-				this->m_Stack.push_back(newState);
+			case LRTableEntryType::TET_ACTION_SHIFT: {
+				this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+				currTokenName = this->m_CurrInputToken.name;
+				this->_push_state(StateT{ currEntry.number });
 				break;
+			}
 
 			case LRTableEntryType::TET_ACTION_REDUCE:
 				_reduce(currEntry.number);
 				break;
 
-			case LRTableEntryType::TET_GOTO:
-				break;
+			case LRTableEntryType::TET_ACCEPT:
+				std::cout << "\nACCEPTED\n";
+				return result;
 
 			default:
 				// TODO [UNREACHABLE]: HANDLE CASES WHERE THE COUNT IS THE TYPE OF THE ENTRY

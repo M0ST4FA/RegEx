@@ -217,7 +217,8 @@ namespace m0st4fa {
 	template<typename DataT>
 	struct LRState;
 	using lrstate_t = size_t;
-	using LRStackType = StackType<LRState<lrstate_t>>;
+	template<typename DataT>
+	using LRStackType = StackType<LRState<DataT>>;
 
 	template<typename SymbolT>
 	struct LRProductionElement {
@@ -245,8 +246,6 @@ namespace m0st4fa {
 
 	template<typename DataT>
 	struct LRState {
-		using ActionType = void(*)(LRStackType&, LRState&);
-
 		lrstate_t state = SIZE_MAX;
 		DataT data{};
 

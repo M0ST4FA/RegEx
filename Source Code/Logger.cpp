@@ -6,6 +6,7 @@ namespace m0st4fa {
 	const LoggerInfo LoggerInfo::WARNING = LoggerInfo{ LOG_LEVEL::LL_WARRNING };
 	const LoggerInfo LoggerInfo::INFO = LoggerInfo{ LOG_LEVEL::LL_INFO };
 	const LoggerInfo LoggerInfo::DEBUG = LoggerInfo{ LOG_LEVEL::LL_DEBUG };
+	const LoggerInfo LoggerInfo::FATAL_ERROR = LoggerInfo{ LOG_LEVEL::LL_FATAL_ERROR };
 	const LoggerInfo LoggerInfo::ERR_INVALID_ARG = LoggerInfo{ LOG_LEVEL::LL_ERROR, { .errorType = ERROR_TYPE::ET_INVALID_ARGUMENT} };
 	const LoggerInfo LoggerInfo::ERR_INVALID_LEXEME = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_INVALID_LEXEME} };
 	const LoggerInfo LoggerInfo::ERR_EMPTY_PROD_BODY = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_PROD_BODY_EMPTY} };
@@ -13,8 +14,8 @@ namespace m0st4fa {
 	const LoggerInfo LoggerInfo::ERR_RECOV_LIMIT_EXCEEDED = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_ERR_RECOVERY_LIMIT_EXCEEDED} };
 	const LoggerInfo LoggerInfo::ERR_MISSING_VAL = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_MISSING_VAL} };
 	const LoggerInfo LoggerInfo::ERR_INVALID_VAL = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_INVALID_VAL} };
-
-
+	const LoggerInfo LoggerInfo::ERR_STACK_UNDERFLOW = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_STACK_UNDERFLOW} };
+	const LoggerInfo LoggerInfo::ERR_UNACCEPTED_STRING = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_UNACCEPTED_STRING} };
 
 	// IMPLEMENTATIONS OF Logger FUNCTIONS
 	void Logger::log(LoggerInfo loggerInfo, const std::string& message, std::source_location location) const
@@ -39,9 +40,7 @@ namespace m0st4fa {
 			messageStr += std::format("[{:s}]: {:s}\n", logLevelStr, message);
 #ifdef _DEBUG 
 #ifdef _TRACE
-		messageStr += std::string("\nFile Name: ") + location.file_name() + std::string("\n");
-		messageStr += std::string("Line: ") + std::to_string(location.line()) + std::string(", Character: ") + std::to_string(location.column()) + "\n";
-		messageStr += std::string("Function: ") + location.function_name() + "\n";
+		messageStr += this->getCurrSourceLocation(location);
 #endif
 #endif
 
@@ -63,7 +62,7 @@ namespace m0st4fa {
 
 	}
 
-	void Logger::logDebug(const std::string& message, std::source_location location) const
+	inline void Logger::logDebug(const std::string& message, std::source_location location) const
 	{
 
 #ifdef _DEBUG
@@ -71,9 +70,7 @@ namespace m0st4fa {
 		std::string messageStr = std::format("[{:s}]: {:s}", logLevelStr, message);
 		
 #ifdef _TRACE
-		messageStr += std::string("\nFile Name: ") + location.file_name() + std::string("\n");
-		messageStr += std::string("Line: ") + std::to_string(location.line()) + std::string(", Character: ") + std::to_string(location.column()) + "\n";
-		messageStr += std::string("Function: ") + location.function_name() + "\n";
+		messageStr += this->getCurrSourceLocation(location);
 #endif
 		
 		std::cout << messageStr << "\n";
@@ -81,5 +78,5 @@ namespace m0st4fa {
 
 		return;
 	}
-	
+
 }

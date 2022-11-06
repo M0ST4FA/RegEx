@@ -120,6 +120,42 @@ GrammarType grammer_expression() {
 	return result;
 }
 
+void num_act(LRStackType& stack, LRStateType& newState) {
+	// F -> ID
+	auto state = stack.back();
+	newState.hasData = true;
+	newState.data = { .data = m0st4fa::toInteger(state.token.attribute) };
+	std::cout << "ID value: " << newState.data.data << "\n";
+}
+
+void pass_last_act(LRStackType& stack, LRStateType& newState) {
+	newState.data = stack.back().data;
+	newState.hasData = true;
+	std::cout << "Curr value: " << newState.data.data << "\n";
+}
+
+void pass_prelast_act(LRStackType& stack, LRStateType& newState) {
+	newState.data = stack.at(stack.size() - 2).data;
+	newState.hasData = true;
+	std::cout << "Curr value: " << newState.data.data << "\n";
+}
+
+void add_act(LRStackType& stack, LRStateType& newState) {
+	size_t a = stack.at(stack.size() - 3).data.data;
+	size_t b = stack.back().data.data;
+	newState.data.data = a + b;
+	std::cout << std::format("Added `{}` and `{}`. Result `{}`\n", a, b, a + b);
+	newState.hasData = true;
+}
+
+void mult_act(LRStackType& stack, LRStateType& newState) {
+	size_t a = stack.at(stack.size() - 3).data.data;
+	size_t b = stack.back().data.data;
+	newState.data.data = a * b;
+	std::cout << std::format("Multipied `{}` and `{}`. Result `{}`\n", a, b, a * b);
+	newState.hasData = true;
+}
+
 LRGrammarType grammar_expression_LR()
 {
 	m0st4fa::ProductionVector<LRProductionType> result;
@@ -141,7 +177,7 @@ LRGrammarType grammar_expression_LR()
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
 		 {se_E, se_PLUS, se_T} };
-
+	prod.postfixAction = add_act;
 	result.pushProduction(prod);
 
 	// E -> T
@@ -149,37 +185,38 @@ LRGrammarType grammar_expression_LR()
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
 		 {se_T} };
-
+	prod.postfixAction = pass_last_act;
 	result.pushProduction(prod);
 
 	// T -> T * F
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
 		 {se_T, se_STAR, se_F} };
-
+	prod.postfixAction = mult_act;
 	result.pushProduction(prod);
 
 	// T -> F
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
 		 {se_F} };
-
+	prod.postfixAction = pass_last_act;
 	result.pushProduction(prod);
 
 	// F -> (E)
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
 		 {se_LP, se_E, se_RP} };
-
+	prod.postfixAction = pass_prelast_act;
 	result.pushProduction(prod);
+
 
 	// F -> ID
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
 		 {se_ID} };
-
+	prod.postfixAction = num_act;
 	result.pushProduction(prod);
-
+	
 	return result;
 }
 
@@ -350,21 +387,27 @@ void define_table_lrparser(m0st4fa::LRParsingTable<LRGrammarType>& table)
 void initFSMTable_parser(m0st4fa::FSMTable<>& table)
 {
 
-	// id
-	table[1]['i'] = 2;
-	table[2]['d'] = 3; // 3 is a final state
-	
+	//// id
+	//table[1]['i'] = 2;
+	//table[2]['d'] = 3; // 3 is a final state [ID]
+
+	// int [Uses the token ID for now]
+	for (size_t i = (size_t)'0'; i <= (size_t)'9'; i++) {
+		table[1][i] = 3;
+		table[3][i] = 3; // 3 is a final state [NUM]
+	}
+
 	// (
-	table[1]['('] = 4; // 4 is a final state
+	table[1]['('] = 4; // 4 is a final state [LEFT_PAREN]
 	
 	// )
-	table[1][')'] = 5; // 5 is a final state
+	table[1][')'] = 5; // 5 is a final state [RIGHT_PAREN]
 	
 	// +
-	table[1]['+'] = 6; // 6 is a final state
+	table[1]['+'] = 6; // 6 is a final state [PLUS]
 	
 	// *
-	table[1]['*'] = 7; // 7 is a final state
+	table[1]['*'] = 7; // 7 is a final state [STAR]
 	
 }
 
@@ -373,19 +416,19 @@ Token<_TERMINAL> token_fact_parser(m0st4fa::state_t state, std::string lexeme) {
 	switch (state) {
 	case 3:
 		return Token{_TERMINAL::T_ID, lexeme};
-		break;
+
 	case 4:
 		return Token{_TERMINAL::T_LEFT_PAREN, lexeme};
-		break;
+
 	case 5:
 		return Token{_TERMINAL::T_RIGHT_PAREN, lexeme};
-		break;
+
 	case 6:
 		return Token{ _TERMINAL::T_PLUS, lexeme };
-		break;
+
 	case 7:
 		return Token{ _TERMINAL::T_STAR, lexeme };
-		break;
+
 	default:
 		std::cerr << "Unknown state: " << state << std::endl;
 		throw std::runtime_error("Unknown state");

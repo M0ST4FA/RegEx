@@ -214,11 +214,11 @@ namespace m0st4fa {
 // LR PARSING 
 namespace m0st4fa {
 
-	template<typename DataT>
+	template<typename DataT, typename TokenT>
 	struct LRState;
 	using lrstate_t = size_t;
-	template<typename DataT>
-	using LRStackType = StackType<LRState<DataT>>;
+	template<typename DataT, typename TokenT>
+	using LRStackType = StackType<LRState<DataT, TokenT>>;
 
 	template<typename SymbolT>
 	struct LRProductionElement {
@@ -244,10 +244,17 @@ namespace m0st4fa {
 
 	};
 
-	template<typename DataT>
+	template<typename DataT, typename TokenT>
 	struct LRState {
 		lrstate_t state = SIZE_MAX;
 		DataT data{};
+		bool hasData = false;
+		TokenT token = TokenT::EPSILON;
+
+		// methods
+		LRState() = default;
+		LRState(lrstate_t state, const DataT& data) : state{ state }, data{ data }, hasData{ true } {};
+		LRState(lrstate_t state) : state{ state }, hasData{ false } {};
 
 		operator std::string() const {
 			return this->toString();
@@ -257,8 +264,14 @@ namespace m0st4fa {
 		}
 
 		std::string toString() const {
-			// TODO: IMPLEMENT THIS
-			return "";
+			std::string res = std::format("<{}", state);
+
+			if (this->hasData)
+				res += ", " + (std::string)this->data;
+
+			res += ">";
+
+			return res;
 		}
 
 	};

@@ -43,6 +43,15 @@ namespace m0st4fa {
 
 	}
 
+	// INTEGER
+
+	/**
+	* extract the first integer from the string and convert it into size_t
+	* the integer may not necessarily be at the beginning except if the boolean is set.
+	*/
+	size_t toInteger(const std::string&, bool = false);
+	size_t pow(size_t, size_t);
+
 	// ITERABLE
 	/**
 	* Inserts elements from `from` to `to` except any element that equals `except`

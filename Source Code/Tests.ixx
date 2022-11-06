@@ -67,6 +67,7 @@ export token_t fact(m0st4fa::state_t, std::string);
 
 export enum struct _TERMINAL {
 	T_ID,
+	T_INT,
 	T_PLUS,
 	T_STAR,
 	T_LEFT_PAREN,
@@ -139,6 +140,7 @@ export struct ActData {
 };
 export using Synthesized = m0st4fa::LLSynthesizedRecord<SynData>;
 export using Action = m0st4fa::LLActionRecord<ActData>;
+export using TokenType = m0st4fa::Token<_TERMINAL>;
 
 using LLStackElementType = m0st4fa::LLStackElement<Symbol, m0st4fa::LLSynthesizedRecord<SynData>, m0st4fa::LLActionRecord<ActData>>;
 using LLStackType = m0st4fa::StackType<LLStackElementType>;
@@ -147,10 +149,20 @@ export using ProductionType = m0st4fa::ProductionRecord<Symbol, LLStackElementTy
 using GrammarType = m0st4fa::ProductionVector<ProductionType>;
 
 // LR PARSER DATA STRUCTURES
-export using LRProductionType = m0st4fa::ProductionRecord<Symbol, m0st4fa::LRProductionElement<Symbol>>;
+using LRProductionElementType = m0st4fa::LRProductionElement<Symbol>;
+export using LRProductionType = m0st4fa::ProductionRecord<Symbol, LRProductionElementType>;
+
 export using LRGrammarType = m0st4fa::ProductionVector<LRProductionType>;
-export using LRDataType = size_t;
-export using LRStateType = m0st4fa::LRParserState<LRDataType>;
+export struct LRDataType {
+	size_t data{};
+	
+	operator std::string() const {
+		return std::to_string(data);
+	}
+
+};
+export using LRStateType = m0st4fa::LRState<LRDataType, TokenType>;
+using LRStackType = m0st4fa::LRStackType<LRDataType, TokenType>;
 
 // FUNCTION SIGNATURES
 

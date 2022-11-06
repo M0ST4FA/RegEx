@@ -13,10 +13,4 @@ namespace m0st4fa {
 
 	};
 
-	template<typename DataT>
-	struct LRParserState {
-		size_t state = SIZE_MAX;
-		DataT data{};
-	};
-	
 }

@@ -131,6 +131,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="common.cpp" />
     <ClCompile Include="FiniteStateMachine.cpp" />
     <ClCompile Include="LATests.cpp" />
     <ClCompile Include="LLParser.hpp" />

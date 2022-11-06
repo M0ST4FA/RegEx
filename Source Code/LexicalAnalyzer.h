@@ -34,7 +34,6 @@ namespace m0st4fa {
 
 		const DFA<TransFn<TableT>, InputT>& getAutomatan() { return this->m_Automatan; };
 		const TokenFactoryT<TokenT, InputT> getTokenFactory() { return this->m_TokenFactory; };
-		const std::string& getSourceCode() { return this->m_SourceCode; };
 
 	public:
 
@@ -59,6 +58,7 @@ namespace m0st4fa {
 		}
 
 		TokenT getNextToken(unsigned = (unsigned)LA_FLAG::LAF_NONE);
+		const std::string& getSourceCode() { return this->m_SourceCode; };
 		TokenT peak(unsigned = (unsigned)LA_FLAG::LAF_NONE);
 		size_t getLine() { return this->m_Line; };
 		size_t getCol() { return this->m_Col; };

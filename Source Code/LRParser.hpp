@@ -30,6 +30,7 @@ namespace m0st4fa {
 		mutable TokenType m_CurrInputToken{ TokenType{} };
 
 		void _reset_parser_state() const {
+			this->m_Logger.log(LoggerInfo::INFO, "RESETTING PARSER.");
 			m_Stack.clear();
 			m_CurrTopState = START_STATE;
 			m_CurrInputToken = TokenType{};
@@ -38,34 +39,52 @@ namespace m0st4fa {
 		void _reduce(size_t);
 
 		void _push_state(const StateT& state) {
+
 			this->m_CurrTopState = state;
 			this->m_Stack.push_back(state);
+
+			this->m_Logger.log(LoggerInfo::INFO, std::format("Pushing state {}\nCurrent stack: {}", (std::string)state, stringfy(this->m_Stack)));
 		}
 
 		void _pop_state() {
 
 			if (this->m_Stack.size() <= 1) {
-				assert("TODO: handle poping elements from the stack when it has size zero");
-			}
 
+				std::string msg = std::format("Cannot pop more states from the LR stack. The stack cannot reach an empty stated.");
+
+				this->m_Logger.log(LoggerInfo::ERR_STACK_UNDERFLOW, msg);
+
+				throw std::runtime_error((std::string)"Stack underflow: " + msg);
+			}
+			
 			this->m_CurrTopState = this->m_Stack.back();
+			this->m_Logger.log(LoggerInfo::INFO, std::format("Popping state {}\nCurrent stack: {}", (std::string)this->m_CurrTopState, stringfy(this->m_Stack)));
+
 			this->m_Stack.pop_back();
 		}
 
 		void _pop_states(size_t num) {
 
 			if (this->m_Stack.size() < num + 1) {
-				assert("TODO: handle poping elements from the stack when it has insufficient elements && the stack cannot be empty after popping from it");
+				std::string msg = std::format("Cannot pop {} states from the LR stack. The stack cannot reach an empty stated.", num);
+
+				this->m_Logger.log(LoggerInfo::ERR_STACK_UNDERFLOW, msg);
+
+				throw std::runtime_error((std::string)"Stack underflow: " + msg);
 			}
 
 			const auto end = this->m_Stack.end();
+
+			StackType temp{ end - num, end };
+
 			this->m_Stack.erase(end - num, end);
+			this->m_Logger.log(LoggerInfo::INFO, std::format("Popping states {}\nCurrent stack: {}", stringfy(temp), stringfy(this->m_Stack)));
 
 			this->m_CurrTopState = this->m_Stack.back();
 		}
 
 	protected:
-		static constexpr const StateT START_STATE{ 0, DataType{} };
+		static const StateT START_STATE;
 
 	public:
 		
@@ -77,22 +96,26 @@ namespace m0st4fa {
 		
 	};
 
-	/*template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	const StateT LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::START_STATE { 0, 0 };
-	*/
+	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
+	const StateT LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::START_STATE{ 0 };
+
 	// IMPLEMENTATION
 	
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
 	inline void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_reduce(size_t prodNumber)
 	{
+		const std::string& src = this->getLexicalAnalyzer().getSourceCode();
+
 		// get the production
 		const auto& production = this->m_Table.grammar.at(prodNumber);
+
+		StackElementType newState = StackElementType{};
 
 		// exeucte the action, if any
 		void(*action)(StackType&, StackElementType&) = static_cast<void(*)(StackType&, StackElementType&)>(production.postfixAction);
 
 		if (action != nullptr)
-			action(this->m_Stack, this->m_CurrTopState);
+			action(this->m_Stack, newState);
 
 		// determine the length of the body of the production
 		const size_t prodBodyLength = production.prodBody.size();
@@ -101,13 +124,17 @@ namespace m0st4fa {
 		this->_pop_states(prodBodyLength);
 		size_t stateNum = this->m_CurrTopState.state;
 		LRTableEntry currEntry = this->m_Table.atGoto(stateNum, production.prodHead.as.nonTerminal);
+		newState.state = currEntry.number;
 
 		if (currEntry.type != LRTableEntryType::TET_GOTO) {
-			assert("TODO: the current LR table entry is an error. this is a temporary handle of such an error and a more sofisticated one should be created!");
+			std::string msg{ std::format("Incorrect entry type! Expected type `GOTO` within function reduce after accessing the GOTO table.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src) };
+			this->m_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
+
+			throw std::logic_error(msg);
 		}
 
 		// if the current entry is not an error
-		this->_push_state(StackElementType{ currEntry.number });
+		this->_push_state(newState);
 	};
 
 	template<typename GrammarT, typename LexicalAnalyzerT, typename		SymbolT, typename StateT, 
@@ -142,6 +169,7 @@ namespace m0st4fa {
 		* _error_recovery(errorRecoveryType): TBD.
 		*/
 
+		this->_reset_parser_state();
 		this->_push_state(START_STATE);
 		this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
 		TerminalType currTokenName = this->m_CurrInputToken.name;
@@ -149,22 +177,31 @@ namespace m0st4fa {
 		while (true) {
 
 			size_t currStateNum = this->m_CurrTopState.state;
-			
 			LRTableEntry currEntry = this->m_Table.atAction(currStateNum, currTokenName);
+			const std::string& src = this->getLexicalAnalyzer().getSourceCode();
 			
-			// TODO: CHECK THE ENTRY IS NOT EMPTY
+			if (currEntry.isEmpty) {
+				std::string msg{ std::format("LR parsing table entry is empty!\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src) };
+				this->m_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
 
-			// TODO: HANDLE CASES WHERE THE ENTRY IS AN ERROR ENTRY
+				throw std::logic_error(msg);
+			}
+
 			if (currEntry.type == LRTableEntryType::TET_ERROR) {
-				assert("TODO: the current LR table entry is an error. this is a temporary handle of such an error and a more sofisticated one should be created!");
+				std::string msg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src);
+				this->m_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, msg);
+
+				throw std::logic_error(msg);
 			}
 
 			switch (currEntry.type)
 			{
 			case LRTableEntryType::TET_ACTION_SHIFT: {
+				StateT s = StateT{ currEntry.number };
+				s.token = this->m_CurrInputToken;
+				this->_push_state(s);
 				this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
 				currTokenName = this->m_CurrInputToken.name;
-				this->_push_state(StateT{ currEntry.number });
 				break;
 			}
 
@@ -177,8 +214,9 @@ namespace m0st4fa {
 				return result;
 
 			default:
-				// TODO [UNREACHABLE]: HANDLE CASES WHERE THE COUNT IS THE TYPE OF THE ENTRY
-				assert("Unreachable!");
+				this->m_Logger.log(LoggerInfo::FATAL_ERROR, std::format("[Unreachable] Invalid entry type on switch statement!\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src));
+				std::string srcLoc = this->m_Logger.getCurrSourceLocation();
+				assert(std::format("Source code location:\n{}", srcLoc).data());
 				break;
 			}
 

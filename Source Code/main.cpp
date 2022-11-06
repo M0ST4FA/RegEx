@@ -37,12 +37,8 @@ using LLParserGeneratorType = m0st4fa::LLParserGenerator<GrammarType, LLParsingT
 
 using LRParsingTableType = m0st4fa::LRParsingTable<LRGrammarType>;
 using LRParserType = m0st4fa::LRParser<GrammarType, LexicalAnalyzerType, Symbol, LRStateType, LRParsingTableType>;
-using LRStackType = m0st4fa::LRStackType<LRDataType>;
+using LRStackType = m0st4fa::LRStackType<LRDataType, TokenType>;
 using m0st4fa::LRState;
-
-void stateAct(LRStackType& stack, LRState<size_t>& thisState) {
-	std::cout << "Hello world\n";
-}
 
 // #defines
 #define TEST_LR_PARSER
@@ -93,7 +89,6 @@ int main(int argc, char** argv) {
 
 			// LR GRAMMAR
 			auto grammarLR = grammar_expression_LR();
-			std::cout << grammarLR.at(0);
 
 			// ITEM
 			const ItemType item{ grammarLR.at(0), 1,
@@ -106,9 +101,7 @@ int main(int argc, char** argv) {
 			LRParsingTableType LRParsingTable;
 			define_table_lrparser(LRParsingTable);
 
-
-			// parse entered source+		grammarLR	{FIRST={ size=0 } FOLLOW={ size=0 } m_CalculatedFIRST=false ...}	m0st4fa::ProductionVector<m0st4fa::ProductionRecord<m0st4fa::GrammaticalSymbol<enum _TERMINAL,enum _NON_TERMINAL>,m0st4fa::LRProductionElement<m0st4fa::GrammaticalSymbol<enum _TERMINAL,enum _NON_TERMINAL>>>>
-
+			// CONTINUE: COMPLETE LOGGING OF LR PARSER FUNCTIONS
 			try {
 				LRParserType parser{ lexicalAnal_parser, LRParsingTable, startSym };
 				parser.parse();

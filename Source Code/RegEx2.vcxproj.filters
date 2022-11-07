@@ -111,5 +111,8 @@
     <ClInclude Include="LLPGenerator.h">
       <Filter>Source Files\Parser</Filter>
     </ClInclude>
+    <ClInclude Include="ANSI.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

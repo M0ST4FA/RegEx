@@ -33,11 +33,10 @@ namespace m0st4fa {
 
 		std::string messageStr;
 		
-
 		if (loggerInfo.level == LOG_LEVEL::LL_ERROR || loggerInfo.level == LOG_LEVEL::LL_FATAL_ERROR)
-			messageStr += std::format("[{:s} => {:s}]: {:s}\n", logLevelStr, errorTypeStr, message);
+			messageStr += std::format(ANSI_ERR_COLOR"[{:s} => {:s}]: {:s}\n" ANSI_RESET_ALL, logLevelStr, errorTypeStr, message);
 		else
-			messageStr += std::format("[{:s}]: {:s}\n", logLevelStr, message);
+			messageStr += std::format(ANSI_INFO_COLOR"[{:s}]: {:s}\n" ANSI_RESET_ALL, logLevelStr, message);
 #ifdef _DEBUG 
 #ifdef _TRACE
 		messageStr += this->getCurrSourceLocation(location);
@@ -62,12 +61,12 @@ namespace m0st4fa {
 
 	}
 
-	inline void Logger::logDebug(const std::string& message, std::source_location location) const
+	void Logger::logDebug(const std::string& message, std::source_location location) const
 	{
 
 #ifdef _DEBUG
 		const std::string logLevelStr = (const char* ) LOG_LEVEL_STRING[(int)LOG_LEVEL::LL_DEBUG];
-		std::string messageStr = std::format("[{:s}]: {:s}", logLevelStr, message);
+		std::string messageStr = std::format(ANSI_DEBUG_COLOR"[{:s}]: {:s}" ANSI_RESET_ALL, logLevelStr, message);
 		
 #ifdef _TRACE
 		messageStr += this->getCurrSourceLocation(location);

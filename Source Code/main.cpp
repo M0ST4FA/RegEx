@@ -9,6 +9,7 @@
 #include "LRParser.hpp"
 #include "LLPGenerator.h"
 #include "LexicalAnalyzer.h"
+#include "ANSI.h"
 
 import Tests;
 
@@ -42,7 +43,6 @@ using m0st4fa::LRState;
 
 // #defines
 #define TEST_LR_PARSER
-#define ANSI_ESC "\u001b"
 
 #ifdef TEST_REGEX
 
@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 			// CONTINUE: COMPLETE LOGGING OF LR PARSER FUNCTIONS
 			try {
 				LRParserType parser{ lexicalAnal_parser, LRParsingTable, startSym };
-				parser.parse();
+				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 
 				// LR GRAMMAR TESTS
 				grammarLR.calculateFIRST();

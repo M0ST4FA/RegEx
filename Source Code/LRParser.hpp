@@ -83,6 +83,10 @@ namespace m0st4fa {
 			this->m_CurrTopState = this->m_Stack.back();
 		}
 
+		void _error_recov_panic_mode() const {
+
+		}
+
 	protected:
 		static const StateT START_STATE;
 
@@ -126,11 +130,13 @@ namespace m0st4fa {
 		LRTableEntry currEntry = this->m_Table.atGoto(stateNum, production.prodHead.as.nonTerminal);
 		newState.state = currEntry.number;
 
+		// Note: errors are never detected when consulting the GOTO table
+		// this here is just a precaution for possible (probably logic) bugs
 		if (currEntry.type != LRTableEntryType::TET_GOTO) {
 			std::string msg{ std::format("Incorrect entry type! Expected type `GOTO` within function reduce after accessing the GOTO table.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src) };
 			this->m_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
 
-			throw std::logic_error(msg);
+			throw std::logic_error("Incorrect entry type!Expected type `GOTO` within function reduce after accessing the GOTO table.");
 		}
 
 		// if the current entry is not an error
@@ -156,8 +162,7 @@ namespace m0st4fa {
 					* Push J on top of the stack and get next input.
 				* Else if A == REDUCE J:
 					* Call _reduce(J).
-				* Else A == ERROR:
-					* Call _error_recovery(errorRecoveryType).
+				* Else ERROR.
 
 		* _reduce(J):
 			* Get to production P indexed J and do the following:
@@ -179,19 +184,40 @@ namespace m0st4fa {
 			size_t currStateNum = this->m_CurrTopState.state;
 			LRTableEntry currEntry = this->m_Table.atAction(currStateNum, currTokenName);
 			const std::string& src = this->getLexicalAnalyzer().getSourceCode();
-			
-			if (currEntry.isEmpty) {
-				std::string msg{ std::format("LR parsing table entry is empty!\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src) };
-				this->m_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
 
-				throw std::logic_error(msg);
-			}
+			// if we detect an error
+			if (currEntry.isEmpty || currEntry.type == LRTableEntryType::TET_ERROR) {
 
-			if (currEntry.type == LRTableEntryType::TET_ERROR) {
-				std::string msg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src);
-				this->m_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, msg);
+				if (currEntry.isEmpty) {
+					std::string msg{ std::format("LR parsing table entry is empty!\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src) };
+					this->m_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
+				}
 
-				throw std::logic_error(msg);
+				// if error recovery is not enabled
+				if (errorRecoveryType == ErrorRecoveryType::ERT_NONE) {
+					std::string msg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src);
+					this->m_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, msg);
+
+					throw std::logic_error("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.");
+				}
+
+				// if error recovery is enabled, switch on the type
+				switch (errorRecoveryType) {
+				case ErrorRecoveryType::ERT_PANIC_MODE: {
+					std::string msg = "ERT_PANIC_MODE in progress!";
+					throw std::logic_error(msg);
+					break;
+				}
+				default: {
+					std::string errMsg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src);
+					std::string noteMsg = std::format("Error recovery type `{}` is not yet supported for LR parsing.", stringfy(errorRecoveryType));
+					std::string fullMsg = std::format("{}\nNote: ", errMsg, noteMsg);
+
+					this->m_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, fullMsg);
+					throw std::logic_error("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.");
+				}
+				}
+				
 			}
 
 			switch (currEntry.type)

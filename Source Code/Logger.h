@@ -5,6 +5,7 @@
 #include <format>
 #include <source_location>
 
+#include "common.h"
 //#define _TRACE
 
 namespace m0st4fa {
@@ -73,7 +74,7 @@ namespace m0st4fa {
 
 		void log(const LoggerInfo, const std::string&, std::source_location = std::source_location::current()) const;
 		
-		inline void logDebug(const std::string&, std::source_location = std::source_location::current()) const;
+		void logDebug(const std::string&, std::source_location = std::source_location::current()) const;
 
 		inline std::string getCurrSourceLocation(std::source_location location = std::source_location::current()) const {
 			std::string messageStr;

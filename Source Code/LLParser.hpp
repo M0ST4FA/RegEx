@@ -61,7 +61,7 @@ namespace m0st4fa {
 
 					LoggerInfo errInfo = { .level = LOG_LEVEL::LL_ERROR, .info = {.errorType = ERROR_TYPE::ET_ERR_RECOVERY_LIMIT_EXCEEDED } };
 
-					this->m_Logger.log(errInfo, std::format("Exceeded error recovery limit\nNote: error recovery limit {}", ParserBase::ERR_RECOVERY_LIMIT));
+					this->p_Logger.log(errInfo, std::format("Exceeded error recovery limit\nNote: error recovery limit {}", ParserBase::ERR_RECOVERY_LIMIT));
 
 					throw std::runtime_error{ "Limit of recovered-from errors exceeded" };
 				};
@@ -72,12 +72,12 @@ namespace m0st4fa {
 			if (errRecovType == ErrorRecoveryType::ERT_NUM) {
 				LoggerInfo info = { .level = LOG_LEVEL::LL_ERROR, .info {.errorType = ERROR_TYPE::ET_INVALID_ARGUMENT} };
 
-				this->m_Logger.log(info, "[ERR_RECOVERY]: Invalid argument.");
+				this->p_Logger.log(info, "[ERR_RECOVERY]: Invalid argument.");
 
 				throw std::invalid_argument("Argument ERT_NONE cannot be used in this context.\nNote: it is just for knowing the number of possible values of this enum.");
 			}
 
-			this->m_Logger.logDebug("[ERR_RECOVERY]: started error recovery: " + stringfy(errRecovType));
+			this->p_Logger.logDebug("[ERR_RECOVERY]: started error recovery: " + stringfy(errRecovType));
 
 			switch (errRecovType) {
 
@@ -131,7 +131,7 @@ namespace m0st4fa {
 				pos.second,
 				(std::string)m_CurrInputToken);
 
-			this->m_Logger.log(info, msg);
+			this->p_Logger.log(info, msg);
 		};
 
 	public:
@@ -145,7 +145,7 @@ namespace m0st4fa {
 		) :
 			Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>
 		{ lexer, parsingTable, startSymbol },
-			m_ProdRecords{ this->m_Table.grammar },
+			m_ProdRecords{ this->p_Table.grammar },
 			m_Stack{},
 			m_CurrInputToken{},
 			m_CurrTopElement{}
@@ -265,8 +265,8 @@ namespace m0st4fa {
 			// match it explicitly
 			bool matched = (topSymbol == m_CurrInputToken);
 
-			this->m_Logger.logDebug(std::format("Stack size before: {}", m_Stack.size() + 1));
-			this->m_Logger.log(info, std::format("Matched {:s} with {:s}: {:s}", (std::string)topSymbol, (std::string)m_CurrInputToken, matched ? "true" : "false"));
+			this->p_Logger.logDebug(std::format("Stack size before: {}", m_Stack.size() + 1));
+			this->p_Logger.log(info, std::format("Matched {:s} with {:s}: {:s}", (std::string)topSymbol, (std::string)m_CurrInputToken, matched ? "true" : "false"));
 
 			// get the next input token
 			m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
@@ -280,7 +280,7 @@ namespace m0st4fa {
 		else {
 
 			// get the production record for the current symbol and input
-			const LLTableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)m_CurrInputToken.name];
+			const LLTableEntry tableEntry = this->p_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)m_CurrInputToken.name];
 
 			// if the table entry is an error
 			if (tableEntry.isError) {
@@ -304,8 +304,8 @@ namespace m0st4fa {
 				m_Stack.push_back(se);
 			};
 
-			this->m_Logger.logDebug(std::format("Stack size before: {}", m_Stack.size() + 1));
-			this->m_Logger.log(info, std::format("Expanded {:s} with {:s}: {:s}", (std::string)topSymbol, (std::string)m_CurrInputToken, (std::string)prod));
+			this->p_Logger.logDebug(std::format("Stack size before: {}", m_Stack.size() + 1));
+			this->p_Logger.log(info, std::format("Expanded {:s} with {:s}: {:s}", (std::string)topSymbol, (std::string)m_CurrInputToken, (std::string)prod));
 
 		}
 
@@ -330,7 +330,7 @@ namespace m0st4fa {
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 		LoggerInfo errInfo{ .level = LOG_LEVEL::LL_ERROR, .info {.errorType = ERROR_TYPE::ET_UNEXCPECTED_TOKEN } };
 
-		this->m_Logger.log(errInfo, std::format(
+		this->p_Logger.log(errInfo, std::format(
 			"({}, {}) Didn't excpect token {:s}",
 			this->getLexicalAnalyzer().getLine(),  
 			this->getLexicalAnalyzer().getCol(),
@@ -344,7 +344,7 @@ namespace m0st4fa {
 			if (topSymbol.isTerminal) {
 
 				
-				this->m_Logger.log(info, std::format(
+				this->p_Logger.log(info, std::format(
 					"Added lexeme {:s} to the input stream.", currInputToken.attribute)
 				);
 
@@ -371,7 +371,7 @@ namespace m0st4fa {
 
 					// if the stack is empty, return to the caller
 					if (m_Stack.empty()) {
-						this->m_Logger.log(info, std::format("[ERROR_RECOVERY] ({}, {}) Failed to syncronize: current input: {:s}",
+						this->p_Logger.log(info, std::format("[ERROR_RECOVERY] ({}, {}) Failed to syncronize: current input: {:s}",
 							this->getLexicalAnalyzer().getLine(),
 							this->getLexicalAnalyzer().getCol(),
 							(std::string)currInputToken
@@ -405,7 +405,7 @@ namespace m0st4fa {
 		LoggerInfo info{ .level = LOG_LEVEL::LL_INFO, .info {.noVal = 0} };
 
 		// Check for whether the non-terminal has an epsilon production and use it to reduce that non-terminal.
-		LLTableEntry tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)TokenType::EPSILON.name];
+		LLTableEntry tableEntry = this->p_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)TokenType::EPSILON.name];
 
 		// if it is not an err, there is an epsilon production
 		if (-not tableEntry.isError) {
@@ -425,7 +425,7 @@ namespace m0st4fa {
 				m_Stack.push_back(se);
 			};
 
-			this->m_Logger.log(info, std::format("[ERROR_RECOVERY] Expanded {:s} with {:s}: {:s}",
+			this->p_Logger.log(info, std::format("[ERROR_RECOVERY] Expanded {:s} with {:s}: {:s}",
 				stringfy(m_CurrTopElement.as.gramSymbol.as.nonTerminal),
 				m_CurrInputToken.toString(),
 				prod.toString()));
@@ -436,7 +436,7 @@ namespace m0st4fa {
 		}
 		
 		// get the production record for the current symbol and input
-		tableEntry = this->m_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)currInputToken.name];
+		tableEntry = this->p_Table[EXTRACT_VARIABLE(this->m_CurrTopElement)][(size_t)currInputToken.name];
 
 		/**
 		* Assume the syncronization set of each non-terminal contains the first set of that non-terminal.
@@ -498,7 +498,7 @@ namespace m0st4fa {
 		const auto& prodBody = prod.prodBody;
 
 		if (prodBody.empty()) {
-			this->m_Logger.log(errorInfo, std::format("Production body is empty: {:s}", prod.toString()));
+			this->p_Logger.log(errorInfo, std::format("Production body is empty: {:s}", prod.toString()));
 			throw std::logic_error("Production body is empty.");
 		};
 

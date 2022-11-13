@@ -17,7 +17,7 @@ namespace m0st4fa {
 		using SymbolT = decltype(ProductionT{}.prodHead);
 		using LookAheadSet = LookAheadSet<SymbolT>;
 		using pos_t = size_t;
-		Logger m_Logger{};
+		Logger p_Logger{};
 		pos_t m_ActualDotPos = 0;
 
 	public:
@@ -48,7 +48,7 @@ namespace m0st4fa {
 
 			// check that the dot position is within range
 			if ((this->dotPos > psize) or (this->dotPos < 0)) {
-				this->m_Logger.log(LoggerInfo::ERR_INVALID_VAL, "Invalid dot position in item. Make sure the dot position is smaller than the size of the production body.");
+				this->p_Logger.log(LoggerInfo::ERR_INVALID_VAL, "Invalid dot position in item. Make sure the dot position is smaller than the size of the production body.");
 				throw std::logic_error("Invalid dot position in item.");
 			}
 

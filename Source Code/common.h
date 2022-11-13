@@ -92,6 +92,16 @@ namespace m0st4fa {
 		return added;
 	};
 	
+	template <typename ElementT, typename IterableT>
+	bool isIn(const ElementT element, const IterableT& iterable) {
+		
+		for (const ElementT& e : iterable)
+			if (e == element)
+				return true;
+		
+		return false;
+	}
+
 	/**
 	* works with iterables that have method `contains`
 	*/

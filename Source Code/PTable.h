@@ -52,6 +52,7 @@ namespace m0st4fa {
 		TET_ERROR,
 		TET_COUNT
 	};
+	std::string stringfy(const LRTableEntryType);
 
 	struct LRTableEntry {
 		bool isEmpty = true;
@@ -83,8 +84,9 @@ namespace m0st4fa {
 			return msg;
 		}
 
+		// Note: being empty is considered erranuous
 		inline bool isError() const {
-			return this->type == LRTableEntryType::TET_ERROR;
+			return isEmpty || this->type == LRTableEntryType::TET_ERROR;
 		}
 
 		inline bool isAccept() const {
@@ -141,6 +143,22 @@ namespace m0st4fa {
 
 			return this->actionTable[state][(size_t)terminal];
 		};
+		const ActionArrayType& atActionRow(size_t state) const {
+			return this->actionTable.at(state);
+		}
+		/**
+		* Return all non-error action entries for this state
+		*/
+		std::vector<TerminalType> getActions(size_t state) const {
+			std::vector<TerminalType> res;
+
+			for (size_t terminal = 0; terminal < TerminalCount; terminal++)
+				if (not this->actionTable[state][terminal].isError())
+					res.push_back((TerminalType)terminal);
+
+			return res;
+		}
+
 		LRTableEntry& atGoto(size_t state, VariableType nonTerminal) {
 			try {
 				return this->gotoTable[state][(size_t)nonTerminal];
@@ -152,6 +170,21 @@ namespace m0st4fa {
 
 			return this->gotoTable[state][(size_t)nonTerminal];
 		};
+		const GotoArrayType& atGotoRow(size_t state) const {
+			return this->gotoTable.at(state);
+		}
+		/**
+		* Return all non-error goto entries for this state
+		*/
+		std::vector<VariableType> getGotos(size_t state) const {
+			std::vector<VariableType> res;
+
+			for (size_t variable = 0; variable < VariableCount; variable++)
+				if (not this->gotoTable[state][variable].isError())
+					res.push_back((VariableType)variable);
+
+			return res;
+		}
 
 		void reserveRows(size_t newRowNum) {
 			this->actionTable.resize(newRowNum);

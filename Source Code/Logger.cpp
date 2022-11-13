@@ -16,6 +16,7 @@ namespace m0st4fa {
 	const LoggerInfo LoggerInfo::ERR_INVALID_VAL = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_INVALID_VAL} };
 	const LoggerInfo LoggerInfo::ERR_STACK_UNDERFLOW = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_STACK_UNDERFLOW} };
 	const LoggerInfo LoggerInfo::ERR_UNACCEPTED_STRING = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_UNACCEPTED_STRING} };
+	const LoggerInfo LoggerInfo::ERR_INVALID_TABLE_ENTRY = LoggerInfo{ LOG_LEVEL::LL_ERROR, {.errorType = ERROR_TYPE::ET_INVALID_TABLE_ENTRY} };
 
 	// IMPLEMENTATIONS OF Logger FUNCTIONS
 	void Logger::log(LoggerInfo loggerInfo, const std::string& message, std::source_location location) const

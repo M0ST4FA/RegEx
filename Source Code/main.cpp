@@ -37,7 +37,7 @@ using LLParsingTableType = m0st4fa::LLParsingTable<GrammarType>;
 using LLParserGeneratorType = m0st4fa::LLParserGenerator<GrammarType, LLParsingTableType>;
 
 using LRParsingTableType = m0st4fa::LRParsingTable<LRGrammarType>;
-using LRParserType = m0st4fa::LRParser<GrammarType, LexicalAnalyzerType, Symbol, LRStateType, LRParsingTableType>;
+using LRParserType = m0st4fa::LRParser<LRGrammarType, LexicalAnalyzerType, Symbol, LRStateType, LRParsingTableType>;
 using LRStackType = m0st4fa::LRStackType<LRDataType, TokenType>;
 using m0st4fa::LRState;
 

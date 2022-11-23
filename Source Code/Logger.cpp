@@ -34,10 +34,13 @@ namespace m0st4fa {
 
 		std::string messageStr;
 		
-		if (loggerInfo.level == LOG_LEVEL::LL_ERROR || loggerInfo.level == LOG_LEVEL::LL_FATAL_ERROR)
+		if (loggerInfo.level == LOG_LEVEL::LL_ERROR)
 			messageStr += std::format(ANSI_ERR_COLOR"[{:s} => {:s}]: {:s}\n" ANSI_RESET_ALL, logLevelStr, errorTypeStr, message);
+		else if (loggerInfo.level == LOG_LEVEL::LL_FATAL_ERROR)
+			messageStr += std::format(ANSI_ERR_COLOR"[{:s}]: {:s}\n" ANSI_RESET_ALL, logLevelStr, message);
 		else
 			messageStr += std::format(ANSI_INFO_COLOR"[{:s}]: {:s}\n" ANSI_RESET_ALL, logLevelStr, message);
+
 #ifdef _DEBUG 
 #ifdef _TRACE
 		messageStr += this->getCurrSourceLocation(location);

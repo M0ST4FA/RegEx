@@ -8,6 +8,7 @@
 #include "LLParser.hpp"
 #include "LRParser.hpp"
 #include "LLPGenerator.h"
+#include "LRPGenerator.h"
 #include "LexicalAnalyzer.h"
 #include "ANSI.h"
 
@@ -40,6 +41,7 @@ using LRParsingTableType = m0st4fa::LRParsingTable<LRGrammarType>;
 using LRParserType = m0st4fa::LRParser<LRGrammarType, LexicalAnalyzerType, Symbol, LRStateType, LRParsingTableType>;
 using LRStackType = m0st4fa::LRStackType<LRDataType, TokenType>;
 using m0st4fa::LRState;
+using LRParserGeneratorType = m0st4fa::LRParserGenerator<LRGrammarType, ItemType, LRParsingTableType>;
 
 // #defines
 #define TEST_LR_PARSER
@@ -101,8 +103,12 @@ int main(int argc, char** argv) {
 			LRParsingTableType LRParsingTable;
 			define_table_lrparser(LRParsingTable);
 
+			LRParserGeneratorType parserGenerator{grammarLR, startSym};
+
 			// CONTINUE: COMPLETE LOGGING OF LR PARSER FUNCTIONS
 			try {
+				parserGenerator.generateSLRParser();
+
 				LRParserType parser{ lexicalAnal_parser, LRParsingTable, startSym };
 				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 
@@ -180,24 +186,24 @@ int main(int argc, char** argv) {
 			std::cout << grammar.at(0);
 
 			// ITEM
-			const ItemType item{ grammar.at(0), 2,
+			const ItemType item{ grammarLR.at(0), 0,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) } };
-			const ItemType item2{ grammar.at(1), 2,
+			const ItemType item2{ grammarLR.at(1), 0,
 				{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
 			ItemSet itemSet{ item, item2 };
-			itemSet.insert({ grammar.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
+			itemSet.insert({ grammarLR.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
 
 			// STATE
-			m0st4fa::LRState<size_t> state{0, 0};
+			LRStateType state{0};
 
 			// parse entered source
 			try {
 
 				// LL GRAMMAR TESTS
-				LLParsingTableType table = parserGenerator.generateLLParser();
-				LLParserType parser{ startSym, table, lexicalAnal_parser };
-				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
-				parserGenerator.generateLLParser();
+				//LLParsingTableType table = parserGenerator.generateLLParser();
+				//LLParserType parser{ startSym, table, lexicalAnal_parser };
+				//parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+				//parserGenerator.generateLLParser();
 
 				// LR GRAMMAR TESTS
 				grammarLR.calculateFIRST();
@@ -208,8 +214,8 @@ int main(int argc, char** argv) {
 				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
 				std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
 				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
-				itemSet.CLOSURE(grammar);
-				itemSet.GOTO(toSymbol(_TERMINAL::T_PLUS), grammar);
+				itemSet.CLOSURE(&grammarLR);
+				itemSet.GOTO(toSymbol(_NON_TERMINAL::NT_E), &grammarLR);
 				
 			}
 			catch (std::exception& e) {

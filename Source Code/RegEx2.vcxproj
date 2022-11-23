@@ -151,6 +151,7 @@
     <ClInclude Include="LADataStructs.h" />
     <ClInclude Include="LexicalAnalyzer.h" />
     <ClInclude Include="LLPGenerator.h" />
+    <ClInclude Include="LRPGenerator.h" />
     <ClInclude Include="PDataStructs.h" />
     <ClInclude Include="PEnum.h" />
     <ClInclude Include="Logger.h" />

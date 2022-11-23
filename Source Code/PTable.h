@@ -119,6 +119,7 @@ namespace m0st4fa {
 		std::vector<GotoArrayType> gotoTable;
 
 		LRParsingTable() = default;
+		LRParsingTable(const GrammarT& grammar): grammar{ grammar } {}
 		LRParsingTable(const GrammarT& grammar,
 			const std::vector<ActionArrayType>& actionTable,
 			const std::vector<GotoArrayType>& gotoTable)

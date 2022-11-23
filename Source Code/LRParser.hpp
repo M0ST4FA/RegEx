@@ -7,7 +7,6 @@ namespace m0st4fa {
 
 	template <typename GrammarT, typename LexicalAnalyzerT,
 		typename SymbolT, typename StateT,
-		// TODO: ADD A TEMPLATE PARAMETER FOR THE STACK ELEMENT TYPE (DataT or StaclElementT)
 		typename ParsingTableT, 
 		typename FSMTableT = FSMTable<>,
 		typename InputT = std::string>
@@ -116,7 +115,7 @@ namespace m0st4fa {
 
 		StackElementType newState = StackElementType{};
 
-		// exeucte the action, if any
+		// execute the action, if any
 		void(*action)(StackType&, StackElementType&) = static_cast<void(*)(StackType&, StackElementType&)>(production.postfixAction);
 
 		if (action != nullptr)

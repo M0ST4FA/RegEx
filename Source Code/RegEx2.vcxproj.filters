@@ -56,7 +56,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PTable.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Parser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -116,6 +116,9 @@
     </ClInclude>
     <ClInclude Include="ANSI.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LRPGenerator.h">
+      <Filter>Source Files\Parser</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

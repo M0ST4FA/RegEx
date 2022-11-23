@@ -347,6 +347,7 @@ namespace m0st4fa {
 
 		// production vector access methods
 		const VecType& getProdVector() { return this->m_Vector; }
+		VecType getProdVectorValue() { return this->m_Vector; }
 		void pushProduction(const ProdRec& prod) { this->m_Vector.push_back(prod); }
 
 		// element access methods

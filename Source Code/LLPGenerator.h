@@ -18,6 +18,7 @@ namespace m0st4fa {
 	class LLParserGenerator {
 		using ProdVecType = decltype(GrammarT{}.getProdVector());
 		using ProductionType = decltype(ProdVecType{}.at(0));
+
 		using SymbolType = decltype(ProductionType{}.prodHead);
 		using VariableType = decltype(SymbolType{}.as.nonTerminal);
 		using TerminalType = decltype(SymbolType{}.as.terminal);
@@ -44,11 +45,11 @@ namespace m0st4fa {
 		};
 
 		SymbolType getStartSymbol() { return this->m_StartSymbol; }
-		const LLParsingTableT& generateLLParser() const;
 		const GrammarT& getGrammar() {
 			return this->m_Grammar;
 		}
 
+		const LLParsingTableT& generateLLParser() const;
 	};
 }
 

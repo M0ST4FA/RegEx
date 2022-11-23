@@ -131,7 +131,9 @@ namespace m0st4fa {
 			return msg + "]";
 		}
 
-		size_t getActualDotPosition() const { return this->m_ActualDotPos; };
+		size_t getActualDotPosition() const { return this->m_ActualDotPos; }
+		ProductionT atDotPosition() const { return this->production.at(this->m_ActualDotPos); }
+		SymbolT symbolAtDotPosition() const { return this->production.at(this->m_ActualDotPos).as.gramSymbol; }
 	};
 
 	template <typename ProductionT>
@@ -153,11 +155,14 @@ namespace m0st4fa {
 
 		// stores the item set
 		std::vector<ItemT> m_Set {};
-		// chaches the closure of this item set
+		// caches the closure of this item set
 		std::vector<ItemT> m_Closure{};
 
 		bool _add_to_closure_no_lookaheads(const ProdVecType&);
 		bool _add_to_closure_lookaheads(const ProdVecType&, const LookAheadSet&);
+		void _set_closure(const ItemSet& newClosure) {
+			this->m_Closure = newClosure;
+		}
 
 	protected:
 		Logger p_Logger;
@@ -179,11 +184,14 @@ namespace m0st4fa {
 			return it;
 		}
 
+		ItemSet(const std::vector<ItemT> items, bool sameClosure) : m_Set{ items }, m_Closure{ items } {}
 	public:
 
 		ItemSet() = default;
 		ItemSet(const std::initializer_list<ItemT>& items) : m_Set{ items } {};
 		ItemSet(const std::vector<ItemT> items) : m_Set{ items } {};
+		ItemSet(const ItemSet& other) : m_Set{ other.m_Set }, m_Closure{ other.m_Closure } {};
+		ItemSet(ItemSet&& other) : m_Set{ std::move(other.m_Set) }, m_Closure{ std::move(other.m_Closure) } {};
 
 		// CAUTION: when implementing these functions, be cautiuos that a single
 		// item object may represent different items.
@@ -195,6 +203,9 @@ namespace m0st4fa {
 		bool operator==(const ItemSet& rhs) const {
 			return this->m_Set == rhs.m_Set;
 		};
+		bool operator<(const ItemSet& rhs) const {
+			return this->m_Set.size() < rhs.m_Set.size();
+		}
 		operator std::string() const {
 			return this->toString();
 		}
@@ -210,11 +221,19 @@ namespace m0st4fa {
 			for (const auto& item : this->m_Set)
 				str += (std::string)item + "\n";
 
-			return str;
+			if (str.empty())
+				return "{ }";
+
+			return (std::string)"{\n" + str + "}";
 		};
 
 		std::vector<ItemT> getItemVector() const { return this->m_Set; }
+		
 		const ItemT& at(size_t index) const { return this->m_Set.at(index); }
+		auto begin() { return this->m_Set.begin(); }
+		auto end() { return this->m_Set.end(); }
+		size_t size() const { return this->m_Set.size(); }
+		bool empty() const { return this->m_Set.empty(); }
 
 		/**
 		* insert a new item into the item set.
@@ -237,11 +256,11 @@ namespace m0st4fa {
 		* @input the grammar to be used to get all the production for a non-terminal when the dot is before that non-terminal.
 		* @return the CLOSURE set of this item set.
 		*/
-		ItemSet CLOSURE(ProdVecType);
+		ItemSet CLOSURE(ProdVecType*const);
 		/**
 		* @return the GOTO set of this item set on a particular symbol.
 		*/
-		ItemSet GOTO(const SymbolType&, ProdVecType);
+		ItemSet GOTO(const SymbolType&, ProdVecType*const);
 
 	};
 }
@@ -384,7 +403,7 @@ namespace m0st4fa {
 	}
 
 	template<typename ItemT>
-	ItemSet<ItemT> ItemSet<ItemT>::CLOSURE(ProdVecType grammar)
+	ItemSet<ItemT> ItemSet<ItemT>::CLOSURE(ProdVecType*const grammarPtr)
 	{
 		// check if the closure is already calculated
 		if (this->m_Closure.size() > 0) {
@@ -392,13 +411,14 @@ namespace m0st4fa {
 			return this->m_Closure;
 		}
 
+		ProdVecType& grammar = *grammarPtr;
 		// check if the set is not empty (its closure would therefore be empty)
 		if (this->m_Set.size() == 0) {
 			this->p_Logger.log(LoggerInfo::WARNING, "Item set is emtpy. Returning empty CLOSURE!");
 			return *this;
 		}
 
-		// keep track of alternaive productions of symbols
+		// keep track of alternative productions of symbols
 		std::vector<size_t> alternativeProduction[(size_t)VariableType::NT_COUNT]{};
 		for (size_t prodIndex = 0; const ProductionType & prod : grammar.getVector()) {
 			size_t varIndex = (size_t)prod.prodHead.as.nonTerminal;
@@ -498,13 +518,21 @@ namespace m0st4fa {
 			}
 		}
 
-		return this->m_Closure;
+		ItemSet res{ this->m_Closure, true };
+		return res;
 	}
 
 	template<typename ItemT>
-	ItemSet<ItemT> ItemSet<ItemT>::GOTO(const SymbolType& symbol, ProdVecType grammar)
+	ItemSet<ItemT> ItemSet<ItemT>::GOTO(const SymbolType& symbol, ProdVecType*const grammarPtr)
 	{
+		// check whether the closure is already calculated
+		if (this->m_Closure.size() == 0) {
+			this->p_Logger.log(LoggerInfo::INFO, "CLOSURE set is not already calculated for this set! Calculating it now.");
 
+			this->CLOSURE(grammarPtr);
+		}
+
+		ProdVecType& grammar = *grammarPtr;
 		this->p_Logger.logDebug("\nCALCULATING GOTO SET:\n");
 		this->p_Logger.logDebug(std::format("Item set:\n {}", (std::string)*this));
 		this->p_Logger.logDebug(std::format("GOTO symbol is {}", (std::string)symbol));
@@ -515,36 +543,47 @@ namespace m0st4fa {
 			figure out whether there exists an item of the form:
 			[A -> alpha .B beta, a]
 		*/
-		std::vector<ItemT> temp{ ItemT{} };
-		std::copy_if(this->m_Closure.begin(), this->m_Closure.end(),
-			temp.begin(),
-			[&symbol](const ItemT& item) {
-			size_t dotPos = item.getActualDotPosition();
-			const SymbolType& sym = item.production.prodBody.at(dotPos).as.gramSymbol;
-			return sym == symbol;
-			});
-		ItemSet<ItemT> foundItems{ temp };
+		ItemSet<ItemT> foundItems{};
+		for (size_t i = 0; i < this->m_Closure.size(); i++) {
+			auto predicate = [&symbol](const ItemT& item) {
+				size_t dotPos = item.getActualDotPosition();
+
+				// skip this item if the dot is at the end
+				if (item.production.size() == dotPos)
+					return false;
+
+				const SymbolType& sym = item.production.at(dotPos).as.gramSymbol;
+				return sym == symbol;
+			};
+
+			const ItemT currItem = this->m_Closure.at(i);
+
+			// if symbolAfterDot == symbol
+			if (predicate(currItem))
+				foundItems.insert(currItem);
+		}
 
 		// figure out whether such an item exists
-		bool found = foundItems.at(0) != ItemT{};
+		bool found = foundItems.size() > 0;
 
 		// if such an item is found
 		if (found) {
-
 			const auto& itemVec = foundItems.getItemVector();
 			for (const ItemT& item : itemVec) {
 				// create new item
 				size_t newDotPos = item.dotPos + 1;
+
+				// ERR: THE EXCEPTION IS HERE!!!
 				ItemT kernelItem = ItemT{ item.production, newDotPos, item.lookaheads };
 
-				// inser the item in `result`
+				// insert the item in `result`
 				result.insert(kernelItem);
 				this->p_Logger.log(LoggerInfo::DEBUG, std::format("Inserting kernel item {} to the GOTO set.", kernelItem.toString()));
 			}
 
 		}
 
-		const ItemSet<ItemT> resultClosure = result.CLOSURE(grammar);
+		const ItemSet<ItemT> resultClosure = result.CLOSURE(grammarPtr);
 		this->p_Logger.logDebug(std::format("GOTO Set for the items: \n{}", (std::string)resultClosure));
 		return resultClosure;
 	}

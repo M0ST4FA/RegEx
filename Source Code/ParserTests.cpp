@@ -7,6 +7,7 @@ module;
 #include "FiniteStateMachine.h"
 #include "LexicalAnalyzer.h"
 #include "Parser.h"
+#include "common.h"
 
 module Tests;
 
@@ -152,7 +153,7 @@ void mult_act(LRStackType& stack, LRStateType& newState) {
 	size_t a = stack.at(stack.size() - 3).data.data;
 	size_t b = stack.back().data.data;
 	newState.data.data = a * b;
-	std::cout << std::format("Multipied `{}` and `{}`. Result `{}`\n", a, b, a * b);
+	std::cout << std::format("Multiplied `{}` and `{}`. Result `{}`\n", a, b, a * b);
 	newState.hasData = true;
 }
 
@@ -161,6 +162,7 @@ LRGrammarType grammar_expression_LR()
 	m0st4fa::ProductionVector<LRProductionType> result;
 
 	LRProductionType prod;
+	Symbol se_EP = toSymbol(_NON_TERMINAL::NT_EP);
 	Symbol se_E = toSymbol(_NON_TERMINAL::NT_E);
 	Symbol se_T = toSymbol(_NON_TERMINAL::NT_T);
 	Symbol se_F = toSymbol(_NON_TERMINAL::NT_F);
@@ -172,6 +174,13 @@ LRGrammarType grammar_expression_LR()
 	Symbol se_RP = toSymbol(_TERMINAL::T_RIGHT_PAREN);
 	Symbol se_EPS = toSymbol(_TERMINAL::T_EPSILON);
 	Symbol se_EOF = toSymbol(_TERMINAL::T_EOF);
+	
+	// E' -> E
+	prod = LRProductionType{
+		 {se_EP },
+		 {se_E} };
+	prod.postfixAction = pass_last_act;
+	result.pushProduction(prod);
 
 	// E -> E + T
 	prod = LRProductionType{
@@ -450,6 +459,12 @@ std::string stringfy(const _TERMINAL terminal) {
 		{ _TERMINAL::T_EPSILON, "EPSILON" }
 	};
 
+	if (not m0st4fa::withinRange((size_t)terminal, (size_t)_TERMINAL::T_ID, (size_t)_TERMINAL::T_EPSILON, true)) {
+		m0st4fa::Logger logger;
+		logger.log(m0st4fa::LoggerInfo::FATAL_ERROR, "The terminal being stringfied is not within range!");
+		throw std::logic_error("The terminal being stringfied is not within range!");
+	}
+
 	return terminal_to_string.at(terminal);
 }
 
@@ -470,6 +485,12 @@ std::string stringfy(const _NON_TERMINAL variable) {
 		{ _NON_TERMINAL::NT_TP, "T'" },
 		{ _NON_TERMINAL::NT_F, "F" }
 	};
+
+	if (not m0st4fa::withinRange((size_t)variable, (size_t)_NON_TERMINAL::NT_E, (size_t)_NON_TERMINAL::NT_F, true)) {
+		m0st4fa::Logger logger;
+		logger.log(m0st4fa::LoggerInfo::FATAL_ERROR, "The non-terminal being stringfied is not within range!");
+		throw std::logic_error("The non-terminal being stringfied is not within range!");
+	}
 
 	return variable_to_string.at(variable);
 }

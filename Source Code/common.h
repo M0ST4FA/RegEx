@@ -165,5 +165,18 @@ namespace m0st4fa {
 		return true;
 	}
 
+	// RANGES
+	template<typename T>
+		requires requires(T a, T b) {
+		a < b;
+		a > b;
+		}
+	inline bool withinRange(T element, T b1, T b2, bool inclusive = false) {
+		if (inclusive)
+			return (element >= b1 && element <= b2);
+
+		return (element > b1 && element < b2);
+	};
+
 }
 

@@ -105,17 +105,11 @@ int main(int argc, char** argv) {
 
 			LRParserGeneratorType parserGenerator{grammarLR, startSym};
 
-			// CONTINUE: COMPLETE LOGGING OF LR PARSER FUNCTIONS
 			try {
-				parserGenerator.generateSLRParser();
+				LRParsingTableType gLRParsingTable = parserGenerator.generateSLRParser();
 
-				LRParserType parser{ lexicalAnal_parser, LRParsingTable, startSym };
+				LRParserType parser{ lexicalAnal_parser, gLRParsingTable, startSym };
 				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
-
-				// LR GRAMMAR TESTS
-				grammarLR.calculateFIRST();
-				grammarLR.calculateFOLLOW();
-				std::cout << "TRYING CREATE PARSING TABLE FOR LR GRAMMAR:\n";
 
 				// ITEM TESTS
 				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
@@ -132,19 +126,43 @@ int main(int argc, char** argv) {
 
 		// get the source
 		std::string src = argv[1];
+		std::cout << src << std::endl;
 
-		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+		LexicalAnalyzerType lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
-		// create parser object
 		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
 
-		// parse entered source
+		// LR GRAMMAR
+		auto grammarLR = grammar_expression_LR();
+
+		// ITEM
+		const ItemType item{ grammarLR.at(0), 1,
+			{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF), toSymbol(_TERMINAL::T_ID) } };
+		const ItemType item2{ grammarLR.at(1), 1,
+			{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_TERMINAL::T_EOF)} };
+		ItemSet itemSet{ item, item2 };
+		itemSet.insert({ grammarLR.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
+
+		LRParsingTableType LRParsingTable;
+		define_table_lrparser(LRParsingTable);
+
+		LRParserGeneratorType parserGenerator{ grammarLR, startSym };
+
 		try {
+			LRParsingTableType gLRParsingTable = parserGenerator.generateSLRParser();
+
+			LRParserType parser{ lexicalAnal_parser, gLRParsingTable, startSym };
+			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+
+			// ITEM TESTS
+			std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
+			std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
+			std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
+
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";
 		};
-
 	}
 
 	return 0;

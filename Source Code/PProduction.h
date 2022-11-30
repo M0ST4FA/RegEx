@@ -33,11 +33,12 @@ namespace m0st4fa {
 	public:
 		SymbolT prodHead = SymbolT{};
 		std::vector<ProductionElementT> prodBody;
+		size_t prodNumber = 0;
 		// action (StackType&, LRState&)
 		void* postfixAction = nullptr;
 
 		ProductionRecord() = default;
-		ProductionRecord(const SymbolT& head, const std::vector<ProductionElementT>& body, void* postfixAct = nullptr) : prodHead{ head }, prodBody{ body }, postfixAction{ postfixAct } {
+		ProductionRecord(const SymbolT& head, const std::vector<ProductionElementT>& body, const size_t number, void* postfixAct = nullptr) : prodHead{ head }, prodBody{ body }, prodNumber{ number }, postfixAction { postfixAct } {
 
 			// the head must be a non-terminal
 			if (head.isTerminal) {
@@ -64,6 +65,7 @@ namespace m0st4fa {
 		ProductionRecord& operator=(const ProductionRecord& other) {
 			prodHead = other.prodHead;
 			prodBody = other.prodBody;
+			prodNumber = other.prodNumber;
 			m_Size = other.m_Size;
 			return *this;
 		}
@@ -84,7 +86,9 @@ namespace m0st4fa {
 			return this->toSymbolString();
 		}
 		auto begin() const { return this->prodBody.begin(); }
+		auto rbegin() const { return this->prodBody.rbegin(); }
 		auto end()   const { return this->prodBody.end(); }
+		auto rend() const { return this->prodBody.rend(); }
 		ProductionElementT& at(size_t index) {
 			return this->prodBody.at(index);
 		}
@@ -146,6 +150,11 @@ namespace m0st4fa {
 			return this->contains(SymbolT::EPSILON);
 		}
 
+		SymbolT getLastSymbol() const {
+			return (std::find_if(this->rbegin(), this->rend(), [](const ProductionElementT& pe) {
+				return pe.type == ProdElementType::PET_GRAM_SYMBOL;
+				})->as.gramSymbol);
+		}
 	};
 
 	template <typename SymbolT, typename ProductionElementT>
@@ -360,6 +369,7 @@ namespace m0st4fa {
 		auto end() const { return this->m_Vector.end(); }
 		size_t size() const { return this->m_Vector.size(); }
 		void clear() { this->m_Vector.clear(); this->FIRST.clear(); this->FOLLOW.clear(); }
+		bool empty() const { return this->m_Vector.empty(); }
 
 		// conversion methods
 		operator std::string() const {

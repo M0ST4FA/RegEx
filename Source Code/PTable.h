@@ -62,6 +62,19 @@ namespace m0st4fa {
 		operator std::string() const {
 			return this->toString();
 		}
+		bool operator==(const LRTableEntry& other) const {
+			bool initCond = isEmpty == other.isEmpty && type == other.type;
+
+			if (not initCond)
+				return false;
+
+			// initCond == true
+
+			if (type == LRTableEntryType::TET_ACTION_SHIFT || type == LRTableEntryType::TET_ACTION_REDUCE)
+				return number == other.number;
+						
+			return true;
+		}
 		std::string toString() const {
 
 			std::string msg;
@@ -84,7 +97,7 @@ namespace m0st4fa {
 			return msg;
 		}
 
-		// Note: being empty is considered erranuous
+		// Note: being empty is considered erroneous
 		inline bool isError() const {
 			return isEmpty || this->type == LRTableEntryType::TET_ERROR;
 		}
@@ -134,15 +147,10 @@ namespace m0st4fa {
 		}
 
 		LRTableEntry& atAction(size_t state, TerminalType terminal) {
-			try {
-				return this->actionTable[state][(size_t)terminal];
-			}
-			catch(...) {
-				assert("TODO: handle checking the boundry of action table");
-				this->reserveRows(state);
-			}
+			if (state >= this->actionTable.size())
+				actionTable.resize(state + 1, {});
 
-			return this->actionTable[state][(size_t)terminal];
+			return this->actionTable.at(state).at((size_t)terminal);
 		};
 		const ActionArrayType& atActionRow(size_t state) const {
 			return this->actionTable.at(state);
@@ -161,15 +169,10 @@ namespace m0st4fa {
 		}
 
 		LRTableEntry& atGoto(size_t state, VariableType nonTerminal) {
-			try {
-				return this->gotoTable[state][(size_t)nonTerminal];
-			}
-			catch(...) {
-				assert("TODO: handle checking the boundry of goto table");
-				this->reserveRows(state);
-			}
+			if (state >= this->gotoTable.size())
+				gotoTable.resize(state + 1, {});
 
-			return this->gotoTable[state][(size_t)nonTerminal];
+			return this->gotoTable.at(state).at((size_t)nonTerminal);
 		};
 		const GotoArrayType& atGotoRow(size_t state) const {
 			return this->gotoTable.at(state);

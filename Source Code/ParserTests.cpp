@@ -42,6 +42,7 @@ GrammarType grammer_expression() {
 
 
 	std::vector<Production> result;
+	size_t index = 0;
 
 	Production prod;
 	StackElement se_E = { .type = ProdElementType::PET_GRAM_SYMBOL, .as = {.gramSymbol = Symbol {false, {.nonTerminal = _NON_TERMINAL::NT_E}} } };
@@ -66,21 +67,21 @@ GrammarType grammer_expression() {
 	// E -> T E'
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
-		 {se_T, se_Act, se_EP, se_Syn} };
+		 {se_T, se_Act, se_EP, se_Syn}, index++ };
 
 	result.push_back(prod);
 
 	// E' -> + E T
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
-		 {se_PLUS, se_T, se_EP} };
+		 {se_PLUS, se_T, se_EP}, index++ };
 
 	result.push_back(prod);
 
 	// T -> F T'
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
-		 {se_F, se_TP} };
+		 {se_F, se_TP}, index++ };
 
 	result.push_back(prod);
 
@@ -88,33 +89,33 @@ GrammarType grammer_expression() {
 	// T' -> * F T'
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
-		 {se_STAR, se_Act, se_F, se_Syn, se_TP} };
+		 {se_STAR, se_Act, se_F, se_Syn, se_TP}, index++ };
 
 	result.push_back(prod);
 
 	// F -> (E)
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		 {se_LP, se_E, se_RP} };
+		 {se_LP, se_E, se_RP}, index++ };
 
 	result.push_back(prod);
 
 	// F -> ID
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		 {se_ID} };
+		 {se_ID}, index++ };
 
 	result.push_back(prod);
 
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_EP} },
-		 {se_EPS} };
+		 {se_EPS}, index++ };
 
 	result.push_back(prod);
 
 	prod = Production{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_TP} },
-		 {se_EPS} };
+		 {se_EPS}, index++ };
 
 	result.push_back(prod);
 
@@ -160,6 +161,7 @@ void mult_act(LRStackType& stack, LRStateType& newState) {
 LRGrammarType grammar_expression_LR()
 {
 	m0st4fa::ProductionVector<LRProductionType> result;
+	size_t index = 0;
 
 	LRProductionType prod;
 	Symbol se_EP = toSymbol(_NON_TERMINAL::NT_EP);
@@ -178,14 +180,14 @@ LRGrammarType grammar_expression_LR()
 	// E' -> E
 	prod = LRProductionType{
 		 {se_EP },
-		 {se_E} };
+		 {se_E}, index++ };
 	prod.postfixAction = pass_last_act;
 	result.pushProduction(prod);
 
 	// E -> E + T
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
-		 {se_E, se_PLUS, se_T} };
+		 {se_E, se_PLUS, se_T}, index++ };
 	prod.postfixAction = add_act;
 	result.pushProduction(prod);
 
@@ -193,28 +195,28 @@ LRGrammarType grammar_expression_LR()
 
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_E} },
-		 {se_T} };
+		 {se_T}, index++ };
 	prod.postfixAction = pass_last_act;
 	result.pushProduction(prod);
 
 	// T -> T * F
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
-		 {se_T, se_STAR, se_F} };
+		 {se_T, se_STAR, se_F}, index++ };
 	prod.postfixAction = mult_act;
 	result.pushProduction(prod);
 
 	// T -> F
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_T} },
-		 {se_F} };
+		 {se_F}, index++ };
 	prod.postfixAction = pass_last_act;
 	result.pushProduction(prod);
 
 	// F -> (E)
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		 {se_LP, se_E, se_RP} };
+		 {se_LP, se_E, se_RP}, index++ };
 	prod.postfixAction = pass_prelast_act;
 	result.pushProduction(prod);
 
@@ -222,7 +224,7 @@ LRGrammarType grammar_expression_LR()
 	// F -> ID
 	prod = LRProductionType{
 		 {false, {.nonTerminal = _NON_TERMINAL::NT_F} },
-		 {se_ID} };
+		 {se_ID}, index++ };
 	prod.postfixAction = num_act;
 	result.pushProduction(prod);
 	

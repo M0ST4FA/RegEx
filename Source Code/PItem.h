@@ -14,6 +14,7 @@ namespace m0st4fa {
 
 	template <typename ProductionT>
 	class Item {
+		using ProductionElementType = decltype(ProductionT{}.at(0));
 		using SymbolT = decltype(ProductionT{}.prodHead);
 		using LookAheadSet = LookAheadSet<SymbolT>;
 		using pos_t = size_t;
@@ -132,8 +133,28 @@ namespace m0st4fa {
 		}
 
 		size_t getActualDotPosition() const { return this->m_ActualDotPos; }
-		ProductionT atDotPosition() const { return this->production.at(this->m_ActualDotPos); }
-		SymbolT symbolAtDotPosition() const { return this->production.at(this->m_ActualDotPos).as.gramSymbol; }
+		bool isDotPositionAtEnd() const { return this->m_ActualDotPos == this->production.size(); }
+
+		/**
+		* @output returns the production element at the dot position, or otherwise a default-constructed production element if the dot is at the end of the production.
+		*/
+		ProductionElementType atDotPosition() const { 
+			if (this->m_ActualDotPos < this->production.size())
+				return this->production.at(this->m_ActualDotPos);
+
+			return ProductionElementType{};
+		}
+
+		/**
+		* @output returns the symbol at the dot position, or otherwise a default-constructed symbol if the dot is at the end of the production.
+		*/
+		SymbolT symbolAtDotPosition() const { 
+			if (this->m_ActualDotPos < this->production.size())
+				return this->production.at(this->m_ActualDotPos).as.gramSymbol; 
+
+			return SymbolT{};
+		}
+		
 	};
 
 	template <typename ProductionT>
@@ -232,6 +253,8 @@ namespace m0st4fa {
 		const ItemT& at(size_t index) const { return this->m_Set.at(index); }
 		auto begin() { return this->m_Set.begin(); }
 		auto end() { return this->m_Set.end(); }
+		auto begin() const { return this->m_Set.begin(); }
+		auto end() const { return this->m_Set.end(); }
 		size_t size() const { return this->m_Set.size(); }
 		bool empty() const { return this->m_Set.empty(); }
 

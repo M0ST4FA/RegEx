@@ -22,6 +22,7 @@ namespace m0st4fa {
 		ET_STACK_UNDERFLOW,
 		ET_UNACCEPTED_STRING,
 		ET_INVALID_TABLE_ENTRY,
+		ET_UNACCEPTED_GRAMMAR,
 		ET_ERROR_TYPE_COUNT
 	};
 
@@ -41,7 +42,7 @@ namespace m0st4fa {
 			ERROR_TYPE errorType;
 		} info;
 
-		static const LoggerInfo WARNING, INFO, DEBUG, FATAL_ERROR, ERR_INVALID_ARG, ERR_INVALID_LEXEME, ERR_EMPTY_PROD_BODY, ERR_UNXPCTED_TOKEN, ERR_RECOV_LIMIT_EXCEEDED, ERR_MISSING_VAL, ERR_INVALID_VAL, ERR_STACK_UNDERFLOW, ERR_UNACCEPTED_STRING, ERR_INVALID_TABLE_ENTRY;
+		static const LoggerInfo WARNING, INFO, DEBUG, FATAL_ERROR, ERR_INVALID_ARG, ERR_INVALID_LEXEME, ERR_EMPTY_PROD_BODY, ERR_UNXPCTED_TOKEN, ERR_RECOV_LIMIT_EXCEEDED, ERR_MISSING_VAL, ERR_INVALID_VAL, ERR_STACK_UNDERFLOW, ERR_UNACCEPTED_STRING, ERR_INVALID_TABLE_ENTRY, ERR_UNACCEPTED_GRAMMAR;
 	};
 	
 	class Logger {
@@ -49,7 +50,7 @@ namespace m0st4fa {
 		// static assertions to remind me of making some changing related to the number of 
 		// these enumerators
 		static_assert((int)LOG_LEVEL::LL_LOG_LEVEL_COUNT == 5 && "Change LOG_LEVEL_STRING");
-		static_assert((int)ERROR_TYPE::ET_ERROR_TYPE_COUNT == 10 && "Change ERROR_TYPE_NAMES");
+		static_assert((int)ERROR_TYPE::ET_ERROR_TYPE_COUNT == 11 && "Change ERROR_TYPE_NAMES");
 
 		static constexpr const volatile char* LOG_LEVEL_STRING[(int)LOG_LEVEL::LL_LOG_LEVEL_COUNT] = {
 			"FATAL ERROR",
@@ -61,7 +62,7 @@ namespace m0st4fa {
 
 		static constexpr const volatile char* ERROR_TYPE_NAMES[(int)ERROR_TYPE::ET_ERROR_TYPE_COUNT] = {
 			"Invalid Argument",
-			"Invlaid Lexeme",
+			"Invalid Lexeme",
 			"Empty Production Body",
 			"Unexpected Token",
 			"Error Recovery Limit Exceeded",
@@ -69,7 +70,8 @@ namespace m0st4fa {
 			"Invalid Value",
 			"Stack Underflow",
 			"Unaccepted String",
-			"Invalid Table Entry"
+			"Invalid Table Entry",
+			"Unaccepted Grammar"
 		};
 
 	public:

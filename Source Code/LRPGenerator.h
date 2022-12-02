@@ -25,6 +25,7 @@ namespace m0st4fa {
 		using TerminalType = decltype(SymbolType{}.as.terminal);
 
 		using SetType = decltype(GrammarT{}.getFOLLOW(SymbolType{}.as.nonTerminal));
+		using LookAheadSetType = decltype(ItemT{}.lookaheads);
 
 		using ItemSetType = ItemSet<ItemT>;
 		using CollectionType = std::vector<ItemSetType>;
@@ -35,7 +36,7 @@ namespace m0st4fa {
 		GrammarT* m_Grammar{nullptr};
 		mutable bool m_ParsingTableGenerated = false;
 
-		CollectionType _create_LR0_collection();
+		CollectionType _create_LR_collection(size_t = 0);
 		bool _check_entry_already_exists(const LRTableEntry& currEntry, const LRTableEntry& newEntry) const {
 			/*
 			* detect if there is already an entry at that location.
@@ -76,7 +77,28 @@ namespace m0st4fa {
 			});
 
 			return newEntryAdded;
+		}
+		bool _action_reduce_CLR(size_t i, const ItemT& currItem) {
+			const SymbolType& head = currItem.production.prodHead;
+			const size_t headNum = (size_t)head.as.nonTerminal;
+			const LookAheadSetType& lookaheads = currItem.lookaheads;
+			size_t prodNum = currItem.production.prodNumber;
+			bool newEntryAdded = false;
 
+			// set ACTION[i, a] to "reduce A --> a" for all a in lookahead set of the item.
+			std::for_each(lookaheads.begin(), lookaheads.end(), [this, i, prodNum, &newEntryAdded](const SymbolType& sym) {
+				LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, sym.as.terminal);
+			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_REDUCE, prodNum };
+
+			if (_check_entry_already_exists(currEntry, newEntry))
+				return;
+
+			this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = R{}", i, (std::string)sym, prodNum));
+			currEntry = newEntry;
+			newEntryAdded = true;
+				});
+
+			return newEntryAdded;
 		}
 		/**
 		* @return bool representing whether a new entry has been added
@@ -140,7 +162,7 @@ namespace m0st4fa {
 		SymbolType getStartSymbol() { return this->m_StartSymbol; }
 
 		const LRParsingTableT& generateSLRParser();
-		const LRParsingTableT& generateCLRParser() const;
+		const LRParsingTableT& generateCLRParser();
 		const LRParsingTableT& generateLALRParser() const;
 	};
 
@@ -157,13 +179,24 @@ namespace m0st4fa {
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
-	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::CollectionType LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_create_LR0_collection()
+	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::CollectionType LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_create_LR_collection(size_t lookaheadNum)
 	{
+
+		// check for whether the number of lookaheads is correct or no
+		if (lookaheadNum > 1 || lookaheadNum < 0) {
+			const std::string msg = std::format("Incorrect number of lookaheads `{}`! Supported lookaheads are `0` and `1`.", lookaheadNum);
+			this->p_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
+			throw std::logic_error("Incorrect number of lookaheads!");
+		}
+
 		CollectionType resCollection;
 		
 		// Initialize the collection of LR(0) item sets
 		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);		
-		const ItemT startItem{ startProd, 0 };
+		ItemT startItem{ startProd, 0 };
+		if (lookaheadNum == 1)
+			startItem.lookaheads = {SymbolType::END_MARKER};
+
 		ItemSetType startItemSet{ startItem };
 		resCollection.push_back(startItemSet.CLOSURE(this->m_Grammar));
 
@@ -223,7 +256,7 @@ namespace m0st4fa {
 
 		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
 		const ItemT endItem{ startProd, 1 };
-		CollectionType LR0Collection = _create_LR0_collection();
+		CollectionType LR0Collection = _create_LR_collection();
 		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(0) COLLECTION:\n{}", stringfy(LR0Collection)));
 
 		for (size_t i = 0; i < LR0Collection.size(); i++) {
@@ -263,10 +296,46 @@ namespace m0st4fa {
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
-	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateCLRParser() const
+	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateCLRParser()
 	{	
-		this->p_Logger.log(LoggerInfo::FATAL_ERROR, "generateCLRParser is not yet finished");
-		std::abort();
+
+		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
+		const ItemT endItem{ startProd, 1, {toSymbol(TerminalType::T_EOF)} };
+		CollectionType LR1Collection = _create_LR_collection(1);
+		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LR1Collection), LR1Collection.size()));
+
+		for (size_t i = 0; i < LR1Collection.size(); i++) {
+			ItemSetType& currItemSet{ LR1Collection.at(i) };
+
+			for (const ItemT& currItem : currItemSet) {
+
+				// if the dot is at the end of the production
+				if (currItem.isDotPositionAtEnd()) {
+					// check whether this item is the end item
+					if (currItem == endItem) {
+						this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = ACCEPT", i, (std::string)toSymbol(TerminalType::T_EOF)));
+						this->m_ParsingTable.atAction(i, TerminalType::T_EOF) = LRTableEntry{ false, LRTableEntryType::TET_ACCEPT };
+					}
+					else // if this item is not the end item
+						_action_reduce_CLR(i, currItem);
+
+					continue; // we're finished with this item; move on to the next one
+				}
+
+				// if the dot is not at the end of the production
+				const SymbolType& symAtDot = currItem.symbolAtDotPosition();
+				size_t j = _goto_set_number(currItemSet, symAtDot, LR1Collection);
+
+				// if the symbol at the dot is a terminal
+				if (symAtDot.isTerminal)
+					_action_shift(i, j, symAtDot);
+				else // if the symbol at the dot is a non-terminal
+					_goto(i, j, symAtDot);
+
+			}
+
+		}
+
 		return this->m_ParsingTable;
 	}
 

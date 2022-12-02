@@ -106,9 +106,11 @@ int main(int argc, char** argv) {
 			LRParserGeneratorType parserGenerator{grammarLR, startSym};
 
 			try {
-				LRParsingTableType gLRParsingTable = parserGenerator.generateSLRParser();
+				//LRParsingTableType SLRParsingTable = parserGenerator.generateSLRParser();
+				// CLR PARSER GENERATOR FINISHED, BUT TRY TO FACTOR OUT CERTAIN COMMON FUNCTIONALITY BETWEEN THE DIFFERENT PARSER GENERATORS.
+				LRParsingTableType CLRParsingTable = parserGenerator.generateCLRParser();
 
-				LRParserType parser{ lexicalAnal_parser, gLRParsingTable, startSym };
+				LRParserType parser{ lexicalAnal_parser, CLRParsingTable, startSym };
 				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 
 				// ITEM TESTS
@@ -149,9 +151,9 @@ int main(int argc, char** argv) {
 		LRParserGeneratorType parserGenerator{ grammarLR, startSym };
 
 		try {
-			LRParsingTableType gLRParsingTable = parserGenerator.generateSLRParser();
+			LRParsingTableType SLRParsingTable = parserGenerator.generateSLRParser();
 
-			LRParserType parser{ lexicalAnal_parser, gLRParsingTable, startSym };
+			LRParserType parser{ lexicalAnal_parser, SLRParsingTable, startSym };
 			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 
 			// ITEM TESTS

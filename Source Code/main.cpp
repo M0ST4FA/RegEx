@@ -108,9 +108,9 @@ int main(int argc, char** argv) {
 			try {
 				//LRParsingTableType SLRParsingTable = parserGenerator.generateSLRParser();
 				// CLR PARSER GENERATOR FINISHED, BUT TRY TO FACTOR OUT CERTAIN COMMON FUNCTIONALITY BETWEEN THE DIFFERENT PARSER GENERATORS.
-				LRParsingTableType CLRParsingTable = parserGenerator.generateCLRParser();
+				LRParsingTableType LALRParsingTable = parserGenerator.generateLALRParser();
 
-				LRParserType parser{ lexicalAnal_parser, CLRParsingTable, startSym };
+				LRParserType parser{ lexicalAnal_parser, LALRParsingTable, startSym };
 				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
 
 				// ITEM TESTS

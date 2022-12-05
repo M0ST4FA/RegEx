@@ -37,7 +37,10 @@ namespace m0st4fa {
 		mutable bool m_ParsingTableGenerated = false;
 
 		CollectionType _create_LR_collection(size_t = 0);
-		bool _check_entry_already_exists(const LRTableEntry& currEntry, const LRTableEntry& newEntry) const {
+		void _create_parsing_table_lookahead(CollectionType&);
+		CollectionType _merge_sets_with_identical_cores(const CollectionType&);
+
+		inline bool _check_entry_already_exists(const LRTableEntry& currEntry, const LRTableEntry& newEntry) const {
 			/*
 			* detect if there is already an entry at that location.
 			* if that entry == the current entry, continue.
@@ -56,7 +59,7 @@ namespace m0st4fa {
 		/**
 		* @return bool representing whether a new entry has been added
 		*/
-		bool _action_reduce_SLR(size_t i, const ItemT& currItem) {
+		inline bool _action_reduce_SLR(size_t i, const ItemT& currItem) {
 			const SymbolType& head = currItem.production.prodHead;
 			const size_t headNum = (size_t)head.as.nonTerminal;
 			const std::set<SymbolType>& followHead = this->m_Grammar->getFOLLOW(head.as.nonTerminal);
@@ -78,7 +81,10 @@ namespace m0st4fa {
 
 			return newEntryAdded;
 		}
-		bool _action_reduce_CLR(size_t i, const ItemT& currItem) {
+		/**
+		* @return bool representing whether a new entry has been added
+		*/
+		inline bool _action_reduce_CLR(size_t i, const ItemT& currItem) {
 			const SymbolType& head = currItem.production.prodHead;
 			const size_t headNum = (size_t)head.as.nonTerminal;
 			const LookAheadSetType& lookaheads = currItem.lookaheads;
@@ -103,7 +109,21 @@ namespace m0st4fa {
 		/**
 		* @return bool representing whether a new entry has been added
 		*/
-		bool _action_shift(size_t i, size_t j, const SymbolType& symAtDot) {
+		inline bool _action_accept(size_t i, const ItemT& currItem) {
+			LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, TerminalType::T_EOF);
+			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACCEPT };
+
+			if (_check_entry_already_exists(currEntry, newEntry))
+				return false;
+
+			currEntry = newEntry;
+			this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = ACCEPT", i, (std::string)toSymbol(TerminalType::T_EOF)));
+			return true;
+		}
+		/**
+		* @return bool representing whether a new entry has been added
+		*/
+		inline bool _action_shift(size_t i, size_t j, const SymbolType& symAtDot) {
 			LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, symAtDot.as.terminal);
 			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_SHIFT, j };
 
@@ -117,7 +137,7 @@ namespace m0st4fa {
 		/**
 		* @return bool representing whether a new entry has been added
 		*/
-		bool _goto(size_t i, size_t j, const SymbolType& symAtDot) {
+		inline bool _goto(size_t i, size_t j, const SymbolType& symAtDot) {
 			LRTableEntry currEntry = this->m_ParsingTable.atGoto(i, symAtDot.as.nonTerminal);
 			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_GOTO, j };
 			if (_check_entry_already_exists(currEntry, newEntry))
@@ -128,18 +148,16 @@ namespace m0st4fa {
 			this->p_Logger.log(LoggerInfo::INFO, std::format("GOTO[{}][{}] = {}", i, (std::string)symAtDot, j));
 			return true;
 		};
-		size_t _goto_set_number(ItemSetType& currItemSet, const SymbolType& symAtDot, const CollectionType& LR0Collection) const {
+		inline size_t _goto_set_number(ItemSetType& currItemSet, const SymbolType& symAtDot, const CollectionType& LRCollection) const {
 			ItemSetType gotoSet = currItemSet.GOTO(symAtDot, this->m_Grammar);
-			size_t j = LR0Collection.size() - 1;
+			size_t j = LRCollection.size() - 1;
 
-			for (; j >= 0; j--)
-				if (LR0Collection.at(j) == gotoSet)
+			for (; j > 0; j--)
+				if (LRCollection.at(j).hasIdenticalCore(gotoSet))
 					break;
 
 			return j;
 		}
-
-		void _fill_table(const ProductionType&, size_t) const;
 
 	protected:
 		Logger p_Logger{};
@@ -163,7 +181,7 @@ namespace m0st4fa {
 
 		const LRParsingTableT& generateSLRParser();
 		const LRParsingTableT& generateCLRParser();
-		const LRParsingTableT& generateLALRParser() const;
+		const LRParsingTableT& generateLALRParser();
 	};
 
 
@@ -240,6 +258,79 @@ namespace m0st4fa {
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
+	void LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_create_parsing_table_lookahead(CollectionType& LRCollection)
+	{
+		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
+		const ItemT endItem{ startProd, 1, {toSymbol(TerminalType::T_EOF)} };
+
+		for (size_t i = 0; i < LRCollection.size(); i++) {
+			ItemSetType& currItemSet{ LRCollection.at(i) };
+
+			for (const ItemT& currItem : currItemSet) {
+
+				// if the dot is at the end of the production
+				if (currItem.isDotPositionAtEnd()) {
+					// check whether this item is the end item
+					if (currItem == endItem)
+						_action_accept(i, currItem);
+					else // if this item is not the end item
+						_action_reduce_CLR(i, currItem);
+
+					continue; // we're finished with this item; move on to the next one
+				}
+
+				// if the dot is not at the end of the production
+				const SymbolType& symAtDot = currItem.symbolAtDotPosition();
+				size_t j = _goto_set_number(currItemSet, symAtDot, LRCollection);
+
+				// if the symbol at the dot is a terminal
+				if (symAtDot.isTerminal)
+					_action_shift(i, j, symAtDot);
+				else // if the symbol at the dot is a non-terminal
+					_goto(i, j, symAtDot);
+			}
+
+		}
+
+	}
+
+	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
+		requires LRPGenConcept<GrammarT>
+	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::CollectionType
+	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_merge_sets_with_identical_cores(const CollectionType& LR1Collection)
+	{
+		CollectionType res;
+		size_t LR1CollSize = LR1Collection.size();
+		std::vector<bool> alreadyMerged(LR1CollSize, false);
+
+
+		for (size_t setIndex = 0; setIndex < LR1CollSize; setIndex++) {
+			ItemSetType currSet = LR1Collection.at(setIndex);
+
+			// check whether the set has already been merged
+			if (alreadyMerged.at(setIndex))
+				continue;
+
+			// if the set is not already merged, find all sets with identical cores and merge them with it
+			// note that if the set is not already merged, this means that all sets with identical cores are also not already merged
+			for (size_t j = setIndex + 1; j < LR1CollSize; j++) {
+				const ItemSetType& s = LR1Collection.at(j);
+				
+				if (not currSet.hasIdenticalCore(s))
+					continue;
+
+				alreadyMerged.at(j) = true;
+				currSet.merge(s);
+			}
+			
+			res.push_back(currSet);
+		}
+
+		return res;
+	}
+
+	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
+		requires LRPGenConcept<GrammarT>
 	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateSLRParser()
 	{
 		/** Algorithm
@@ -267,13 +358,11 @@ namespace m0st4fa {
 				// if the dot is at the end of the production
 				if (currItem.isDotPositionAtEnd()) {
 					// check whether this item is the end item
-					if (currItem == endItem) {
-						this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = ACCEPT", i, (std::string)toSymbol(TerminalType::T_EOF)));
-						this->m_ParsingTable.atAction(i, TerminalType::T_EOF) = LRTableEntry{ false, LRTableEntryType::TET_ACCEPT };
-					}
+					if (currItem == endItem)
+						_action_accept(i, currItem);
 					else // if this item is not the end item
 						_action_reduce_SLR(i, currItem);
-					
+
 					continue; // we're finished with this item; move on to the next one
 				}
 
@@ -299,52 +388,34 @@ namespace m0st4fa {
 	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateCLRParser()
 	{	
 
-		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
-		const ItemT endItem{ startProd, 1, {toSymbol(TerminalType::T_EOF)} };
 		CollectionType LR1Collection = _create_LR_collection(1);
 		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LR1Collection), LR1Collection.size()));
-
-		for (size_t i = 0; i < LR1Collection.size(); i++) {
-			ItemSetType& currItemSet{ LR1Collection.at(i) };
-
-			for (const ItemT& currItem : currItemSet) {
-
-				// if the dot is at the end of the production
-				if (currItem.isDotPositionAtEnd()) {
-					// check whether this item is the end item
-					if (currItem == endItem) {
-						this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = ACCEPT", i, (std::string)toSymbol(TerminalType::T_EOF)));
-						this->m_ParsingTable.atAction(i, TerminalType::T_EOF) = LRTableEntry{ false, LRTableEntryType::TET_ACCEPT };
-					}
-					else // if this item is not the end item
-						_action_reduce_CLR(i, currItem);
-
-					continue; // we're finished with this item; move on to the next one
-				}
-
-				// if the dot is not at the end of the production
-				const SymbolType& symAtDot = currItem.symbolAtDotPosition();
-				size_t j = _goto_set_number(currItemSet, symAtDot, LR1Collection);
-
-				// if the symbol at the dot is a terminal
-				if (symAtDot.isTerminal)
-					_action_shift(i, j, symAtDot);
-				else // if the symbol at the dot is a non-terminal
-					_goto(i, j, symAtDot);
-
-			}
-
-		}
+		
+		_create_parsing_table_lookahead(LR1Collection);
 
 		return this->m_ParsingTable;
 	}
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
-	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateLALRParser() const
+	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateLALRParser()
 	{
-		this->p_Logger.log(LoggerInfo::FATAL_ERROR, "generateLALRParser is not yet finished");
-		std::abort();
+
+		// generate LR(1) collection
+		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
+		const ItemT endItem{ startProd, 1, {toSymbol(TerminalType::T_EOF)} };
+		CollectionType LR1Collection = _create_LR_collection(1);
+		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LR1Collection), LR1Collection.size()));
+
+		/**
+		* obtain LALR(1) collection by merging sets with identical cores
+		*/
+		CollectionType LALR1Collection = _merge_sets_with_identical_cores(LR1Collection);
+		this->p_Logger.log(LoggerInfo::INFO, std::format("LALR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LALR1Collection), LALR1Collection.size()));
+
+		// generate the parsing table (in the same way as a CLR(1) parser)
+		_create_parsing_table_lookahead(LALR1Collection);
+
 		return this->m_ParsingTable;
 	}
 

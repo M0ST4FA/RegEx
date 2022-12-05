@@ -155,6 +155,9 @@ namespace m0st4fa {
 			return SymbolT{};
 		}
 		
+		bool hasIdenticalCore(const Item& other) const {
+			return dotPos == other.dotPos && m_ActualDotPos == other.m_ActualDotPos && production == other.production;
+		}
 	};
 
 	template <typename ProductionT>
@@ -222,7 +225,7 @@ namespace m0st4fa {
 		* @returns true iff the two Item sets are identical.
 		*/
 		bool operator==(const ItemSet& rhs) const {
-			return this->m_Set == rhs.m_Set;
+			return size() == size() && this->m_Set == rhs.m_Set;
 		};
 		bool operator<(const ItemSet& rhs) const {
 			return this->m_Set.size() < rhs.m_Set.size();
@@ -260,10 +263,16 @@ namespace m0st4fa {
 
 		/**
 		* insert a new item into the item set.
-		* if an item with the first compoenent is already present, it just inserts the lookahead.
+		* if an item with the first component is already present, it just inserts the lookahead.
 		* @return whether a new item was inserted.
 		*/
 		bool insert(const ItemT&);
+		/*
+		* merge an item set `s` with this item set.
+		* if an item `i` exists in `s` and does not exist in this item set, `i` will be added to this item set.
+		* the lookaheads of all identical items will be merged.
+		*/
+		bool merge(const ItemSet&);
 		/**
 		* get all the items with this first component in this item set, if any.
 		* @return emtpy Item if none is found, else a nonempty Item.
@@ -275,6 +284,7 @@ namespace m0st4fa {
 		* @return true if such an Item is found, otherwise false.
 		*/
 		bool contains(const ItemT&) const;
+		bool hasIdenticalCore(const ItemSet&) const;
 		/**
 		* @input the grammar to be used to get all the production for a non-terminal when the dot is before that non-terminal.
 		* @return the CLOSURE set of this item set.
@@ -388,6 +398,30 @@ namespace m0st4fa {
 		return (std::find_if(begin, end, predicate) != end);
 	}
 
+	// TODO: OPTIMIZE THIS FUNCTION
+	template<typename ItemT>
+	bool ItemSet<ItemT>::hasIdenticalCore(const ItemSet& other) const
+	{
+		if (this->size() != other.size())
+			return false;
+
+		const auto thisBegin = this->m_Set.begin();
+		const auto thisEnd = this->m_Set.end();
+		const auto otherBegin = other.m_Set.begin();
+		const auto otherEnd = other.m_Set.end();
+
+		const auto pred = [this, &other, otherBegin, otherEnd](const ItemT& thisItem) {
+			bool t = std::any_of(otherBegin, otherEnd, [&thisItem](const ItemT& otherItem) {
+				return thisItem.hasIdenticalCore(otherItem);
+				});
+
+			return t;
+		};
+
+		// if they have the same size, they may have the same cores
+		return std::all_of(thisBegin, thisEnd, pred);
+	}
+
 	template<typename ItemT>
 	inline ItemT ItemSet<ItemT>::get(const ProductionType& production, size_t dotPosition) const
 	{
@@ -421,6 +455,31 @@ namespace m0st4fa {
 
 		// if no entry with the same first component is found
 		this->m_Set.push_back(item);
+
+		return true;
+	}
+
+	// TODO: OPTIMIZE THIS FUNCTION
+	template<typename ItemT>
+	bool ItemSet<ItemT>::merge(const ItemSet& other)
+	{
+
+		for (const ItemT& item : other.m_Set) {
+			const auto itemIt = std::find_if(m_Set.begin(), m_Set.end(), [&item](const ItemT& i) {
+				return item.hasIdenticalCore(i);
+				});
+
+			// if the item does not exist
+			if (itemIt == m_Set.end()) {
+				this->m_Set.push_back(item);
+				continue;
+			}
+
+			// if such an item exists
+			itemIt->lookaheads.insert(item.lookaheads.begin(), item.lookaheads.end());
+
+		}
+
 
 		return true;
 	}

@@ -141,6 +141,8 @@
     <ClCompile Include="PTable.cpp" />
     <ClCompile Include="regex.cpp" />
     <ClCompile Include="ParserTests.cpp" />
+    <ClCompile Include="regexEnum.cpp" />
+    <ClCompile Include="regexTypedefs.cpp" />
     <ClCompile Include="Tests.ixx" />
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +165,10 @@
     <ClInclude Include="PStack.h" />
     <ClInclude Include="PTable.h" />
     <ClInclude Include="regex.h" />
+    <ClInclude Include="regexEnum.h" />
+    <ClCompile Include="regexGrammar.cpp" />
+    <ClInclude Include="regexToken.h" />
+    <ClInclude Include="regexTypedefs.h" />
     <ClInclude Include="termcolor.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

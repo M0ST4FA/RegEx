@@ -43,24 +43,23 @@ using LRStackType = m0st4fa::LRStackType<LRDataType, TokenType>;
 using m0st4fa::LRState;
 using LRParserGeneratorType = m0st4fa::LRParserGenerator<LRGrammarType, ItemType, LRParsingTableType>;
 
+using m0st4fa::regex::regex;
+using m0st4fa::regex::regexRes;
+
 // #defines
-#define TEST_LR_PARSER
+#define TEST_REGEX
 
 #ifdef TEST_REGEX
 
 int main(void) {
 	
-	regex re = "^mos.*";
-	re.match(re, "mostafa");
-
-	regex re; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
-	regexRes reres; // re.exec(string); // you execute the compiled regular expression against the string
+	regex re{ "^most.*", "g" }; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
+	regexRes reres = re.exec("mostafa"); // re.exec(string); // you execute the compiled regular expression against the string
 	bool match; // re.match(string);    // asserts that the string matches the regular expression
-	// re.getSource() => gets the source code of the regex that has been compiled
-	// re.getFlags() => returns the flags applied to the regex
-	// re.getIndex() => returns the index into the string of the next character that will be matched by the regex
+	re.getPattern();
+	re.getFlags();
+	re.getIndex();
 	
-
 	return 0;
 }
 #elif defined TEST_LR_PARSER 

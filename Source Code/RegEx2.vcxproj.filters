@@ -58,6 +58,15 @@
     <ClCompile Include="PTable.cpp">
       <Filter>Source Files\Parser</Filter>
     </ClCompile>
+    <ClCompile Include="regexEnum.cpp">
+      <Filter>Source Files\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="regexTypedefs.cpp">
+      <Filter>Source Files\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="regexGrammar.cpp">
+      <Filter>Source Files\regex</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DFA.h">
@@ -119,6 +128,15 @@
     </ClInclude>
     <ClInclude Include="LRPGenerator.h">
       <Filter>Source Files\Parser</Filter>
+    </ClInclude>
+    <ClInclude Include="regexEnum.h">
+      <Filter>Source Files\regex</Filter>
+    </ClInclude>
+    <ClInclude Include="regexToken.h">
+      <Filter>Source Files\regex</Filter>
+    </ClInclude>
+    <ClInclude Include="regexTypedefs.h">
+      <Filter>Source Files\regex</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

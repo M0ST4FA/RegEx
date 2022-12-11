@@ -194,7 +194,19 @@ namespace m0st4fa {
 				return as.nonTerminal == other.as.nonTerminal;
 			
 		};
-		
+		bool operator<(const GrammaticalSymbol& other) const {
+			// one is a terminal and the other is non-terminal
+			if (isTerminal != other.isTerminal)
+				return isTerminal - other.isTerminal;
+
+			// both are terminals
+			if (isTerminal && other.isTerminal)
+				return (size_t)this->as.terminal < (size_t)other.as.terminal;
+
+			// both are non-terminals
+			return (size_t)this->as.nonTerminal < (size_t)other.as.nonTerminal;
+		}
+
 		operator std::string() const {
 			return this->toString();
 		}

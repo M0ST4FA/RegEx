@@ -42,7 +42,7 @@ namespace m0st4fa {
 		LexicalAnalyzer(
 			DFA<TransFn<TableT>, InputT> automaton,
 			TokenFactoryT<TokenT, InputT> tokenFactory,
-			std::string sourceCode) :
+			const std::string& sourceCode) :
 			m_Automatan{ automaton }, m_TokenFactory{ tokenFactory }, m_SourceCode{ sourceCode }
 		{
 

@@ -20,8 +20,8 @@ namespace m0st4fa {
 		TerminalT name = TerminalT::T_EOF;
 		AttrT attribute;
 
-		static const Token<TerminalT> EPSILON;
-		static const Token<TerminalT> TEOF;
+		static const Token<TerminalT, AttrT> EPSILON;
+		static const Token<TerminalT, AttrT> TEOF;
 
 		bool operator==(const Token& other) const {
 			return name == other.name && attribute == other.attribute;
@@ -38,10 +38,10 @@ namespace m0st4fa {
 
 	template <typename TerminalT, typename AttrT>
 		requires requires (TerminalT a) { TerminalT::T_EOF; TerminalT::T_EPSILON; stringfy(a); }
-	const Token<TerminalT> Token<TerminalT, typename AttrT>::EPSILON = { TerminalT::T_EPSILON, "\0" };
+	const Token<TerminalT, AttrT> Token<TerminalT, AttrT>::EPSILON = { TerminalT::T_EPSILON };
 	template <typename TerminalT, typename AttrT>
 		requires requires (TerminalT a) { TerminalT::T_EOF; TerminalT::T_EPSILON; stringfy(a); }
-	const Token<TerminalT> Token<TerminalT, typename AttrT>::TEOF = { TerminalT::T_EOF, "\0" };
+	const Token<TerminalT, AttrT> Token<TerminalT, AttrT>::TEOF = { TerminalT::T_EOF };
 
 
 	template <typename TerminalT>

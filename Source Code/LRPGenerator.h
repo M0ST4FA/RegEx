@@ -4,6 +4,12 @@
 
 namespace m0st4fa {
 
+	enum class ConflictPolicy {
+		CP_PREFER_SHIFT, // prefer shift over reduce, but stop if there are two shifts
+		CP_NONE, // stop always
+		CP_COUNT
+	};
+
 	template <typename GrammarT>
 	concept LRPGenConcept = requires (GrammarT grammar) {
 		true;
@@ -37,25 +43,28 @@ namespace m0st4fa {
 		mutable bool m_ParsingTableGenerated = false;
 
 		CollectionType _create_LR_collection(size_t = 0);
-		void _create_parsing_table_lookahead(CollectionType&);
+		void _create_parsing_table_lookahead(CollectionType&, ConflictPolicy cp);
 		CollectionType _merge_sets_with_identical_cores(const CollectionType&);
 
-		inline bool _check_entry_already_exists(const LRTableEntry& currEntry, const LRTableEntry& newEntry, size_t itemSetIndex, const ItemSetType& itemSet, const SymbolType& lookahead , const std::string& grammarType = "SLR") const {
+		inline bool _check_entry_already_exists(const LRTableEntry& currEntry, const LRTableEntry& newEntry, size_t itemSetIndex, const ItemSetType& itemSet, const SymbolType& lookahead, ConflictPolicy cp, std::string_view grammarType = "SLR") const {
 			/*
 			* detect if there is already an entry at that location.
 			* if that entry == the current entry, continue.
 			* if that entry != the current entry, the location is being reset and that is an error.
 			*/
-			if (not (currEntry.type == LRTableEntryType::TET_ERROR))
-				if (not (currEntry == newEntry))
-					return _resolve_conflict(currEntry, newEntry, itemSetIndex, itemSet, lookahead);
-					//throw std::logic_error(grammarType + " table entry being redefined!");
+			if (! (currEntry.type == LRTableEntryType::TET_ERROR)) {
+				if (! (currEntry == newEntry))
+					return _resolve_conflict(currEntry, newEntry, itemSetIndex, itemSet, lookahead, cp);
+				//throw std::logic_error(grammarType + " table entry being redefined!");
 				else
 					return true;
+			}
 
 			return false;
 		}
-		inline bool _resolve_conflict(const LRTableEntry& currEntry, const LRTableEntry& newEntry, size_t itemSetIndex, const ItemSetType& itemSet, const SymbolType& lookahead) const {
+
+		inline bool _prompt_conflict_resolution(const LRTableEntry& currEntry, const LRTableEntry& newEntry, size_t itemSetIndex, const ItemSetType& itemSet, const SymbolType& lookahead) const {
+
 			std::string msg1 = "PLease resolve the conflict in order to continue.";
 			std::string iSet = itemSet.toString();
 			std::string msg2 = "Would you like to replace the already existing entry with the new one? [type `yes` or `no`] ";
@@ -63,31 +72,51 @@ namespace m0st4fa {
 
 			std::string response;
 			std::cin >> response;
-			
+
 			if (response == "yes")
 				return false;
 			else if (response == "no")
 				return true;
 			else // TODO: SET THIS UP
 				throw std::exception("Wrong answer");
+
+		}
+
+		inline bool _resolve_conflict(const LRTableEntry& currEntry, const LRTableEntry& newEntry, size_t itemSetIndex, const ItemSetType& itemSet, const SymbolType& lookahead, ConflictPolicy cp = ConflictPolicy::CP_NONE) const {
+
+			switch (cp) {
+			case ConflictPolicy::CP_NONE:
+				return _prompt_conflict_resolution(currEntry, newEntry, itemSetIndex, itemSet, lookahead);
+			case ConflictPolicy::CP_PREFER_SHIFT: {
+				if (
+					currEntry.type != LRTableEntryType::TET_ACTION_REDUCE && currEntry.type != LRTableEntryType::TET_ACTION_SHIFT
+					) // prompt the user to resolve the conflict
+					return _prompt_conflict_resolution(currEntry, newEntry, itemSetIndex, itemSet, lookahead);
+
+				// the current entry is reduce and the new one is shift
+				return false; // don't keep the current entry and replace it
+			}
+			default:
+				throw std::exception("TODO: PUT A BETTER EXCEPTION HERE IN _resolve_conflict() when the conflict policy is unknown");
+			}
 			
 		}
 		/**
 		* @return bool representing whether a new entry has been added
 		*/
-		inline bool _action_reduce_SLR(size_t i, const ItemSetType& currItemSet, const ItemT& currItem) {
+		inline bool _action_reduce_SLR(size_t i, const ItemSetType& currItemSet, const ItemT& currItem, ConflictPolicy cp) {
 			const SymbolType& head = currItem.production.prodHead;
-			const size_t headNum = (size_t)head.as.nonTerminal;
+			[[maybe_unused]] const auto headNum = (size_t)head.as.nonTerminal;
 			const std::set<SymbolType>& followHead = this->m_Grammar->getFOLLOW(head.as.nonTerminal);
 			size_t prodNum = currItem.production.prodNumber;
 			bool newEntryAdded = false;
 
 			// set ACTION[i, a] to "reduce A --> a" for all a in FOLLOW(A)
-			std::for_each(followHead.begin(), followHead.end(), [this, i, prodNum, &newEntryAdded, &currItemSet](const SymbolType& sym) {
+			std::ranges::for_each(followHead.begin(), followHead.end(), [this, i, prodNum, &newEntryAdded, &currItemSet, cp](const SymbolType& sym) {
 				LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, sym.as.terminal);
-				LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_REDUCE, prodNum };
+				auto newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_REDUCE, prodNum };
 
-				if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, sym))
+				if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, sym, cp))
 					return;
 
 				this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = R{}", i, (std::string)sym, prodNum));
@@ -100,19 +129,19 @@ namespace m0st4fa {
 		/**
 		* @return bool representing whether a new entry has been added
 		*/
-		inline bool _action_reduce_CLR(size_t i, const ItemSetType& currItemSet, const ItemT& currItem) {
+		inline bool _action_reduce_CLR(size_t i, const ItemSetType& currItemSet, const ItemT& currItem, ConflictPolicy cp) {
 			const SymbolType& head = currItem.production.prodHead;
-			const size_t headNum = (size_t)head.as.nonTerminal;
+			[[maybe_unused]] const auto headNum = (size_t)head.as.nonTerminal;
 			const LookAheadSetType& lookaheads = currItem.lookaheads;
 			size_t prodNum = currItem.production.prodNumber;
 			bool newEntryAdded = false;
 
 			// set ACTION[i, a] to "reduce A --> a" for all a in lookahead set of the item.
-			std::for_each(lookaheads.begin(), lookaheads.end(), [this, i, prodNum, &newEntryAdded, &currItemSet](const SymbolType& sym) {
+			std::ranges::for_each(lookaheads.begin(), lookaheads.end(), [this, i, prodNum, &newEntryAdded, &currItemSet, cp](const SymbolType& sym) {
 				LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, sym.as.terminal);
-			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_REDUCE, prodNum };
+			auto newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_REDUCE, prodNum };
 
-			if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, sym, "CLR/LALR"))
+			if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, sym, cp, "CLR/LALR"))
 				return;
 
 			this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = R{}", i, (std::string)sym, prodNum));
@@ -125,12 +154,12 @@ namespace m0st4fa {
 		/**
 		* @return bool representing whether a new entry has been added
 		*/
-		inline bool _action_accept(size_t i, const ItemSetType& currItemSet, const ItemT& currItem) {
+		inline bool _action_accept(size_t i, const ItemSetType& currItemSet, [[maybe_unused]] const ItemT& currItem) {
 			LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, TerminalType::T_EOF);
-			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACCEPT };
+			auto newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACCEPT };
 			SymbolType symbol = to_symbol(TerminalType::T_EOF);
 
-			if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, symbol, "SLR/CLR/LALR"))
+			if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, symbol, ConflictPolicy::CP_NONE, "SLR/CLR/LALR"))
 				return false;
 
 			currEntry = newEntry;
@@ -140,11 +169,11 @@ namespace m0st4fa {
 		/**
 		* @return bool representing whether a new entry has been added
 		*/
-		inline bool _action_shift(size_t i, const ItemSetType& currItemSet, size_t j, const SymbolType& symAtDot) {
+		inline bool _action_shift(size_t i, const ItemSetType& currItemSet, size_t j, const SymbolType& symAtDot, ConflictPolicy cp) {
 			LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, symAtDot.as.terminal);
-			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_SHIFT, j };
+			auto newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_SHIFT, j };
 
-			if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, symAtDot, "SLR/CLR/LALR"))
+			if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, symAtDot, cp, "SLR/CLR/LALR"))
 				return false;
 
 			currEntry = newEntry;
@@ -156,8 +185,8 @@ namespace m0st4fa {
 		*/
 		inline bool _goto(size_t i, size_t j, const SymbolType& symAtDot) {
 			LRTableEntry currEntry = this->m_ParsingTable.atGoto(i, symAtDot.as.nonTerminal);
-			LRTableEntry newEntry = LRTableEntry{ false, LRTableEntryType::TET_GOTO, j };
-			if (_check_entry_already_exists(currEntry, newEntry, i, ItemSetType{}, SymbolType{}, "SLR/CLR/LALR"))
+			auto newEntry = LRTableEntry{ false, LRTableEntryType::TET_GOTO, j };
+			if (_check_entry_already_exists(currEntry, newEntry, i, ItemSetType{}, SymbolType{}, ConflictPolicy::CP_NONE, "SLR/CLR/LALR"))
 				return false;
 
 			// if the symbol at the dot is a non-terminal
@@ -177,13 +206,12 @@ namespace m0st4fa {
 		}
 
 	protected:
-		Logger p_Logger{};
+		Logger p_Logger;
 
 		SymbolType to_symbol(const TerminalType terminal)
 		{
 			return SymbolType{ .isTerminal = true, .as {.terminal = terminal} };
 		}
-
 		SymbolType to_symbol(const VariableType variable)
 		{
 			return SymbolType{ .isTerminal = false, .as {.nonTerminal = variable} };
@@ -195,7 +223,7 @@ namespace m0st4fa {
 	public:
 		LRParserGenerator() = default;
 		LRParserGenerator(const LRParserGenerator&) = default;
-		LRParserGenerator(LRParserGenerator&&) = default;
+		LRParserGenerator(LRParserGenerator&&) noexcept = default;
 		LRParserGenerator(const GrammarT& grammar, const SymbolType& startSymbol) : m_ParsingTable{ grammar }, m_Grammar{ &this->m_ParsingTable.grammar }, m_StartSymbol{ startSymbol } {
 			this->m_ParsingTable.grammar.calculateFIRST();
 			this->m_ParsingTable.grammar.calculateFOLLOW();
@@ -204,11 +232,11 @@ namespace m0st4fa {
 		const GrammarT& getGrammar() {
 			return this->m_Grammar;
 		}
-		SymbolType getStartSymbol() { return this->m_StartSymbol; }
+		SymbolType get_start_symbol() { return this->m_StartSymbol; }
 
-		const LRParsingTableT& generateSLRParser();
-		const LRParsingTableT& generateCLRParser();
-		const LRParsingTableT& generateLALRParser();
+		const LRParsingTableT& generateSLRParser(ConflictPolicy = ConflictPolicy::CP_NONE);
+		const LRParsingTableT& generateCLRParser(ConflictPolicy = ConflictPolicy::CP_NONE);
+		const LRParsingTableT& generateLALRParser(ConflictPolicy = ConflictPolicy::CP_NONE);
 	};
 
 
@@ -228,7 +256,7 @@ namespace m0st4fa {
 	{
 
 		// check for whether the number of lookaheads is correct or no
-		if (lookaheadNum > 1 || lookaheadNum < 0) {
+		if (lookaheadNum > 1) {
 			const std::string msg = std::format("Incorrect number of lookaheads `{}`! Supported lookaheads are `0` and `1`.", lookaheadNum);
 			this->p_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
 			throw std::logic_error("Incorrect number of lookaheads!");
@@ -263,15 +291,13 @@ namespace m0st4fa {
 					continue;
 
 				// check whether this item set already exists
-				bool alreadyExists = std::any_of(
+				if (bool alreadyExists = std::any_of(
 					resCollection.rbegin(),
 					resCollection.rend(),
 					[&gotoSet](const ItemSetType& is) {
 						return gotoSet == is;
 					}
-				);
-
-				if (alreadyExists)
+				); alreadyExists)
 					continue;
 
 				this->p_Logger.logDebug(std::format("Inserting item set to the LR(0) collection: {}", (std::string)gotoSet));
@@ -285,7 +311,7 @@ namespace m0st4fa {
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
-	void LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_create_parsing_table_lookahead(CollectionType& LRCollection)
+	void LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_create_parsing_table_lookahead(CollectionType& LRCollection, ConflictPolicy cp)
 	{
 		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
 		const ItemT endItem{ startProd, 1, {to_symbol(TerminalType::T_EOF)} };
@@ -301,7 +327,7 @@ namespace m0st4fa {
 					if (currItem == endItem)
 						_action_accept(i, currItemSet, currItem);
 					else // if this item is not the end item
-						_action_reduce_CLR(i, currItemSet, currItem);
+						_action_reduce_CLR(i, currItemSet, currItem, cp);
 
 					continue; // we're finished with this item; move on to the next one
 				}
@@ -312,7 +338,7 @@ namespace m0st4fa {
 
 				// if the symbol at the dot is a terminal
 				if (symAtDot.isTerminal)
-					_action_shift(i, currItemSet, j, symAtDot);
+					_action_shift(i, currItemSet, j, symAtDot, cp);
 				else // if the symbol at the dot is a non-terminal
 					_goto(i, j, symAtDot);
 			}
@@ -358,7 +384,7 @@ namespace m0st4fa {
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
-	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateSLRParser()
+	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateSLRParser(ConflictPolicy conflictPolicy)
 	{
 		/** Algorithm
 		* Create the set of LR(0) items.
@@ -386,9 +412,9 @@ namespace m0st4fa {
 				if (currItem.isDotPositionAtEnd()) {
 					// check whether this item is the end item
 					if (currItem == endItem)
-						_action_accept(i, currItem);
+						_action_accept(i, currItemSet, currItem);
 					else // if this item is not the end item
-						_action_reduce_SLR(i, currItem);
+						_action_reduce_SLR(i, currItemSet, currItem, conflictPolicy);
 
 					continue; // we're finished with this item; move on to the next one
 				}
@@ -399,7 +425,7 @@ namespace m0st4fa {
 				
 				// if the symbol at the dot is a terminal
 				if (symAtDot.isTerminal)
-					_action_shift(i, j, symAtDot);
+					_action_shift(i, currItemSet, j, symAtDot, conflictPolicy);
 				else // if the symbol at the dot is a non-terminal
 					_goto(i, j, symAtDot);
 
@@ -412,20 +438,20 @@ namespace m0st4fa {
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
-	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateCLRParser()
+	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateCLRParser(ConflictPolicy conflictPolicy)
 	{	
 
 		CollectionType LR1Collection = _create_LR_collection(1);
 		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LR1Collection), LR1Collection.size()));
 		
-		_create_parsing_table_lookahead(LR1Collection);
+		_create_parsing_table_lookahead(LR1Collection, conflictPolicy);
 
 		return this->m_ParsingTable;
 	}
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
-	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateLALRParser()
+	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateLALRParser(ConflictPolicy conflictPolicy)
 	{
 
 		// generate LR(1) collection
@@ -441,7 +467,7 @@ namespace m0st4fa {
 		this->p_Logger.log(LoggerInfo::INFO, std::format("LALR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LALR1Collection), LALR1Collection.size()));
 
 		// generate the parsing table (in the same way as a CLR(1) parser)
-		_create_parsing_table_lookahead(LALR1Collection);
+		_create_parsing_table_lookahead(LALR1Collection, conflictPolicy);
 
 		return this->m_ParsingTable;
 	}

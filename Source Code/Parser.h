@@ -32,7 +32,7 @@ namespace m0st4fa {
 	class Parser {
 		using TokenType = decltype(LexicalAnalyzerT{}.getNextToken());
 
-		mutable LexicalAnalyzerT m_LexicalAnalyzer;
+		LexicalAnalyzerT* mp_LexicalAnalyzer;
 		SymbolT m_StartSymbol;
 
 	protected:
@@ -40,20 +40,20 @@ namespace m0st4fa {
 		Logger p_Logger;
 
 		// set the maximum number of errors that you recover from
-		static constexpr size_t ERR_RECOVERY_LIMIT = 1;
+		static constexpr size_t ERR_RECOVERY_LIMIT = 5;
 
-		LexicalAnalyzerT& getLexicalAnalyzer() { return m_LexicalAnalyzer; }
-		TokenType getNextToken() { return this->m_LexicalAnalyzer.getNextToken(); }
-		SymbolT getStartSymbol() const { return m_StartSymbol; }
+		std::string_view get_source_code() const { return this->mp_LexicalAnalyzer->getSourceCode(); }
+		TokenType get_next_token() const { return this->mp_LexicalAnalyzer->getNextToken(); }
+		SymbolT get_start_symbol() const { return m_StartSymbol; }
 
 	public:
 
 		Parser() = default;
 		Parser(
-			const LexicalAnalyzerT& lexer, 
+			LexicalAnalyzerT& lexer, 
 			const ParsingTableT& parsingTable, 
 			const SymbolT& startSymbol) :
-			m_LexicalAnalyzer{ lexer }, p_Table{ parsingTable }, m_StartSymbol{ startSymbol }
+			mp_LexicalAnalyzer{ &lexer }, p_Table{ parsingTable }, m_StartSymbol{ startSymbol }
 		{
 			// TODO: check for argument correctness
 

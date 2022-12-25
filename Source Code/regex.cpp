@@ -1,4 +1,5 @@
 #include "regex.h"
+#include "regexDFA.h"
 
 namespace m0st4fa {
 
@@ -9,19 +10,23 @@ namespace m0st4fa {
 		{
 			ParserGeneratorType parserGen{ RegularExpression::_get_grammar(), toSymbol(Variable::V_REGEX) };
 
-			return parserGen.generateCLRParser();
+			return parserGen.generateLALRParser(ConflictPolicy::CP_PREFER_SHIFT);
 		}
-		inline constexpr SymbolType RegularExpression::_get_start_symbol()
+		constexpr SymbolType RegularExpression::_get_start_symbol()
 		{
 			return SymbolType{ .isTerminal = false, .as {.nonTerminal = Variable::V_REGEX} };
 		}
 		constexpr TokenFactType RegularExpression::_get_token_factory()
 		{
-			return TokenFactType();
+			return &_token_factory;
 		}
 		DFAType RegularExpression::_get_automaton()
 		{
-			return DFAType();
+			state_set_t fstates;
+			for (size_t i = 2; i < 20; i++)
+				fstates.insert(i);
+
+			return DFAType{ fstates, _get_dfa_table() };
 		}
 
 		const ParsingTableType RegularExpression::PARSING_TABLE = RegularExpression::_get_parsing_table();
@@ -33,16 +38,17 @@ namespace m0st4fa {
 
 	// BEHAVIOR IMPLEMENTATION
 	namespace regex {
-		RegularExpressionResult RegularExpression::exec(const std::string& source)
+		RegularExpressionResult RegularExpression::exec(std::string_view source)
 		{
 			RegularExpressionResult res;
-
-
+			
+			size_t x = 0;
+			std::cin >> x;
 
 			return res;
 		}
 
-		bool RegularExpression::match(const std::string& source)
+		bool RegularExpression::match(std::string_view source)
 		{
 			return false;
 		}

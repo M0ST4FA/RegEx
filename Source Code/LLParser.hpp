@@ -179,9 +179,9 @@ namespace m0st4fa {
 		LoggerInfo info{ LoggerInfo::INFO };
 
 		// Initalize the algorithm, such that the parser is in the initial configuration
-		m_Stack.push_back({ .type = ProdElementType::PET_GRAM_SYMBOL, .as = { .gramSymbol = this->getStartSymbol() } });
+		m_Stack.push_back({ .type = ProdElementType::PET_GRAM_SYMBOL, .as = { .gramSymbol = this->get_start_symbol() } });
 
-		this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+		this->m_CurrInputToken = this->getLexicalAnalyzer().get_next_token();
 
 		/** Basic algorithm:
 		* Loop until the stack is empty.
@@ -269,7 +269,7 @@ namespace m0st4fa {
 			this->p_Logger.log(info, std::format("Matched {:s} with {:s}: {:s}", (std::string)topSymbol, (std::string)m_CurrInputToken, matched ? "true" : "false"));
 
 			// get the next input token
-			m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+			m_CurrInputToken = this->getLexicalAnalyzer().get_next_token();
 
 			// if the symbol at the top of the stack is not a terminal symbol and the input token is not matched,
 			if (-not matched)
@@ -455,7 +455,7 @@ namespace m0st4fa {
 
 				// if the action results in a syncronization
 				if (action(m_Stack, m_CurrTopElement, currInputToken)) {
-					m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+					m_CurrInputToken = this->getLexicalAnalyzer().get_next_token();
 					
 					print_sync_msg(this->getLexicalAnalyzer().getPosition());
 					
@@ -467,7 +467,7 @@ namespace m0st4fa {
 			// if the entry has no action or the action has failed to syncronize
 
 			// get the next input and try again to syncronize
-			m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+			m_CurrInputToken = this->getLexicalAnalyzer().get_next_token();
 			return false;
 		}
 
@@ -476,7 +476,7 @@ namespace m0st4fa {
 		* Upon reaching here, this means the parser has synronized with the current token.
 		* Since we've just peaked to see whether we can sync with it or not, now we need to fetch it so that parsing can continue from it.
 		*/
-		m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+		m_CurrInputToken = this->getLexicalAnalyzer().get_next_token();
 		print_sync_msg(this->getLexicalAnalyzer().getPosition());
 
 		/**

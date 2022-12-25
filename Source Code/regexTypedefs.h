@@ -11,9 +11,9 @@ namespace m0st4fa {
 		using index_t = unsigned int;
 
 		// TODO: change FSMTable to be an API implementation around vectors
-		using AttributeType = size_t;
+		using AttributeType = char;
 		using TokenType = Token<Terminal, AttributeType>;
-		using InputType = std::string;
+		using InputType = std::string_view;
 		using TokenFactType = TokenFactoryT<TokenType, InputType>;
 
 		using DFATableType = FSMTable<STATE_COUNT, INPUT_COUNT>;
@@ -30,7 +30,14 @@ namespace m0st4fa {
 
 		using GrammarType = ProductionVector<ProductionType>;
 
-		using DataType = size_t;
+		struct DataType {
+			const char* data = nullptr;
+			size_t size = 0;
+
+			explicit(false) operator std::string() const {
+				return data;
+			}
+		};
 		using StateType = LRState<DataType, TokenType>;
 
 		using ParsingTableType = LRParsingTable<GrammarType>;

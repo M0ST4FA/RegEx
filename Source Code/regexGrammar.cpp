@@ -7,6 +7,18 @@ namespace m0st4fa {
 
 	namespace regex {
 
+		void pass_last_act(StackType& stack, StateType& newState) {
+			newState.data = stack.back().data;
+			newState.hasData = true;
+			std::cout << "Curr value: " << newState.data.data << "\n";
+		};
+
+		void pass_prelast_act(StackType& stack, StateType& newState) {
+			newState.data = stack.at(stack.size() - 2).data;
+			newState.hasData = true;
+			std::cout << "Curr value: " << newState.data.data << "\n";
+		};
+		
 		GrammarType RegularExpression::_get_grammar() {
 
 			GrammarType grammar;
@@ -39,7 +51,7 @@ namespace m0st4fa {
 			SymbolType tLParen = toSymbol(Terminal::T_LEFT_PAREN);
 			SymbolType tLBrace = toSymbol(Terminal::T_LEFT_BRACE);
 			SymbolType tRBracket = toSymbol(Terminal::T_RIGHT_BRACKET);
-			SymbolType tRBracketCharet = toSymbol(Terminal::T_RIGHT_BRACKET_CHARET);
+			SymbolType tLBracketCharet = toSymbol(Terminal::T_LEFT_BRACKET_CHARET);
 			SymbolType tRParen = toSymbol(Terminal::T_RIGHT_PAREN);
 			SymbolType tRBrace = toSymbol(Terminal::T_RIGHT_BRACE);
 			SymbolType tRBraceLZ = toSymbol(Terminal::T_RIGHT_BRACE_LAZY);
@@ -55,13 +67,23 @@ namespace m0st4fa {
 			SymbolType tQQLZ = toSymbol(Terminal::T_QUANT_QMARK_LAZY);
 			SymbolType tQSG = toSymbol(Terminal::T_QUANT_STAR_GREEDY);
 			SymbolType tQSLZ = toSymbol(Terminal::T_QUANT_STAR_LAZY);
-			SymbolType tAlphaNum = toSymbol(Terminal::T_ALPHANUM);
+			SymbolType tAlpha = toSymbol(Terminal::T_ALPHA);
+			SymbolType tNum = toSymbol(Terminal::T_NUM);
+
+			// <regex'> -> <regex>
+			prod = ProductionType{
+				{vRegExp},
+				{vRegEx},
+				index
+			};
+			prod.postfixAction = &pass_last_act;
+			grammar.pushProduction(prod);
 
 			// <regex> -> <regex> | <anchor>
 			prod = ProductionType{
 				{vRegEx},
 				{vRegEx, tOr, vAnch},
-				index
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -69,7 +91,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vRegEx},
 				{vAnch},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -77,7 +99,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vAnch},
 				{tAnchCharet, vAnch},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -85,7 +107,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vAnch},
 				{vAnch, tAnchDollar},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -93,7 +115,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vAnch},
 				{vConc},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -101,7 +123,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vConc},
 				{vConc, vQuant},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -109,7 +131,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vConc},
 				{vQuant},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -117,7 +139,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vQuant},
 				{vQuant, tQSG},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -125,7 +147,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vQuant},
 				{vQuant, tQSLZ},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -133,7 +155,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vQuant},
 				{vQuant, tQPG},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -141,7 +163,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vQuant},
 				{vQuant, tQPLZ},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -149,7 +171,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vQuant},
 				{vQuant, tQQG},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -157,55 +179,55 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vQuant},
 				{vQuant, tQQLZ},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <quant> -> <quant>{int m, int n}
 			prod = ProductionType{
 				{vQuant},
-				{vQuant, tLBrace, tAlphaNum, tAlphaNum, tAlphaNum, tRBrace},
-				index++
+				{vQuant, tLBrace, tNum, tAlpha, tNum, tRBrace},
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <quant> -> <quant>{int m, int n}?
 			prod = ProductionType{
 				{vQuant},
-				{vQuant, tLBrace, tAlphaNum, tAlphaNum, tAlphaNum, tRBraceLZ},
-				index++
+				{vQuant, tLBrace, tNum, tAlpha, tNum, tRBraceLZ},
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <quant> -> <quant>{int n,}
 			prod = ProductionType{
 				{vQuant},
-				{vQuant, tLBrace, tAlphaNum, tAlphaNum, tRBrace},
-				index++
+				{vQuant, tLBrace, tNum, tAlpha, tRBrace},
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <quant> -> <quant>{int n,}?
 			prod = ProductionType{
 				{vQuant},
-				{vQuant, tLBrace, tAlphaNum, tAlphaNum, tRBraceLZ},
-				index++
+				{vQuant, tLBrace, tNum, tAlpha, tRBraceLZ},
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <quant> -> <quant>{int n}
 			prod = ProductionType{
 				{vQuant},
-				{vQuant, tLBrace, tAlphaNum, tRBrace},
-				index++
+				{vQuant, tLBrace, tNum, tRBrace},
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <quant> -> <quant>{int n}?
 			prod = ProductionType{
 				{vQuant},
-				{vQuant, tLBrace, tAlphaNum, tRBraceLZ},
-				index++
+				{vQuant, tLBrace, tNum, tRBraceLZ},
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -213,15 +235,15 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vQuant},
 				{vGroup},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <group> -> (<regex>)
 			prod = ProductionType{
 				{vGroup},
-				{tRParen, vRegEx, tLParen},
-				index++
+				{tLParen, vRegEx, tRParen},
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -229,23 +251,23 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vGroup},
 				{vCharClass},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <char_class> -> [<char_class_seq>]
 			prod = ProductionType{
 				{vCharClass},
-				{tRBracket, vCharClassSeq, tLBracket},
-				index++
+				{tLBracket, vCharClassSeq, tRBracket},
+				++index
 			};
 			grammar.pushProduction(prod);
 
 			// <char_class> -> [^<char_class_seq>]
 			prod = ProductionType{
 				{vCharClass},
-				{tRBracketCharet, vCharClassSeq, tLBracket},
-				index++
+				{tLBracketCharet, vCharClassSeq, tRBracket},
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -253,7 +275,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vCharClass},
 				{vEscapeSeq},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -261,7 +283,7 @@ namespace m0st4fa {
 			//prod = ProductionType{
 			//	{vCharClassSeq},
 			//	{vRange, vCharClassSeq},
-			//	index++
+			//	++index
 			//};
 			//grammar.pushProduction(prod);
 
@@ -269,7 +291,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vCharClassSeq},
 				{vEscapeSeq, vCharClassSeq},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -277,7 +299,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vCharClassSeq},
 				{vEscapeSeq},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -285,7 +307,7 @@ namespace m0st4fa {
 			//prod = ProductionType{
 			//	{vRange},
 			//	{vFact},
-			//	index++
+			//	++index
 			//};
 			//grammar.pushProduction(prod);
 
@@ -293,7 +315,7 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vEscapeSeq},
 				{tBackSlash, vFact},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
@@ -301,15 +323,22 @@ namespace m0st4fa {
 			prod = ProductionType{
 				{vEscapeSeq},
 				{vFact},
-				index++
+				++index
 			};
 			grammar.pushProduction(prod);
 
-			// <esq_seq> -> \<factor>
+			// <factor> -> ALPHA | NUM
 			prod = ProductionType{
 				{vFact},
-				{tAlphaNum},
-				index++
+				{tAlpha},
+				++index
+			};
+			grammar.pushProduction(prod);
+
+			prod = ProductionType{
+				{vFact},
+				{tNum},
+				++index
 			};
 			grammar.pushProduction(prod);
 

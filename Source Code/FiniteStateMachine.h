@@ -122,7 +122,7 @@ namespace m0st4fa {
 		friend class FSMResult;
 		
 		// private instance data members
-		const state_set_t m_FinalStates{};
+		state_set_t m_FinalStates{};
 		FSM_TYPE m_MachineType;
 		flag_t m_Flags;
 
@@ -158,6 +158,14 @@ namespace m0st4fa {
 			};
 		
 		};
+		FiniteStateMachine& operator=(const FiniteStateMachine& rhs) {
+			this->m_TransitionFunc = rhs.m_TransitionFunc;
+			this->m_Flags = rhs.m_Flags;
+			this->m_MachineType = rhs.m_MachineType;
+			this->m_FinalStates = rhs.m_FinalStates;
+
+			return *this;
+		}
 
 		const state_set_t& getFinalStates() const { return m_FinalStates; };
 		flag_t getFlags() const { return m_Flags; };
@@ -171,7 +179,7 @@ namespace m0st4fa {
 			unsigned long start = 0;
 			unsigned long end = 0;
 		} indecies;
-		const std::string& input;
+		const std::string_view input;
 
 	};
 	std::ostream& operator<<(const std::ostream&, const FSMResult&);

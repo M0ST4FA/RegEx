@@ -10,10 +10,11 @@ namespace m0st4fa {
 	* @brief A DFA that that can be used to match strings.
 	* Provides a single function: simulate();
 	*/
-	template <typename TransFuncT, typename InputT = std::string>
-	class DeterFiniteAutomatan: FiniteStateMachine<TransFuncT, InputT> {
+	template <typename TransFuncT, typename InputT = std::string_view>
+	class DeterFiniteAutomatan: protected FiniteStateMachine<TransFuncT, InputT> {
 		// fields
 
+		using Base = FiniteStateMachine<TransFuncT, InputT>;
 		// static variables
 		constexpr static state_t DEAD_STATE = 0;
 
@@ -30,6 +31,10 @@ namespace m0st4fa {
 		DeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
 			FiniteStateMachine<TransFuncT, InputT> {fStates, tranFn, FSM_TYPE::MT_DFA, flags}
 		{};
+		DeterFiniteAutomatan& operator=(const DeterFiniteAutomatan& rhs) {
+			this->Base::operator=(rhs);
+			return *this;
+		}
 
 		FSMResult simulate(const InputT&, FSM_MODE) const;
 		
@@ -112,7 +117,8 @@ namespace m0st4fa {
 		* Will be used to figure out the longest matched prefix, if any.
 		*/
 		std::vector matchedStates = { startState };
-		size_t startIndex = 0, charIndex = 0;
+		size_t startIndex = 0;
+		size_t charIndex = 0;
 
 		/**
 		 * Follow a path through the machine using the characters of the string until you check all the characters.
@@ -122,14 +128,13 @@ namespace m0st4fa {
 		*/
 		for (; startIndex < input.size(); charIndex = ++startIndex) {
 			
-			bool accepted = _check_accepted_substring(input, matchedStates, startIndex, charIndex);
-
 			// if this substring was not accepted
-			if (-not accepted)
+			if (bool accepted = _check_accepted_substring(input, matchedStates, startIndex, charIndex);
+				!accepted)
 				continue;
 
 			// if it was accepted:
-			typedef unsigned long ull;
+			using ull = unsigned long;
 			return FSMResult{ true, state_set_t { matchedStates.at(charIndex - startIndex) }, {(ull)startIndex, (ull)charIndex}, input };
 		}
 
@@ -153,7 +158,7 @@ namespace m0st4fa {
 		{
 			state_t currState = *it;
 			
-			// if the currunt state is the start state
+			// if the current state is the start state
 			if (currState == startState) {
 				break;
 			}
@@ -194,7 +199,7 @@ namespace m0st4fa {
 				break;
 
 			// update the path through the machine
-			matchedStates.push_back((state_t)currState);
+			matchedStates.push_back(currState);
 		};
 
 		// endIndex = number of characters checked + the offset of the substring into the input string

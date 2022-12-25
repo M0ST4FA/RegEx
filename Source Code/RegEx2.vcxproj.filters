@@ -138,5 +138,8 @@
     <ClInclude Include="regexTypedefs.h">
       <Filter>Source Files\regex</Filter>
     </ClInclude>
+    <ClInclude Include="regexDFA.h">
+      <Filter>Source Files\regex</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -28,13 +28,14 @@ std::string m0st4fa::toString(const Terminal terminal)
         "LEFT_PAREN",
         "RIGHT_PAREN",
         "LEFT_BRACKET",
+        "LEFT_BRACKET_CHARET",
         "RIGHT_BRACKET",
-        "RIGHT_BRACKET_CHARET",
         "LEFT_BRACE",
         "RIGHT_BRACE",
         "RIGHT_BRACE_LAZY",
         "BACK_SLASH",
-        "ALPHA_NUM",
+        "ALPHA",
+        "NUM",
         "EPSILON",
         "EOF"
     };

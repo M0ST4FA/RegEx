@@ -82,7 +82,99 @@ namespace m0st4fa {
 			this->m_CurrTopState = this->m_Stack.back();
 		}
 
-		void _error_recov_panic_mode();
+		void _error_recov_panic_mode() {
+
+			/** Algorithm
+			* Go through the stack top-down and consider state S, the top on the stack:
+			* For every non-terminal V:
+			* If S has a goto on non-terminal V, record non-terminal V.
+			* See whether any non-terminal V has been record for S:
+			* If so, found = true and break.
+			* If this is not the case, pop S and continue on to the next state on top of the stack.
+
+			* If (not found) ERROR(could not synchronize).
+
+			* For each token left on the input T:
+			* If reachedEnd == true, break.              // the order is important
+			* If T == EOF, set reachedEnd = true.        // between these two steps
+			* For every non-terminal V, check whether T is in FOLLOW(V):
+			* If So, shift GOTO[S][V] and set synchronized = true and break.
+			* If not, continue on to the next token T.
+
+			* If (not synchronized) ERROR(could not synchronize).
+			*/
+
+			auto rbegin = this->m_Stack.rbegin();
+			auto rend = this->m_Stack.rend();
+
+			std::vector<VariableType> nonTerminals;
+			bool found = false;
+
+			// find a state with at least a single GOTO entry on some non-terminal
+			// record all non-terminals on which it has a GOTO
+			for (; rbegin < rend; rbegin = this->m_Stack.rbegin()) {
+				auto currState = *rbegin;
+				size_t stateNum = currState.state;
+
+				// get all non-error goto entries for this state
+				nonTerminals = this->p_Table.getGotos(stateNum);
+
+				// if this state has at least a single GOTO
+				// we have found the state we seek; break in this case
+				if (!nonTerminals.empty()) {
+					found = true;
+					break;
+				}
+
+				// if this state does not have any GOTOs,
+				// we still didn't find the state we seek
+				this->m_Stack.pop_back();
+			}
+
+			// if no state was found
+			if (!found) {
+				this->p_Logger.log(LoggerInfo::FATAL_ERROR, "Unable to synchronize! implement professional handling of this.");
+				std::abort();
+			}
+
+			// if some state could be found
+
+			// loop through the remaining terminals of the input
+
+			bool hasReachedEnd = false;
+			for (; ; this->m_CurrInputToken = this->get_next_token()) {
+
+				if (hasReachedEnd)
+					break;
+
+				hasReachedEnd = this->m_CurrInputToken == TokenType::TEOF;
+
+				TerminalType currT = this->m_CurrInputToken.name;
+				auto toSymbol = [](const TerminalType t) {
+					return SymbolT{ .isTerminal = true, .as {.terminal = t} };
+				};
+
+				for (VariableType nonTerminal : nonTerminals) {
+					const auto& follow = this->p_Table.grammar.getFOLLOW(nonTerminal);
+
+					// check whether the current terminal is in FOLLOW(nonTerminal)
+					// if it does not exist
+					if (bool exists = isIn(toSymbol(currT), follow); !exists)
+						continue;
+
+					const StackElementType& topState = this->m_Stack.back();
+					this->p_Logger.log(LoggerInfo::DEBUG, std::format("Synchronized with:\n Top state {}\nNon-terminal {}\nTerminal", topState.toString(), stringfy(nonTerminal), stringfy(currT)));
+
+					LRTableEntry entry = this->p_Table.atGoto(topState.state, nonTerminal);
+					assert(not entry.isError());
+
+					StackElementType newState{ entry.number };
+					_push_state(newState);
+					return;
+				}
+
+			}
+		}
 
 	protected:
 		static const StateT START_STATE;
@@ -90,12 +182,21 @@ namespace m0st4fa {
 	public:
 		
 		LRParser() = default;
-		LRParser(const LexicalAnalyzerT& lexer,
+		LRParser(LexicalAnalyzerT& lexer,
 			const ParsingTableT& parsingTable,
 			const SymbolT& startSymbol) : ParserBase{ lexer, parsingTable, startSymbol } {
 			this->p_Table.grammar.calculateFIRST();
 			this->p_Table.grammar.calculateFOLLOW();
 		};
+		LRParser(const LRParser& other) = default;
+		LRParser& operator=(const LRParser& rhs) {
+			this->ParserBase::operator=(rhs);
+			this->m_Stack = rhs.m_Stack;
+			this->m_CurrTopState = rhs.m_CurrTopState;
+			this->m_CurrInputToken = rhs.m_CurrInputToken;
+
+			return *this;
+		}
 		ParserResult parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
 		
 	};
@@ -108,7 +209,7 @@ namespace m0st4fa {
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
 	inline void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_reduce(size_t prodNumber)
 	{
-		const std::string& src = this->getLexicalAnalyzer().getSourceCode();
+		const std::string_view src = this->get_source_code();
 
 		// get the production
 		const auto& production = this->p_Table.grammar.at(prodNumber);
@@ -116,9 +217,7 @@ namespace m0st4fa {
 		StackElementType newState = StackElementType{};
 
 		// execute the action, if any
-		void(*action)(StackType&, StackElementType&) = static_cast<void(*)(StackType&, StackElementType&)>(production.postfixAction);
-
-		if (action != nullptr)
+		if (auto action = static_cast<void(*)(StackType&, StackElementType&)>(production.postfixAction); action != nullptr)
 			action(this->m_Stack, newState);
 
 		// determine the length of the body of the production
@@ -143,102 +242,7 @@ namespace m0st4fa {
 		this->_push_state(newState);
 	};
 
-	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_error_recov_panic_mode() {
-
-		/** Algorithm
-		* Go through the stack top-down and consider state S, the top on the stack:
-			* For every non-terminal V:
-				* If S has a goto on non-terminal V, record non-terminal V.
-			* See whether any non-terminal V has been record for S:
-				* If so, found = true and break.
-				* If this is not the case, pop S and continue on to the next state on top of the stack.
-
-		* If (not found) ERROR(could not synchronize).
-
-		* For each token left on the input T:
-			* If reachedEnd == true, break.              // the order is important
-			* If T == EOF, set reachedEnd = true.        // between these two steps
-			* For every non-terminal V, check whether T is in FOLLOW(V):
-				* If So, shift GOTO[S][V] and set synchronized = true and break.
-				* If not, continue on to the next token T.
-
-		* If (not synchronized) ERROR(could not synchronize).
-		*/
-
-		auto rbegin = this->m_Stack.rbegin();
-		auto rend = this->m_Stack.rend();
-
-		std::vector<VariableType> nonTerminals;
-		bool found = false;
-
-		// find a state with at least a single GOTO entry on some non-terminal
-		// record all non-terminals on which it has a GOTO
-		for (; rbegin < rend; rbegin = this->m_Stack.rbegin()) {
-			auto currState = *rbegin;
-			size_t stateNum = currState.state;
-
-			// get all non-error goto entries for this state
-			nonTerminals = this->p_Table.getGotos(stateNum);
-
-			// if this state has at least a single GOTO
-			// we have found the state we seek; break in this case
-			if (not nonTerminals.empty()) {
-				found = true;
-				break;
-			}
-
-			// if this state does not have any GOTOs,
-			// we still didn't find the state we seek
-			this->m_Stack.pop_back();
-		}
-
-		// if no state was found
-		if (not found) {
-			this->p_Logger.log(LoggerInfo::FATAL_ERROR, "Unable to syncrhonize! implement professional handling of this.");
-			std::abort();
-		}
-
-		// if some state could be found
-
-		// loop through the remaining terminals of the input
-
-		bool hasReachedEnd = false;
-		for (; ; this->m_CurrInputToken = this->getNextToken()) {
-
-			if (hasReachedEnd)
-				break;
-
-			hasReachedEnd = this->m_CurrInputToken == TokenType::TEOF;
-
-			TerminalType currT = this->m_CurrInputToken.name;
-			bool matches = false;
-
-			for (VariableType nonTerminal : nonTerminals) {
-				const auto& follow = this->p_Table.grammar.getFOLLOW(nonTerminal);
-
-				// check whether the current terminal is in FOLLOW(nonTerminal)
-				bool exists = isIn(toSymbol(currT), follow);
-
-				// if it does not exist
-				if (not exists)
-					continue;
-
-				const StackElementType& topState = this->m_Stack.back();
-				this->p_Logger.log(LoggerInfo::DEBUG, std::format("Synchronized with:\n Top state {}\nNon-terminal {}\nTerminal", topState.toString(), stringfy(nonTerminal), stringfy(currT)));
-
-				LRTableEntry entry = this->p_Table.atGoto(topState.state, nonTerminal);
-				assert(not entry.isError());
-
-				StackElementType newState{ entry.number };
-				_push_state(newState);
-				return;
-			}
-
-		}
-	}
-
-	template<typename GrammarT, typename LexicalAnalyzerT, typename		SymbolT, typename StateT, 
+	template<typename GrammarT, typename LexicalAnalyzerT, typename		SymbolT, typename StateT,
 		typename ParsingTableT, 
 		typename FSMTableT, typename InputT>
 	ParserResult LRParser<GrammarT, LexicalAnalyzerT, 
@@ -271,18 +275,18 @@ namespace m0st4fa {
 
 		this->_reset_parser_state();
 		this->_push_state(START_STATE);
-		this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+		this->m_CurrInputToken = this->get_next_token();
 		TerminalType currTokenName = this->m_CurrInputToken.name;
 
 		// this variable keeps track of the number of errors encountered thus far
-		size_t errorNum = 0;
+		size_t errorNum = 0; 
 
 		// main parser loop
 		while (true) {
 
 			size_t currStateNum = this->m_CurrTopState.state;
 			LRTableEntry currEntry = this->p_Table.atAction(currStateNum, currTokenName);
-			const std::string& src = this->getLexicalAnalyzer().getSourceCode();
+			const std::string_view src = this->get_source_code();
 
 			// if we detect an error
 			if (currEntry.isEmpty || currEntry.type == LRTableEntryType::TET_ERROR) {
@@ -334,7 +338,7 @@ namespace m0st4fa {
 				StateT s = StateT{ currEntry.number };
 				s.token = this->m_CurrInputToken;
 				this->_push_state(s);
-				this->m_CurrInputToken = this->getLexicalAnalyzer().getNextToken();
+				this->m_CurrInputToken = this->get_next_token();
 				currTokenName = this->m_CurrInputToken.name;
 				break;
 			}

@@ -1,9 +1,7 @@
 #include "regexTypedefs.h"
 
 
-namespace m0st4fa {
-
-    namespace regex {
+namespace m0st4fa::regex {
 
         SymbolType toSymbol(const Terminal terminal)
         {
@@ -14,7 +12,5 @@ namespace m0st4fa {
         {
             return SymbolType{ .isTerminal = false, .as {.nonTerminal = variable} };
         }
-
-    }
 
 }

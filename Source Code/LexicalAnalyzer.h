@@ -16,7 +16,7 @@ namespace m0st4fa {
 
 		DFA<TransFn<TableT>, InputT> m_Automatan;
 		TokenFactoryT<TokenT, InputT> m_TokenFactory = nullptr;
-		std::string m_SourceCode;
+		std::string_view m_SourceCode;
 
 		size_t m_Line = 1,
 			/** When does the line number change?
@@ -42,7 +42,7 @@ namespace m0st4fa {
 		LexicalAnalyzer(
 			DFA<TransFn<TableT>, InputT> automaton,
 			TokenFactoryT<TokenT, InputT> tokenFactory,
-			const std::string& sourceCode) :
+			std::string_view sourceCode) :
 			m_Automatan{ automaton }, m_TokenFactory{ tokenFactory }, m_SourceCode{ sourceCode }
 		{
 
@@ -57,8 +57,20 @@ namespace m0st4fa {
 
 		}
 
+		LexicalAnalyzer(const LexicalAnalyzer&) = default;
+		LexicalAnalyzer(LexicalAnalyzer&&) = default;
+		LexicalAnalyzer& operator= (const LexicalAnalyzer& rhs) {
+			this->m_Automatan = rhs.m_Automatan;
+			this->m_Col = rhs.m_Col;
+			this->m_Line = rhs.m_Line;
+			this->m_SourceCode = rhs.m_SourceCode;
+			this->m_TokenFactory = rhs.m_TokenFactory;
+
+			return *this;
+		}
+
 		TokenT getNextToken(unsigned = (unsigned)LA_FLAG::LAF_NONE);
-		const std::string& getSourceCode() { return this->m_SourceCode; };
+		const std::string_view& getSourceCode() { return this->m_SourceCode; };
 		TokenT peak(unsigned = (unsigned)LA_FLAG::LAF_NONE);
 		size_t getLine() { return this->m_Line; };
 		size_t getCol() { return this->m_Col; };
@@ -88,14 +100,14 @@ namespace m0st4fa {
 				// if the current character is a new line char and they are allowed, do not remove the current char
 				if (currChar == '\n' && (flags & (unsigned)LA_FLAG::LAF_ALLOW_NEW_LINE)) {
 					this->m_Line++, this->m_Col = 0;
-					this->m_SourceCode.erase(this->m_SourceCode.begin());
+					this->m_SourceCode.remove_suffix(1);
 					continue;
 				}
 
 				// if this whitespace character is not a new line character
 				
 				// erase whitespace from source code stream
-				this->m_SourceCode.erase(this->m_SourceCode.begin());
+				this->m_SourceCode.remove_suffix(1);
 
 				// update character
 				this->m_Col++;
@@ -116,7 +128,7 @@ namespace m0st4fa {
 	{
 
 		// remove all whitespaces and count new lines
-		if (-not (flags & (unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS))
+		if (!(flags & (unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS))
 			this->_remove_whitespace(flags);
 
 		// if we are at the end of the source code or it is empty, return EOF token
@@ -139,7 +151,7 @@ namespace m0st4fa {
 		const state_t fstate = *fsmRes.finalState.begin();
 
 		// check whether there is a matched lexeme
-		if (-not fsmRes.accepted) {
+		if (!fsmRes.accepted) {
 
 			LoggerInfo info;
 			info.level = LOG_LEVEL::LL_ERROR;
@@ -156,13 +168,13 @@ namespace m0st4fa {
 
 		m_Logger.logDebug(std::format("LexemeSize: {}", lexemeSize));
 		this->m_Col += lexemeSize;
-		const std::string lexeme = this->m_SourceCode.substr(0, lexemeSize);
+		const std::string_view lexeme = this->m_SourceCode.substr(0, lexemeSize);
 
 		// get the token
 		res = m_TokenFactory(fstate, lexeme);
 
 		// erease the lexeme from source code stream
-		m_SourceCode.erase(0, lexemeSize);
+		m_SourceCode.remove_prefix(lexemeSize);
 		m_Logger.logDebug(std::format("Source Code: {}, Length {}", m_SourceCode, m_SourceCode.length()));
 
 		return res;

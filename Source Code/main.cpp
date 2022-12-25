@@ -53,9 +53,9 @@ using m0st4fa::regex::regexRes;
 
 int main(void) {
 	
-	regex re{ "^most.*", "g" }; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
-	regexRes reres = re.exec("mostafa"); // re.exec(string); // you execute the compiled regular expression against the string
-	bool match; // re.match(string);    // asserts that the string matches the regular expression
+	regex re{ R"((^a[^b]))", "g" }; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
+	regexRes reres = re.exec("mostafa"); // you execute the compiled regular expression against the string
+	bool match = re.match("mostafa");    // asserts that the string matches the regular expression
 	re.getPattern();
 	re.getFlags();
 	re.getIndex();

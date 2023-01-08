@@ -364,7 +364,7 @@ namespace m0st4fa {
 
 		// constructors
 		ProductionVector() = default;
-		ProductionVector(const VecType& vec) : m_Vector { vec } {};
+		explicit(true) ProductionVector(const VecType& vec) : m_Vector { vec } {};
 
 		// production vector access methods
 		const VecType& getProdVector() { return this->m_Vector; }
@@ -382,9 +382,11 @@ namespace m0st4fa {
 		size_t size() const { return this->m_Vector.size(); }
 		void clear() { this->m_Vector.clear(); this->FIRST.clear(); this->FOLLOW.clear(); }
 		bool empty() const { return this->m_Vector.empty(); }
+		void push_back(const ProductionT& production) { m_Vector.push_back(production); }
+		void pop_back() { m_Vector.pop_back(); }
 
 		// conversion methods
-		operator std::string() const {
+		explicit(false) operator std::string() const {
 			return this->toString();
 		}
 		std::string toString() const {
@@ -500,7 +502,7 @@ namespace m0st4fa {
 
 		using SetPair = std::pair<std::set<SymbolT>, bool>;
 
-		// resize the FIRST set to accomdate an entry for all non-terminals
+		// resize the FIRST set to accommodate an entry for all non-terminals
 		this->FIRST.resize((size_t)decltype(SymbolT().as.nonTerminal)::NT_COUNT);
 		bool added = false;
 
@@ -560,7 +562,7 @@ namespace m0st4fa {
 					// get variable
 					auto variable = (decltype(set.begin()->as.nonTerminal))i++;
 
-					this->m_Logger.logDebug(std::format("FIRST({}) = {}", stringfy(variable), stringfy(set)));
+					this->m_Logger.logDebug(std::format("FIRST({}) = {}", stringfy(variable), m0st4fa::toString(set)));
 				}
 #endif
 
@@ -580,7 +582,7 @@ namespace m0st4fa {
 	{
 
 		const SymbolT& head = prod.prodHead;
-		size_t setIndexH = (size_t)head.as.nonTerminal;
+		auto setIndexH = (size_t)head.as.nonTerminal;
 		std::set<SymbolT>& fsetH = this->FIRST[setIndexH];
 
 		// check whether the first set contains epsilon
@@ -590,7 +592,7 @@ namespace m0st4fa {
 		if (!symbol.isTerminal) {
 
 			// get the first set of the symbol	
-			size_t setIndexN = (size_t)symbol.as.nonTerminal;
+			auto setIndexN = (size_t)symbol.as.nonTerminal;
 			std::set<SymbolT>& fsetN = this->FIRST[setIndexN];
 
 			// check whether the first set contains epsilon
@@ -617,7 +619,7 @@ namespace m0st4fa {
 				return true;
 			}
 
-			// if the symbol is differnt from head
+			// if the symbol is different from head
 			/**
 			* If S is a non-terminal N:
 				* F = FIRST(N), FE = F has epsilon?, HE = H has epsilon?
@@ -653,7 +655,7 @@ namespace m0st4fa {
 						std::format("Added terminal {} to FIRST({}), which is now: {}",
 							(std::string)symbol,
 							(std::string)head,
-							stringfy(this->FIRST[setIndexH])));
+							m0st4fa::toString(this->FIRST[setIndexH])));
 
 				}
 			}
@@ -681,7 +683,7 @@ namespace m0st4fa {
 							std::format("Added terminal {} to FIRST({}), which is now: {}",
 								(std::string)SymbolT::EPSILON,
 								(std::string)head,
-								stringfy(this->FIRST[setIndexH])));
+								m0st4fa::toString(this->FIRST[setIndexH])));
 					}
 				}
 
@@ -695,17 +697,16 @@ namespace m0st4fa {
 				*If S is a terminal T, add T to FIRST(H) and move on to the next production.
 					* If T is added(was not already there), set added to true.
 			*/
-			auto p = this->FIRST[setIndexH].insert(symbol);
 
 			// add epsilon to the FIRST set of the head
-			if (p.second) {
+			if (auto p = this->FIRST[setIndexH].insert(symbol); p.second) {
 				added = true;
 
 				this->m_Logger.logDebug(
 					std::format("Added terminal {} to FIRST({}), which is now: {}",
 						(std::string)symbol,
 						(std::string)head,
-						stringfy(this->FIRST[setIndexH])));
+						m0st4fa::toString(this->FIRST[setIndexH])));
 			}
 
 			// continue to the next production
@@ -766,7 +767,7 @@ namespace m0st4fa {
 					std::format("Added terminal {} to FOLLOW({}), which is now: {}",
 						(std::string)sym,
 						stringfy(nonTerminal),
-						stringfy(this->FOLLOW[currSymIndex])));
+						m0st4fa::toString(this->FOLLOW[currSymIndex])));
 
 			}
 
@@ -811,7 +812,7 @@ namespace m0st4fa {
 					std::format("Added terminal {} to FOLLOW({}), which is now: {}",
 						(std::string)symbol,
 						stringfy(nonTerminal),
-						stringfy(this->FOLLOW[currSymIndex])));
+						m0st4fa::toString(this->FOLLOW[currSymIndex])));
 
 				// return whether a new element has been inserted
 				return p.second;
@@ -972,7 +973,7 @@ namespace m0st4fa {
 					// get variable
 					auto variable = (decltype(set.begin()->as.nonTerminal))i++;
 
-					this->m_Logger.logDebug(std::format("FOLLOW({}) = {}", stringfy(variable), stringfy(set)));
+					this->m_Logger.logDebug(std::format("FOLLOW({}) = {}", stringfy(variable), m0st4fa::toString(set)));
 
 				}
 #endif
@@ -1078,7 +1079,7 @@ namespace m0st4fa {
 			goto epilogue;
 		}
 
-		this->m_Logger.logDebug(std::format("FIRST({}) = {}", (std::string)*this, stringfy(this->FIRST)));
+		this->m_Logger.logDebug(std::format("FIRST({}) = {}", (std::string)*this, m0st4fa::toString(this->FIRST)));
 #endif
 
 	epilogue:

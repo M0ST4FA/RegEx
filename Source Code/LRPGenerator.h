@@ -3,7 +3,6 @@
 #include "LRParser.hpp"
 
 namespace m0st4fa {
-
 	enum class ConflictPolicy {
 		CP_PREFER_SHIFT, // prefer shift over reduce, but stop if there are two shifts
 		CP_NONE, // stop always
@@ -39,7 +38,7 @@ namespace m0st4fa {
 		// Assume FIRST set is stored within the grammar class
 		SymbolType m_StartSymbol{};
 		mutable LRParsingTableT m_ParsingTable{};
-		GrammarT* m_Grammar{nullptr};
+		GrammarT* m_Grammar{ nullptr };
 		mutable bool m_ParsingTableGenerated = false;
 
 		CollectionType _create_LR_collection(size_t = 0);
@@ -52,8 +51,8 @@ namespace m0st4fa {
 			* if that entry == the current entry, continue.
 			* if that entry != the current entry, the location is being reset and that is an error.
 			*/
-			if (! (currEntry.type == LRTableEntryType::TET_ERROR)) {
-				if (! (currEntry == newEntry))
+			if (!(currEntry.type == LRTableEntryType::TET_ERROR)) {
+				if (!(currEntry == newEntry))
 					return _resolve_conflict(currEntry, newEntry, itemSetIndex, itemSet, lookahead, cp);
 				//throw std::logic_error(grammarType + " table entry being redefined!");
 				else
@@ -64,7 +63,6 @@ namespace m0st4fa {
 		}
 
 		inline bool _prompt_conflict_resolution(const LRTableEntry& currEntry, const LRTableEntry& newEntry, size_t itemSetIndex, const ItemSetType& itemSet, const SymbolType& lookahead) const {
-
 			std::string msg1 = "PLease resolve the conflict in order to continue.";
 			std::string iSet = itemSet.toString();
 			std::string msg2 = "Would you like to replace the already existing entry with the new one? [type `yes` or `no`] ";
@@ -79,11 +77,9 @@ namespace m0st4fa {
 				return true;
 			else // TODO: SET THIS UP
 				throw std::exception("Wrong answer");
-
 		}
 
 		inline bool _resolve_conflict(const LRTableEntry& currEntry, const LRTableEntry& newEntry, size_t itemSetIndex, const ItemSetType& itemSet, const SymbolType& lookahead, ConflictPolicy cp = ConflictPolicy::CP_NONE) const {
-
 			switch (cp) {
 			case ConflictPolicy::CP_NONE:
 				return _prompt_conflict_resolution(currEntry, newEntry, itemSetIndex, itemSet, lookahead);
@@ -99,7 +95,6 @@ namespace m0st4fa {
 			default:
 				throw std::exception("TODO: PUT A BETTER EXCEPTION HERE IN _resolve_conflict() when the conflict policy is unknown");
 			}
-			
 		}
 		/**
 		* @return bool representing whether a new entry has been added
@@ -114,15 +109,15 @@ namespace m0st4fa {
 			// set ACTION[i, a] to "reduce A --> a" for all a in FOLLOW(A)
 			std::ranges::for_each(followHead.begin(), followHead.end(), [this, i, prodNum, &newEntryAdded, &currItemSet, cp](const SymbolType& sym) {
 				LRTableEntry& currEntry = this->m_ParsingTable.atAction(i, sym.as.terminal);
-				auto newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_REDUCE, prodNum };
+			auto newEntry = LRTableEntry{ false, LRTableEntryType::TET_ACTION_REDUCE, prodNum };
 
-				if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, sym, cp))
-					return;
+			if (_check_entry_already_exists(currEntry, newEntry, i, currItemSet, sym, cp))
+				return;
 
-				this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = R{}", i, (std::string)sym, prodNum));
-				currEntry = newEntry;
-				newEntryAdded = true;
-			});
+			this->p_Logger.log(LoggerInfo::INFO, std::format("ACTION[{}][{}] = R{}", i, (std::string)sym, prodNum));
+			currEntry = newEntry;
+			newEntryAdded = true;
+				});
 
 			return newEntryAdded;
 		}
@@ -239,22 +234,17 @@ namespace m0st4fa {
 		const LRParsingTableT& generateLALRParser(ConflictPolicy = ConflictPolicy::CP_NONE);
 	};
 
-
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
 	const typename LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::SymbolType
-	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::START_SYMBOL_PRIME{ .isTerminal = false, .as = {.nonTerminal = SIZE_MAX - 1} };
-	
+		LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::START_SYMBOL_PRIME{ .isTerminal = false, .as = {.nonTerminal = SIZE_MAX - 1} };
 }
 
-
 namespace m0st4fa {
-
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
 	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::CollectionType LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_create_LR_collection(size_t lookaheadNum)
 	{
-
 		// check for whether the number of lookaheads is correct or no
 		if (lookaheadNum > 1) {
 			const std::string msg = std::format("Incorrect number of lookaheads `{}`! Supported lookaheads are `0` and `1`.", lookaheadNum);
@@ -263,12 +253,12 @@ namespace m0st4fa {
 		}
 
 		CollectionType resCollection;
-		
+
 		// Initialize the collection of LR(0) item sets
-		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);		
+		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
 		ItemT startItem{ startProd, 0 };
 		if (lookaheadNum == 1)
-			startItem.lookaheads = {SymbolType::END_MARKER};
+			startItem.lookaheads = { SymbolType::END_MARKER };
 
 		ItemSetType startItemSet{ startItem };
 		resCollection.push_back(startItemSet.CLOSURE(this->m_Grammar));
@@ -278,7 +268,6 @@ namespace m0st4fa {
 			ItemSetType itemSet = resCollection.at(itemSetIndex);
 
 			for (const ItemT item : itemSet) {
-
 				const SymbolType& sym = item.symbolAtDotPosition();
 
 				// if the dot is at the end of the item
@@ -303,7 +292,6 @@ namespace m0st4fa {
 				this->p_Logger.logDebug(std::format("Inserting item set to the LR(0) collection: {}", (std::string)gotoSet));
 				resCollection.push_back(gotoSet);
 			}
-
 		}
 
 		return resCollection;
@@ -320,7 +308,6 @@ namespace m0st4fa {
 			ItemSetType& currItemSet{ LRCollection.at(i) };
 
 			for (const ItemT& currItem : currItemSet) {
-
 				// if the dot is at the end of the production
 				if (currItem.isDotPositionAtEnd()) {
 					// check whether this item is the end item
@@ -342,20 +329,17 @@ namespace m0st4fa {
 				else // if the symbol at the dot is a non-terminal
 					_goto(i, j, symAtDot);
 			}
-
 		}
-
 	}
 
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
 	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::CollectionType
-	LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_merge_sets_with_identical_cores(const CollectionType& LR1Collection)
+		LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::_merge_sets_with_identical_cores(const CollectionType& LR1Collection)
 	{
 		CollectionType res;
 		size_t LR1CollSize = LR1Collection.size();
 		std::vector<bool> alreadyMerged(LR1CollSize, false);
-
 
 		for (size_t setIndex = 0; setIndex < LR1CollSize; setIndex++) {
 			ItemSetType currSet = LR1Collection.at(setIndex);
@@ -368,14 +352,14 @@ namespace m0st4fa {
 			// note that if the set is not already merged, this means that all sets with identical cores are also not already merged
 			for (size_t j = setIndex + 1; j < LR1CollSize; j++) {
 				const ItemSetType& s = LR1Collection.at(j);
-				
+
 				if (not currSet.hasIdenticalCore(s))
 					continue;
 
 				alreadyMerged.at(j) = true;
 				currSet.merge(s);
 			}
-			
+
 			res.push_back(currSet);
 		}
 
@@ -401,13 +385,12 @@ namespace m0st4fa {
 		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
 		const ItemT endItem{ startProd, 1 };
 		CollectionType LR0Collection = _create_LR_collection();
-		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(0) COLLECTION:\n{}", stringfy(LR0Collection)));
+		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(0) COLLECTION:\n{}", toString(LR0Collection)));
 
 		for (size_t i = 0; i < LR0Collection.size(); i++) {
 			ItemSetType& currItemSet{ LR0Collection.at(i) };
-			
-			for (const ItemT& currItem : currItemSet) {
 
+			for (const ItemT& currItem : currItemSet) {
 				// if the dot is at the end of the production
 				if (currItem.isDotPositionAtEnd()) {
 					// check whether this item is the end item
@@ -422,15 +405,13 @@ namespace m0st4fa {
 				// if the dot is not at the end of the production
 				const SymbolType& symAtDot = currItem.symbolAtDotPosition();
 				size_t j = _goto_set_number(currItemSet, symAtDot, LR0Collection);
-				
+
 				// if the symbol at the dot is a terminal
 				if (symAtDot.isTerminal)
 					_action_shift(i, currItemSet, j, symAtDot, conflictPolicy);
 				else // if the symbol at the dot is a non-terminal
 					_goto(i, j, symAtDot);
-
 			}
-
 		}
 
 		return this->m_ParsingTable;
@@ -439,11 +420,10 @@ namespace m0st4fa {
 	template<typename GrammarT, typename ItemT, typename LRParsingTableT>
 		requires LRPGenConcept<GrammarT>
 	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateCLRParser(ConflictPolicy conflictPolicy)
-	{	
-
+	{
 		CollectionType LR1Collection = _create_LR_collection(1);
-		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LR1Collection), LR1Collection.size()));
-		
+		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", toString(LR1Collection), LR1Collection.size()));
+
 		_create_parsing_table_lookahead(LR1Collection, conflictPolicy);
 
 		return this->m_ParsingTable;
@@ -453,23 +433,21 @@ namespace m0st4fa {
 		requires LRPGenConcept<GrammarT>
 	const LRParsingTableT& LRParserGenerator<GrammarT, ItemT, LRParsingTableT>::generateLALRParser(ConflictPolicy conflictPolicy)
 	{
-
 		// generate LR(1) collection
 		const ProductionType startProd = this->m_ParsingTable.grammar.at(0);
 		const ItemT endItem{ startProd, 1, {to_symbol(TerminalType::T_EOF)} };
 		CollectionType LR1Collection = _create_LR_collection(1);
-		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LR1Collection), LR1Collection.size()));
+		this->p_Logger.log(LoggerInfo::INFO, std::format("LR(1) COLLECTION:\n{}\nSize of collection: {}", toString(LR1Collection), LR1Collection.size()));
 
 		/**
 		* obtain LALR(1) collection by merging sets with identical cores
 		*/
 		CollectionType LALR1Collection = _merge_sets_with_identical_cores(LR1Collection);
-		this->p_Logger.log(LoggerInfo::INFO, std::format("LALR(1) COLLECTION:\n{}\nSize of collection: {}", stringfy(LALR1Collection), LALR1Collection.size()));
+		this->p_Logger.log(LoggerInfo::INFO, std::format("LALR(1) COLLECTION:\n{}\nSize of collection: {}", toString(LALR1Collection), LALR1Collection.size()));
 
 		// generate the parsing table (in the same way as a CLR(1) parser)
 		_create_parsing_table_lookahead(LALR1Collection, conflictPolicy);
 
 		return this->m_ParsingTable;
 	}
-
 }

@@ -4,10 +4,9 @@
 #include "Parser.h"
 
 namespace m0st4fa {
-
 	template <typename GrammarT, typename LexicalAnalyzerT,
 		typename SymbolT, typename StateT,
-		typename ParsingTableT, 
+		typename ParsingTableT,
 		typename FSMTableT = FSMTable<>,
 		typename InputT = std::string>
 	class LRParser : public Parser<LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT> {
@@ -24,7 +23,7 @@ namespace m0st4fa {
 
 		using TokenType = decltype(LexicalAnalyzerT{}.getNextToken());
 
-		mutable StackType m_Stack{0};
+		mutable StackType m_Stack{ 0 };
 		mutable StackElementType m_CurrTopState{ START_STATE };
 		mutable TokenType m_CurrInputToken{ TokenType{} };
 
@@ -38,32 +37,28 @@ namespace m0st4fa {
 		void _reduce(size_t);
 
 		void _push_state(const StateT& state) {
-
 			this->m_Stack.push_back(state);
 			this->m_CurrTopState = this->m_Stack.back();
 
-			this->p_Logger.log(LoggerInfo::INFO, std::format("Pushing state {}\nCurrent stack: {}", (std::string)state, stringfy(this->m_Stack)));
+			this->p_Logger.log(LoggerInfo::INFO, std::format("Pushing state {}\nCurrent stack: {}", (std::string)state, toString(this->m_Stack)));
 		}
 
 		void _pop_state() {
-
 			if (this->m_Stack.size() <= 1) {
-
 				std::string msg = std::format("Cannot pop more states from the LR stack. The stack cannot reach an empty stated.");
 
 				this->p_Logger.log(LoggerInfo::ERR_STACK_UNDERFLOW, msg);
 
 				throw std::runtime_error((std::string)"Stack underflow: " + msg);
 			}
-			
+
 			this->m_CurrTopState = this->m_Stack.back();
-			this->p_Logger.log(LoggerInfo::INFO, std::format("Popping state {}\nCurrent stack: {}", (std::string)this->m_CurrTopState, stringfy(this->m_Stack)));
+			this->p_Logger.log(LoggerInfo::INFO, std::format("Popping state {}\nCurrent stack: {}", (std::string)this->m_CurrTopState, toString(this->m_Stack)));
 
 			this->m_Stack.pop_back();
 		}
 
 		void _pop_states(size_t num) {
-
 			if (this->m_Stack.size() < num + 1) {
 				std::string msg = std::format("Cannot pop {} states from the LR stack. The stack cannot reach an empty stated.", num);
 
@@ -77,13 +72,18 @@ namespace m0st4fa {
 			StackType temp{ end - num, end };
 
 			this->m_Stack.erase(end - num, end);
-			this->p_Logger.log(LoggerInfo::INFO, std::format("Popping states {}\nCurrent stack: {}", stringfy(temp), stringfy(this->m_Stack)));
+			this->p_Logger.log(LoggerInfo::INFO, std::format("Popping states {}\nCurrent stack: {}", toString(temp), toString(this->m_Stack)));
 
 			this->m_CurrTopState = this->m_Stack.back();
 		}
 
+		/**
+		* @output `false`: there is no error
+		*		  `true`:  there is an error and has been resolved
+		*		  exception: there is an error that could not be resolved
+		*/
+		bool _check_resolve_parsing_errors(size_t, ErrorRecoveryType);
 		void _error_recov_panic_mode() {
-
 			/** Algorithm
 			* Go through the stack top-down and consider state S, the top on the stack:
 			* For every non-terminal V:
@@ -143,7 +143,6 @@ namespace m0st4fa {
 
 			bool hasReachedEnd = false;
 			for (; ; this->m_CurrInputToken = this->get_next_token()) {
-
 				if (hasReachedEnd)
 					break;
 
@@ -163,7 +162,7 @@ namespace m0st4fa {
 						continue;
 
 					const StackElementType& topState = this->m_Stack.back();
-					this->p_Logger.log(LoggerInfo::DEBUG, std::format("Synchronized with:\n Top state {}\nNon-terminal {}\nTerminal", topState.toString(), stringfy(nonTerminal), stringfy(currT)));
+					this->p_Logger.log(LoggerInfo::DEBUG, std::format("Synchronized with:\n Top state {}\nNon-terminal {}\nTerminal", topState.toString(), toString(nonTerminal), toString(currT)));
 
 					LRTableEntry entry = this->p_Table.atGoto(topState.state, nonTerminal);
 					assert(not entry.isError());
@@ -172,15 +171,19 @@ namespace m0st4fa {
 					_push_state(newState);
 					return;
 				}
-
 			}
 		}
-
+		/**
+		* @output `true`: accepted
+		*		  `false`: didn't accept
+		*         exception: the entry is incorrect
+		*/
+		bool _take_parsing_action(ParserResult&);
 	protected:
 		static const StateT START_STATE;
 
 	public:
-		
+
 		LRParser() = default;
 		LRParser(LexicalAnalyzerT& lexer,
 			const ParsingTableT& parsingTable,
@@ -198,14 +201,67 @@ namespace m0st4fa {
 			return *this;
 		}
 		ParserResult parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
-		
 	};
 
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
 	const StateT LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::START_STATE{ 0 };
 
 	// IMPLEMENTATION
-	
+
+
+	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
+	inline bool LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_check_resolve_parsing_errors(size_t errorNum, ErrorRecoveryType errorRecoveryType)
+	{
+
+		TerminalType currTokenName = this->m_CurrInputToken.name;
+		size_t currStateNum = this->m_CurrTopState.state;
+		LRTableEntry currEntry = this->p_Table.atAction(currStateNum, currTokenName);
+
+		if (!(currEntry.isEmpty || currEntry.type == LRTableEntryType::TET_ERROR))
+			return false;
+
+		const std::string_view src = this->get_source_code();
+		// check we have not reached the maximum number of encountered errors
+		if (errorNum == ParserBase::ERR_RECOVERY_LIMIT) {
+			this->p_Logger.log(LoggerInfo::ERR_RECOV_LIMIT_EXCEEDED, std::format("Maximum number of errors to recover from is `{}` which has been exceeded.", ParserBase::ERR_RECOVERY_LIMIT));
+			throw std::logic_error("Error recovery limit exceeded!");
+		}
+
+		errorNum++;
+
+		if (currEntry.isEmpty) {
+			std::string msg{ std::format("LR parsing table entry is empty!\nCurrent stack: {}\nCurrent token: {}\nCurrent input: {}", toString(this->m_Stack), m_CurrInputToken.toString(), src)};
+			this->p_Logger.log(LoggerInfo::ERR_INVALID_TABLE_ENTRY, msg);
+		}
+
+		// if error recovery is not enabled
+		if (errorRecoveryType == ErrorRecoveryType::ERT_NONE) {
+			std::string msg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", toString(this->m_Stack), src);
+			this->p_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, msg);
+
+			throw std::logic_error("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.");
+		}
+
+		// if error recovery is enabled, switch on the type
+		switch (errorRecoveryType) {
+		case ErrorRecoveryType::ERT_PANIC_MODE: {
+			_error_recov_panic_mode();
+			break;
+		}
+		default: {
+			std::string errMsg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", toString(this->m_Stack), src);
+			std::string noteMsg = std::format("Error recovery type `{}` is not yet supported for LR parsing.", stringfy(errorRecoveryType));
+			std::string fullMsg = std::format("{}\nNote: ", errMsg, noteMsg);
+
+			this->p_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, fullMsg);
+			throw std::logic_error("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.");
+		}
+		}
+
+		// if the error was resolved, continue to the next iteration
+		return true;
+	};
+
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
 	inline void LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_reduce(size_t prodNumber)
 	{
@@ -232,21 +288,70 @@ namespace m0st4fa {
 		// Note: errors are never detected when consulting the GOTO table
 		// this here is just a precaution for possible (probably logic) bugs
 		if (currEntry.type != LRTableEntryType::TET_GOTO) {
-			std::string msg{ std::format("Incorrect entry type! Expected type `GOTO` within function reduce after accessing the GOTO table.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src) };
+			std::string msg{ std::format("Incorrect entry type! Expected type `GOTO` within function reduce after accessing the GOTO table.\nCurrent stack: {}\n Current input: {}", toString(this->m_Stack), src) };
 			this->p_Logger.log(LoggerInfo::ERR_INVALID_VAL, msg);
 
-			throw std::logic_error("Incorrect entry type!Expected type `GOTO` within function reduce after accessing the GOTO table.");
+			throw std::logic_error("Incorrect entry type! Expected type `GOTO` within function reduce after accessing the GOTO table.");
 		}
 
 		// if the current entry is not an error
 		this->_push_state(newState);
-	};
+	}
+
+
+	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
+	inline bool LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_take_parsing_action([[maybe_unused]] ParserResult& result)
+	{
+
+		size_t currStateNum = this->m_CurrTopState.state;
+		TerminalType currTokenName = this->m_CurrInputToken.name;
+		LRTableEntry currEntry = this->p_Table.atAction(currStateNum, currTokenName);
+		const std::string_view src = this->get_source_code();
+
+		switch (currEntry.type)
+		{
+		case LRTableEntryType::TET_ACTION_SHIFT: {
+			StateT s = StateT{ currEntry.number };
+			s.token = this->m_CurrInputToken;
+			this->_push_state(s);
+			this->m_CurrInputToken = this->get_next_token();
+			break;
+		}
+
+		case LRTableEntryType::TET_ACTION_REDUCE:
+			_reduce(currEntry.number);
+			break;
+
+		case LRTableEntryType::TET_ACCEPT: {
+			// get the production
+			const auto& production = this->p_Table.grammar.at(0);
+
+			StackElementType newState = StackElementType{};
+
+			// execute the action, if any
+			if (auto action = static_cast<void(*)(StackType&, StackElementType&)>(production.postfixAction); action != nullptr)
+				action(this->m_Stack, newState);
+			else
+				std::cout << "ACCEPTED!";
+
+			return true;
+		}
+
+		default: // TODO: ENHANCE THIS
+			this->p_Logger.log(LoggerInfo::FATAL_ERROR, std::format("[Unreachable] Invalid entry type `{}` on switch statement!\nCurrent stack: {}\n Current input: {}", stringfy(currEntry.type), toString(this->m_Stack), src));
+			std::string srcLoc = this->p_Logger.getCurrSourceLocation();
+			assert(std::format("Source code location:\n{}", srcLoc).data());
+			std::abort();
+		}
+
+		return false;
+	}
 
 	template<typename GrammarT, typename LexicalAnalyzerT, typename		SymbolT, typename StateT,
-		typename ParsingTableT, 
+		typename ParsingTableT,
 		typename FSMTableT, typename InputT>
-	ParserResult LRParser<GrammarT, LexicalAnalyzerT, 
-		SymbolT, StateT, 
+	ParserResult LRParser<GrammarT, LexicalAnalyzerT,
+		SymbolT, StateT,
 		ParsingTableT, FSMTableT, InputT>::
 		parse(ErrorRecoveryType errorRecoveryType)
 	{
@@ -257,7 +362,7 @@ namespace m0st4fa {
 		* Loop inifinitly until: the parser accepts or an error is produced.
 		* For every state I on top of the stack and token T from the input:
 			* A = ACTION[I][T.asTerminal] and switch on A:
-				* If A == SHIFT J: 
+				* If A == SHIFT J:
 					* Push J on top of the stack and get next input.
 				* Else if A == REDUCE J:
 					* Call _reduce(J).
@@ -276,96 +381,28 @@ namespace m0st4fa {
 		this->_reset_parser_state();
 		this->_push_state(START_STATE);
 		this->m_CurrInputToken = this->get_next_token();
-		TerminalType currTokenName = this->m_CurrInputToken.name;
 
 		// this variable keeps track of the number of errors encountered thus far
-		size_t errorNum = 0; 
+		size_t errorNum = 0;
 
 		// main parser loop
 		while (true) {
+			// check for errors and resolve them if any
+			if(_check_resolve_parsing_errors(errorNum, errorRecoveryType))
+				continue; // if there is no error and has been resolved
 
-			size_t currStateNum = this->m_CurrTopState.state;
-			LRTableEntry currEntry = this->p_Table.atAction(currStateNum, currTokenName);
-			const std::string_view src = this->get_source_code();
+			// no error:
 
-			// if we detect an error
-			if (currEntry.isEmpty || currEntry.type == LRTableEntryType::TET_ERROR) {
-
-				// check we have not reached the maximum number of encountered errors
-				if (errorNum == ParserBase::ERR_RECOVERY_LIMIT) {
-					this->p_Logger.log(LoggerInfo::ERR_RECOV_LIMIT_EXCEEDED, std::format("Maximum number of errors to recover from is `{}` which has been exceeded.", ParserBase::ERR_RECOVERY_LIMIT));
-					throw std::logic_error("Error recovery limit exceeded!");
-				}
-
-				errorNum++;
-
-				if (currEntry.isEmpty) {
-					std::string msg{ std::format("LR parsing table entry is empty!\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src) };
-					this->p_Logger.log(LoggerInfo::ERR_INVALID_TABLE_ENTRY, msg);
-				}
-
-				// if error recovery is not enabled
-				if (errorRecoveryType == ErrorRecoveryType::ERT_NONE) {
-					std::string msg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src);
-					this->p_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, msg);
-
-					throw std::logic_error("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.");
-				}
-
-				// if error recovery is enabled, switch on the type
-				switch (errorRecoveryType) {
-				case ErrorRecoveryType::ERT_PANIC_MODE: {
-					_error_recov_panic_mode();
-					break;
-				}
-				default: {
-					std::string errMsg = std::format("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.\nCurrent stack: {}\n Current input: {}", stringfy(this->m_Stack), src);
-					std::string noteMsg = std::format("Error recovery type `{}` is not yet supported for LR parsing.", stringfy(errorRecoveryType));
-					std::string fullMsg = std::format("{}\nNote: ", errMsg, noteMsg);
-
-					this->p_Logger.log(LoggerInfo::ERR_UNACCEPTED_STRING, fullMsg);
-					throw std::logic_error("Cannot continue further with the parse! Error entry encountered; It looks like this string does not belong to the grammar.");
-				}
-				}
-
-				// if the error was resolved, continue to the next iteration
-				continue;
-			}
-
-			switch (currEntry.type)
-			{
-			case LRTableEntryType::TET_ACTION_SHIFT: {
-				StateT s = StateT{ currEntry.number };
-				s.token = this->m_CurrInputToken;
-				this->_push_state(s);
-				this->m_CurrInputToken = this->get_next_token();
-				currTokenName = this->m_CurrInputToken.name;
+			// do the action and break in case we accept
+			if (this->_take_parsing_action(result))
 				break;
-			}
-
-			case LRTableEntryType::TET_ACTION_REDUCE:
-				_reduce(currEntry.number);
-				break;
-
-			case LRTableEntryType::TET_ACCEPT:
-				std::cout << "\nACCEPTED\n";
-				return result;
-
-			default:
-				this->p_Logger.log(LoggerInfo::FATAL_ERROR, std::format("[Unreachable] Invalid entry type `{}` on switch statement!\nCurrent stack: {}\n Current input: {}", stringfy(currEntry.type), stringfy(this->m_Stack), src));
-				std::string srcLoc = this->p_Logger.getCurrSourceLocation();
-				assert(std::format("Source code location:\n{}", srcLoc).data());
-				std::abort();
-			}
-
+			
 		}
 
 		return result;
 	}
-
 }
 
 namespace m0st4ta {
-
 
 }

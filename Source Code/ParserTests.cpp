@@ -41,7 +41,7 @@ GrammarType grammer_expression() {
 	using Production = m0st4fa::ProductionRecord<Symbol, StackElement>;
 
 
-	std::vector<Production> result;
+	GrammarType result;
 	size_t index = 0;
 
 	Production prod;
@@ -125,20 +125,17 @@ GrammarType grammer_expression() {
 void num_act(LRStackType& stack, LRStateType& newState) {
 	// F -> ID
 	auto state = stack.back();
-	newState.hasData = true;
 	newState.data = { .data = m0st4fa::toInteger(state.token.attribute) };
 	std::cout << "ID value: " << newState.data.data << "\n";
 }
 
 void pass_last_act(LRStackType& stack, LRStateType& newState) {
 	newState.data = stack.back().data;
-	newState.hasData = true;
 	std::cout << "Curr value: " << newState.data.data << "\n";
 }
 
 void pass_prelast_act(LRStackType& stack, LRStateType& newState) {
 	newState.data = stack.at(stack.size() - 2).data;
-	newState.hasData = true;
 	std::cout << "Curr value: " << newState.data.data << "\n";
 }
 
@@ -147,7 +144,6 @@ void add_act(LRStackType& stack, LRStateType& newState) {
 	size_t b = stack.back().data.data;
 	newState.data.data = a + b;
 	std::cout << std::format("Added `{}` and `{}`. Result `{}`\n", a, b, a + b);
-	newState.hasData = true;
 }
 
 void mult_act(LRStackType& stack, LRStateType& newState) {
@@ -155,7 +151,6 @@ void mult_act(LRStackType& stack, LRStateType& newState) {
 	size_t b = stack.back().data.data;
 	newState.data.data = a * b;
 	std::cout << std::format("Multiplied `{}` and `{}`. Result `{}`\n", a, b, a * b);
-	newState.hasData = true;
 }
 
 LRGrammarType grammar_expression_LR()

@@ -1,36 +1,35 @@
 #pragma once
 #include <string>
 #include <set>
+#include <map>
 #include <type_traits>
 #include <concepts>
 
 #include "ANSI.h"
 // FUNCTIONS
 namespace m0st4fa {
-
 	// STRING
 	template <typename T>
 	concept ConvertableToString = std::is_convertible_v<T, std::string>;
-		/*requires (T obj) { stringfy(obj); } || 
-		requires (T obj) { toString(obj); };*/
+	/*requires (T obj) { stringfy(obj); } ||
+	requires (T obj) { toString(obj); };*/
 
 	template <typename T>
 	// require the object to be iterable and its elements be convertable to strings
 		requires requires (T iterable) {
-		{*iterable.begin()} -> ConvertableToString;
+			{*iterable.begin()} -> ConvertableToString;
 	}
-	std::string stringfy(const T& iterable, bool asList = true) {
-
+	std::string toString(const T& iterable, bool asList = true) {
 		std::string separator = asList ? ", " : "\n";
 
 		std::string temp = "{ ";
 
 		if (iterable.empty())
-			return temp+= " }";
+			return temp += " }";
 
 		temp += (std::string)*iterable.begin();
 
-		for (size_t i = 0;  const auto & element : iterable) {
+		for (size_t i = 0; const auto & element : iterable) {
 			// skip the first element
 			if (-not i) {
 				i++;
@@ -40,9 +39,22 @@ namespace m0st4fa {
 			temp += separator + (std::string)element;
 		}
 
-		return temp+= " }";
-
+		return temp += " }";
 	}
+
+	template<typename K, typename V>
+	std::string toString(const std::map<K, V>& map) {
+		using MapType = std::map<K, V>;
+		std::string res;
+
+		for (const auto& pair : map)
+			// FORMAT:
+			// Key : Value
+			res += std::format("{} : {}\n", pair.first, toString(pair.second));
+
+		return res;
+	}
+	
 
 	// INTEGER
 
@@ -63,7 +75,6 @@ namespace m0st4fa {
 		bool added = false;
 
 		for (auto element : from) {
-
 			if (element == except)
 				continue;
 
@@ -81,24 +92,21 @@ namespace m0st4fa {
 		bool added = false;
 
 		for (auto element : from) {
-
 			auto p = to.insert(element);
 
 			if (p.second)
 				added = true;
-
 		}
 
 		return added;
 	};
-	
+
 	template <typename ElementT, typename IterableT>
 	bool isIn(const ElementT element, const IterableT& iterable) {
-		
 		for (const ElementT& e : iterable)
 			if (e == element)
 				return true;
-		
+
 		return false;
 	}
 
@@ -110,7 +118,6 @@ namespace m0st4fa {
 		a.contains(*a.begin());
 	}
 	bool operator==(const IterableT& lhs, const IterableT& rhs) {
-
 		// if they do not have the same size, they are not coequal
 		if (lhs.size() != rhs.size())
 			return false;
@@ -128,19 +135,18 @@ namespace m0st4fa {
 			// if `rhs` does not contain that element
 			return false;
 		}
-		
+
 		return true;
 	};
 
 	/**
 	* works with iterables that do not have method `contains`, but that have method `at`
 	*/
-	template<typename IterableT> 
+	template<typename IterableT>
 		requires requires (IterableT a) {
 		a.at(0);
 	}
 	bool operator==(const IterableT& lhs, const IterableT& rhs) {
-
 		const size_t lhsSize = lhs.size();
 		const size_t rhsSize = rhs.size();
 
@@ -170,13 +176,11 @@ namespace m0st4fa {
 		requires requires(T a, T b) {
 		a < b;
 		a > b;
-		}
+	}
 	inline bool withinRange(T element, T b1, T b2, bool inclusive = false) {
 		if (inclusive)
 			return (element >= b1 && element <= b2);
 
 		return (element > b1 && element < b2);
 	};
-
 }
-

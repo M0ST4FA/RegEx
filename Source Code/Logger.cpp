@@ -68,7 +68,7 @@ namespace m0st4fa {
 
 	void Logger::logDebug(const std::string& message, std::source_location location) const
 	{
-
+#ifdef _ENABLE_LOG_DEBUG
 #ifdef _DEBUG
 		const std::string logLevelStr = (const char* ) LOG_LEVEL_STRING[(int)LOG_LEVEL::LL_DEBUG];
 		std::string messageStr = std::format(ANSI_DEBUG_COLOR"[{:s}]: {:s}" ANSI_RESET_ALL, logLevelStr, message);
@@ -79,7 +79,7 @@ namespace m0st4fa {
 		
 		std::cout << messageStr << "\n";
 #endif
-
+#endif
 		return;
 	}
 

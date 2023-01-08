@@ -34,6 +34,7 @@ namespace m0st4fa {
 		T_NUM,
 		T_EPSILON,
 		T_EOF,
+		T_END_MARKER,
 		T_COUNT
 	};
 
@@ -63,5 +64,4 @@ namespace m0st4fa {
 	std::string toString(const Variable);
 	// LEGACY
 	std::string stringfy(const Variable);
-
 }

@@ -248,25 +248,28 @@ namespace m0st4fa {
 	struct LRState {
 		lrstate_t state = SIZE_MAX;
 		DataT data{};
-		bool hasData = false;
 		TokenT token = TokenT::EPSILON;
 
 		// methods
 		LRState() = default;
-		LRState(lrstate_t state, const DataT& data) : state{ state }, data{ data }, hasData{ true } {};
-		LRState(lrstate_t state) : state{ state }, hasData{ false } {};
+		LRState(lrstate_t state, const DataT& data) : state{ state }, data{ data } {};
+		LRState(lrstate_t state) : state{ state } {};
 
 		operator std::string() const {
 			return this->toString();
 		}
 		bool operator==(const LRState& rhs) {
-			return this->state == rhs.state && this->data == rhs.data;
+			return this->state == rhs.state && this->data == rhs.data && token == token;
 		}
+		bool hasData() const {
+			return (bool)data;
+		}
+
 
 		std::string toString() const {
 			std::string res = std::format("<{}", state);
 
-			if (this->hasData)
+			if (this->hasData())
 				res += ", " + (std::string)this->data;
 
 			res += ">";

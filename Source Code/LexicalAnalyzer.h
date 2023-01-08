@@ -29,7 +29,29 @@ namespace m0st4fa {
 
 
 		// methods
-		void _remove_whitespace(unsigned = (unsigned)LA_FLAG::LAF_NONE);
+		inline void _remove_whitespace(unsigned = (unsigned)LA_FLAG::LAF_NONE);
+		inline bool _check_source_code_empty() {
+			if (!this->m_SourceCode.empty())
+				return false;
+
+			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"End of file reached"});
+			this->m_Logger.logDebug(msg);
+
+			// assuming that EOF is the default value for a token
+			return true;
+		};
+		inline void _check_accepted_fsm(const FSMResult& fsmRes) {
+			if (fsmRes.accepted)
+				return;
+
+			LoggerInfo info;
+			info.level = LOG_LEVEL::LL_ERROR;
+			info.info = { .errorType = ERROR_TYPE::ET_INVALID_LEXEME };
+
+			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"No lexeme matched"});
+			this->m_Logger.log(info, msg);
+			throw std::runtime_error("No lexeme accepted by the state machine");
+		}
 	protected:
 
 		const DFA<TransFn<TableT>, InputT>& getAutomatan() { return this->m_Automatan; };
@@ -46,12 +68,8 @@ namespace m0st4fa {
 			m_Automatan{ automaton }, m_TokenFactory{ tokenFactory }, m_SourceCode{ sourceCode }
 		{
 
-			LoggerInfo info;
-			info.level = LOG_LEVEL::LL_ERROR;
-			info.info = { .errorType = ERROR_TYPE::ET_INVALID_ARGUMENT };
-
 			if (this->m_TokenFactory == nullptr) {
-				this->m_Logger.log(info, "TokenFactory is not set");
+				this->m_Logger.log(LoggerInfo::ERR_INVALID_ARG, "TokenFactory is not set");
 				throw std::runtime_error("TokenFactory is not set");
 			};
 
@@ -100,14 +118,14 @@ namespace m0st4fa {
 				// if the current character is a new line char and they are allowed, do not remove the current char
 				if (currChar == '\n' && (flags & (unsigned)LA_FLAG::LAF_ALLOW_NEW_LINE)) {
 					this->m_Line++, this->m_Col = 0;
-					this->m_SourceCode.remove_suffix(1);
+					this->m_SourceCode.remove_prefix(1);
 					continue;
 				}
 
 				// if this whitespace character is not a new line character
 				
 				// erase whitespace from source code stream
-				this->m_SourceCode.remove_suffix(1);
+				this->m_SourceCode.remove_prefix(1);
 
 				// update character
 				this->m_Col++;
@@ -127,41 +145,22 @@ namespace m0st4fa {
 	TokenT m0st4fa::LexicalAnalyzer<TokenT, TableT, InputT>::getNextToken(unsigned flags)
 	{
 
-		// remove all whitespaces and count new lines
+		// remove all white spaces and count new lines
 		if (!(flags & (unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS))
 			this->_remove_whitespace(flags);
 
 		// if we are at the end of the source code or it is empty, return EOF token
-		if (this->m_SourceCode.empty()) {
-			LoggerInfo info;
-			info.level = LOG_LEVEL::LL_DEBUG;
-
-			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"End of file reached"});
-			this->m_Logger.log(info, msg);
-
-			// assuming that EOF is the default value for a token
+		if (this->_check_source_code_empty())
 			return TokenT{};
-		};
 
 		TokenT res{};
-
 
 		// get the lexeme and the final state reached (if any)
 		const FSMResult fsmRes = this->m_Automatan.simulate(this->m_SourceCode, FSM_MODE::MM_LONGEST_PREFIX);
 		const state_t fstate = *fsmRes.finalState.begin();
 
+		this->_check_accepted_fsm(fsmRes);
 		// check whether there is a matched lexeme
-		if (!fsmRes.accepted) {
-
-			LoggerInfo info;
-			info.level = LOG_LEVEL::LL_ERROR;
-			info.info = { .errorType = ERROR_TYPE::ET_INVALID_LEXEME };
-
-			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"No lexeme matched"});
-			this->m_Logger.log(info, msg);
-			throw std::runtime_error("No lexeme accepted by the state machine");
-
-		}
 
 		// if a lexeme is accepted, extract it
 		const size_t lexemeSize = fsmRes.indecies.end;
@@ -173,7 +172,7 @@ namespace m0st4fa {
 		// get the token
 		res = m_TokenFactory(fstate, lexeme);
 
-		// erease the lexeme from source code stream
+		// erase the lexeme from source code stream
 		m_SourceCode.remove_prefix(lexemeSize);
 		m_Logger.logDebug(std::format("Source Code: {}, Length {}", m_SourceCode, m_SourceCode.length()));
 
@@ -184,42 +183,22 @@ namespace m0st4fa {
 	template<typename TokenT, typename TableT, typename InputT>
 	TokenT m0st4fa::LexicalAnalyzer<TokenT, TableT, InputT>::peak(unsigned flags) {
 
-		// remove all whitespaces and count new lines
+		// remove all white spaces and count new lines
 		if (-not (flags & (unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS))
 			this->_remove_whitespace(flags);
 
 		// if we are at the end of the source code or it is empty, return EOF token
-		if (this->m_SourceCode.empty()) {
-			LoggerInfo info;
-			info.level = LOG_LEVEL::LL_DEBUG;
-
-			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"End of file reached"});
-			this->m_Logger.log(info, msg);
-
-			// assuming that EOF is the default value for a token
+		if (this->_check_source_code_empty())
 			return TokenT{};
-		};
 
 		TokenT res{};
-
 
 		// get the lexeme and the final state reached (if any)
 		const FSMResult fsmRes = this->m_Automatan.simulate(this->m_SourceCode, FSM_MODE::MM_LONGEST_PREFIX);
 		const state_t fstate = *fsmRes.finalState.begin();
 
 		// check whether there is a matched lexeme
-		if (-not fsmRes.accepted) {
-
-			// TODO: try to make the lexical analyzer able to print the erranous lexeme
-			LoggerInfo info;
-			info.level = LOG_LEVEL::LL_ERROR;
-			info.info = { .errorType = ERROR_TYPE::ET_INVALID_LEXEME };
-
-			std::string msg = std::format("({}, {}) {:s}", this->m_Line, this->m_Col, std::string{"No lexeme matched"});
-			this->m_Logger.log(info, msg);
-			throw std::runtime_error("No lexeme accepted by the state machine");
-
-		}
+		this->_check_accepted_fsm(fsmRes);
 
 		// if a lexeme is accepted, extract it
 		const size_t lexemeSize = fsmRes.indecies.end;
@@ -230,13 +209,10 @@ namespace m0st4fa {
 		// get the token
 		res = m_TokenFactory(fstate, lexeme);
 
-		// do not erease the lexeme from source code stream
+		// do not erase the lexeme from source code stream
 		m_Logger.logDebug(std::format("SourceCode: {}, Length {}", m_SourceCode, m_SourceCode.length()));
 
-
 		return res;
-
-
 	}
 
 };

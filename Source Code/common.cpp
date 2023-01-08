@@ -8,7 +8,6 @@
 #include "Logger.h"
 
 namespace m0st4fa {
-
 	size_t pow(size_t base, size_t p) {
 		if (p == 0)
 			return 1;
@@ -22,7 +21,6 @@ namespace m0st4fa {
 	}
 
 	size_t toInteger(const std::string& str, bool atBeginning) {
-
 		// find the first integer
 		auto itr = std::find_if(str.begin(), str.end(), isalnum);
 

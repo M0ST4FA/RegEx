@@ -306,7 +306,7 @@ namespace m0st4fa {
 	{
 		bool inserted = false;
 		this->p_Logger.logDebug(std::format("(Possibly) adding new items to the closure of an item set"));
-		this->p_Logger.logDebug(std::format("Closure before:\n {}", stringfy(this->m_Closure, false)));
+		this->p_Logger.logDebug(std::format("Closure before:\n {}", m0st4fa::toString(this->m_Closure, false)));
 
 		// go through every production and insert the non-kernel items you create into the closure.
 		for (const ProductionType& production : symbolProductions) {
@@ -324,7 +324,7 @@ namespace m0st4fa {
 			} // if one was found, we cannot insert it again
 
 		}
-		this->p_Logger.logDebug(std::format("Closure after:\n {}", stringfy(this->m_Closure, false)));
+		this->p_Logger.logDebug(std::format("Closure after:\n {}", m0st4fa::toString(this->m_Closure, false)));
 
 		return inserted;
 	}
@@ -333,7 +333,7 @@ namespace m0st4fa {
 	bool ItemSet<ItemT>::_add_to_closure_lookaheads(const ProdVecType& symbolProductions, const LookAheadSet& lookaheads)
 	{
 		bool inserted = false;
-		this->p_Logger.logDebug(std::format("Closure before:\n {}", stringfy(this->m_Closure, false)));
+		this->p_Logger.logDebug(std::format("Closure before:\n {}", m0st4fa::toString(this->m_Closure, false)));
 
 		// go through every production and insert the non-kernel items you create into the closure.
 		for (const ProductionType& production : symbolProductions) {
@@ -364,7 +364,7 @@ namespace m0st4fa {
 
 		}		
 		
-		this->p_Logger.logDebug(std::format("Closure after:\n {}", stringfy(this->m_Closure, false)));
+		this->p_Logger.logDebug(std::format("Closure after:\n {}", m0st4fa::toString(this->m_Closure, false)));
 
 		return inserted;
 	}
@@ -591,7 +591,7 @@ namespace m0st4fa {
 					tempSymString.calculateFIRST(first);
 					LookAheadSet lookaheads{tempSymString.getFIRST()};
 
-					this->p_Logger.logDebug(std::format("The lookaheads for the current item is: {}", stringfy(lookaheads)));
+					this->p_Logger.logDebug(std::format("The lookaheads for the current item is: {}", m0st4fa::toString(lookaheads)));
 
 					// add the item to the CLOSURE set
 					_add_to_closure_lookaheads(symbolProductions, lookaheads);

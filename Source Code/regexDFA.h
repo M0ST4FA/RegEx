@@ -3,9 +3,7 @@
 #include "regex.h"
 
 namespace m0st4fa {
-	
 	namespace regex {
-		
 		DFATableType RegularExpression::_get_dfa_table()
 		{
 			DFATableType table{};
@@ -32,10 +30,9 @@ namespace m0st4fa {
 				19. number
 			*/
 
-
 			// |
 			table[1]['|'] = 2;
-			
+
 			// ^
 			table[1]['^'] = 3;
 
@@ -57,7 +54,7 @@ namespace m0st4fa {
 			// ( and )
 			table[1]['('] = 11;
 			table[1][')'] = 12;
-			
+
 			// [ and ]
 			table[1]['['] = 13;
 			table[13]['^'] = 14;
@@ -77,6 +74,8 @@ namespace m0st4fa {
 			for (char c = '0'; c <= '9'; c++)
 				table[1][c] = 20;
 
+			table[1][REGEX_END_MARKER] = 19;
+
 			return table;
 		}
 
@@ -85,7 +84,7 @@ namespace m0st4fa {
 			TokenType token;
 
 			switch (state) {
-			using enum m0st4fa::Terminal;
+				using enum m0st4fa::Terminal;
 			case 2:
 				token.name = T_OP_OR;
 				break;
@@ -139,22 +138,18 @@ namespace m0st4fa {
 				break;
 			case 19:
 				token.name = T_ALPHA;
-				token.attribute = lexeme.at(0);
+				token.attribute = lexeme;
 				break;
 			case 20:
 				token.name = T_NUM;
-				token.attribute = lexeme.at(0);
+				token.attribute = lexeme;
 				break;
 
 			default:
 				throw std::exception("AT FUNCTION _token_factory(), UNIDENTIFIED STATE. THIS IS TEMPORARY HANDLING!");
-
 			}
 
 			return token;
 		}
-		
-
 	}
-
 }

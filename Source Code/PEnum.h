@@ -3,7 +3,6 @@
 #include <ostream>
 
 namespace m0st4fa {
-
 	enum struct ExecutionOrder {
 		EO_PREORDER = 0,
 		EO_INORDER,
@@ -12,7 +11,6 @@ namespace m0st4fa {
 	};
 	std::string stringfy(ExecutionOrder);
 	std::ostream& operator<<(std::ostream&, ExecutionOrder);
-
 
 	/**
 	* The effect of ERT_NONE is close to ERT_PANIC_MODE because of how the parser is architected.
@@ -38,7 +36,4 @@ namespace m0st4fa {
 	};
 	std::string stringfy(ProdElementType);
 	std::ostream& operator<<(std::ostream&, ProdElementType);
-
-
-
 }

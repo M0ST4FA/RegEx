@@ -52,20 +52,22 @@ using m0st4fa::regex::regexRes;
 #ifdef TEST_REGEX
 
 int main(void) {
-	
-	regex re{ R"((^a[^b]))", "g" }; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
+
+	// NEXT TO WORK ON: FOLLOWPOS IS CALCULATED INCORRECTLY
+
+
+	regex re{ R"(a(b|c)\x)", "g" }; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
 	regexRes reres = re.exec("mostafa"); // you execute the compiled regular expression against the string
 	bool match = re.match("mostafa");    // asserts that the string matches the regular expression
 	re.getPattern();
-	re.getFlags();
+	re.getFlags(); 
 	re.getIndex();
-	
+
 	return 0;
 }
-#elif defined TEST_LR_PARSER 
+#elif defined TEST_LR_PARSER
 
 int main(int argc, char** argv) {
-
 	FSMTable<> fsmTable{};
 	initFSMTable_parser(fsmTable);
 
@@ -102,7 +104,7 @@ int main(int argc, char** argv) {
 			LRParsingTableType LRParsingTable;
 			define_table_lrparser(LRParsingTable);
 
-			LRParserGeneratorType parserGenerator{grammarLR, startSym};
+			LRParserGeneratorType parserGenerator{ grammarLR, startSym };
 
 			try {
 				//LRParsingTableType SLRParsingTable = parserGenerator.generateSLRParser();
@@ -116,7 +118,6 @@ int main(int argc, char** argv) {
 				std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
 				std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
 				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
-
 			}
 			catch (std::exception& e) {
 				std::cout << "Exception : " << e.what() << "\n";
@@ -124,7 +125,6 @@ int main(int argc, char** argv) {
 		};
 
 	{
-
 		// get the source
 		std::string src = argv[1];
 		std::cout << src << std::endl;
@@ -159,7 +159,6 @@ int main(int argc, char** argv) {
 			std::cout << "\nITEM SET:\n" << (std::string)itemSet << "\n";
 			std::cout << "Does the `item1` equal `item2`? " << std::boolalpha << (item == item2) << "\n";
 			std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
-
 		}
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";
@@ -169,10 +168,8 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
-
-#elif defined TEST_LL_PARSER 
+#elif defined TEST_LL_PARSER
 int main(int argc, char** argv) {
-
 	FSMTable<> fsmTable{};
 	initFSMTable_parser(fsmTable);
 
@@ -197,8 +194,8 @@ int main(int argc, char** argv) {
 
 			// LL GRAMMAR
 			auto grammar = grammer_expression();
-			LLParsingTableType table{grammar};
-			LLParserGeneratorType parserGenerator{grammar, startSym};
+			LLParsingTableType table{ grammar };
+			LLParserGeneratorType parserGenerator{ grammar, startSym };
 
 			// LR GRAMMAR
 			auto grammarLR = grammar_expression_LR();
@@ -213,11 +210,10 @@ int main(int argc, char** argv) {
 			itemSet.insert({ grammarLR.at(1), 0, {toSymbol(_TERMINAL::T_ID)} });
 
 			// STATE
-			LRStateType state{0};
+			LRStateType state{ 0 };
 
 			// parse entered source
 			try {
-
 				// LL GRAMMAR TESTS
 				//LLParsingTableType table = parserGenerator.generateLLParser();
 				//LLParserType parser{ startSym, table, lexicalAnal_parser };
@@ -235,7 +231,6 @@ int main(int argc, char** argv) {
 				std::cout << "Does `itemSet` contain `item2`? " << (itemSet.contains(item2)) << "\n";
 				itemSet.CLOSURE(&grammarLR);
 				itemSet.GOTO(toSymbol(_NON_TERMINAL::NT_E), &grammarLR);
-				
 			}
 			catch (std::exception& e) {
 				std::cout << "Exception : " << e.what() << "\n";
@@ -243,7 +238,6 @@ int main(int argc, char** argv) {
 		};
 
 	{
-
 		// get the source
 		std::string src = argv[1];
 
@@ -268,16 +262,14 @@ int main(int argc, char** argv) {
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";
 		};
-
 	}
 
 	return 0;
 }
 
 #elif defined TEST_PARSER
-	
-int main(int argc, char** argv) {
 
+int main(int argc, char** argv) {
 	FSMTable<> fsmTable{};
 	initFSMTable_parser(fsmTable);
 
@@ -288,58 +280,57 @@ int main(int argc, char** argv) {
 	// if no arguments are passed
 	if (argc < 2)
 		while (true) {
-		std::string src;
-		std::cout << ANSI_ESC"[36m""Enter the source code to be parsed : " ANSI_ESC"[0m";
-		std::getline(std::cin, src);
-		std::cout << "\n";
+			std::string src;
+			std::cout << ANSI_ESC"[36m""Enter the source code to be parsed : " ANSI_ESC"[0m";
+			std::getline(std::cin, src);
+			std::cout << "\n";
 
-		if (src == "q" || src == "Q")
-			return 0;
-		
-		LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
+			if (src == "q" || src == "Q")
+				return 0;
 
-		LLParsingTable<> table{};
-		define_table_llparser(table);
+			LexicalAnalyzer<Token<_TERMINAL>, FSMTable<>> lexicalAnal_parser{ automaton_parser, token_fact_parser, src };
 
-		// create parser object
-		auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
-		auto grammar = grammer_expression();
-		m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec {grammar};
+			LLParsingTable<> table{};
+			define_table_llparser(table);
 
-		auto grammarLR = grammar_expression_LR();
+			// create parser object
+			auto startSym = Symbol{ false, {.nonTerminal = _NON_TERMINAL::NT_E} };
+			auto grammar = grammer_expression();
+			m0st4fa::ProdVec<Symbol, Synthesized, Action> prodVec{ grammar };
 
-		m0st4fa::LLParser <
-			Symbol, 
-			LLSynthesizedRecord<SynData>, 
-			SynData,
-			LLActionRecord<ActData>,
-			ActData,
-			Token<_TERMINAL>
-		> 
-			parser{ grammar, startSym, table, lexicalAnal_parser };
+			auto grammarLR = grammar_expression_LR();
 
-		// parse entered source
-		try { 
-			parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
-			prodVec.calculateFIRST();
-			prodVec.calculateFIRST();
-			prodVec.calculateFOLLOW();
-			prodVec.getFIRST(_NON_TERMINAL::NT_E);
-			grammarLR.calculateFIRST();
-			grammarLR.calculateFOLLOW();
-			grammarLR.calculateFOLLOW();
-			grammarLR.getFOLLOW(_NON_TERMINAL::NT_E);
-			m0st4fa::SymbolString<_TERMINAL, _NON_TERMINAL> symString{toSymbol(_TERMINAL::T_EPSILON), toSymbol(_NON_TERMINAL::NT_E)};
-			std::cout << "Grammar symbol string: " << symString << std::endl;
-			symString.calculateFIRST(grammarLR.getFIRST());
-		}
-		catch (std::exception& e) {
-			std::cout << "Exception : " << e.what() << "\n";
+			m0st4fa::LLParser <
+				Symbol,
+				LLSynthesizedRecord<SynData>,
+				SynData,
+				LLActionRecord<ActData>,
+				ActData,
+				Token<_TERMINAL>
+			>
+				parser{ grammar, startSym, table, lexicalAnal_parser };
+
+			// parse entered source
+			try {
+				parser.parse(m0st4fa::ErrorRecoveryType::ERT_PANIC_MODE);
+				prodVec.calculateFIRST();
+				prodVec.calculateFIRST();
+				prodVec.calculateFOLLOW();
+				prodVec.getFIRST(_NON_TERMINAL::NT_E);
+				grammarLR.calculateFIRST();
+				grammarLR.calculateFOLLOW();
+				grammarLR.calculateFOLLOW();
+				grammarLR.getFOLLOW(_NON_TERMINAL::NT_E);
+				m0st4fa::SymbolString<_TERMINAL, _NON_TERMINAL> symString{ toSymbol(_TERMINAL::T_EPSILON), toSymbol(_NON_TERMINAL::NT_E) };
+				std::cout << "Grammar symbol string: " << symString << std::endl;
+				symString.calculateFIRST(grammarLR.getFIRST());
+			}
+			catch (std::exception& e) {
+				std::cout << "Exception : " << e.what() << "\n";
+			};
 		};
-	};
 
 	{
-
 		// get the source
 		std::string src = argv[1];
 
@@ -372,7 +363,6 @@ int main(int argc, char** argv) {
 		catch (std::exception& e) {
 			std::cout << "Exception : " << e.what() << "\n";
 		};
-
 	}
 
 	return 0;
@@ -380,10 +370,8 @@ int main(int argc, char** argv) {
 
 #elif defined TEST_LA
 
-
 int main(void) {
 	typedef std::array<std::array<state_t, 'z'>, 10> table_t;
-
 
 	table_t input{};
 	initTranFn_ab(input);
@@ -413,12 +401,9 @@ int main(void) {
 		std::cin >> x;
 		if (x == "q") break;
 	}
-	
 }
 
 #elif defined TEST_FSM
-
-
 
 int main(void) {
 	typedef std::array<std::array<state_set_t, 'z'>, 10> table_t;
@@ -428,12 +413,11 @@ int main(void) {
 
 	TransitionFunction<table_t> tf{ input };
 
-
 	// TODO: next state is a set now
 	/*state_t nextState = tf(1, 'a');
 	std::cout << nextState << std::endl;*/
 
-	state_set_t fstates = {4, 2};
+	state_set_t fstates = { 4, 2 };
 	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_EPSILON_NFA };
 
 	std::string str = "aaababffaba";
@@ -441,10 +425,8 @@ int main(void) {
 	std::cout << result << "\n";
 
 	std::string x;
-	
 
 	typedef std::array<std::array<state_t, 'z'>, 10> table_t_dfa;
-
 
 	table_t_dfa input_dfa{};
 	initTranFn_ab(input_dfa);
@@ -456,7 +438,7 @@ int main(void) {
 
 	auto resultDFA = automatonDFA.simulate(str, FSM_MODE::MM_LONGEST_SUBSTRING);
 	std::cout << resultDFA << "\n";
-	
+
 	while (x != "q") {
 		std::cin >> x;
 		if (x == "q") break;
@@ -464,4 +446,3 @@ int main(void) {
 }
 
 #endif
-

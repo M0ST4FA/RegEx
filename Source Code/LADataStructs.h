@@ -32,7 +32,7 @@ namespace m0st4fa {
 		}
 
 		std::string toString() const {
-			return "<" + stringfy(this->name) + ", " + this->attribute + ">";
+			return "<" + stringfy(this->name) + ", " + (std::string)this->attribute + ">";
 		}
 	};
 

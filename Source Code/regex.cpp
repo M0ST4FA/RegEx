@@ -2,10 +2,8 @@
 #include "regexDFA.h"
 
 namespace m0st4fa {
-
 	// INITIALIZATION
 	namespace regex {
-				
 		ParsingTableType RegularExpression::_get_parsing_table()
 		{
 			ParserGeneratorType parserGen{ RegularExpression::_get_grammar(), toSymbol(Variable::V_REGEX) };
@@ -33,7 +31,6 @@ namespace m0st4fa {
 		const SymbolType RegularExpression::START_SYMBOL = RegularExpression::_get_start_symbol();
 		const TokenFactType RegularExpression::TOKEN_FACTORY = RegularExpression::_get_token_factory();
 		const DFAType RegularExpression::AUTOMATON = RegularExpression::_get_automaton();
-
 	}
 
 	// BEHAVIOR IMPLEMENTATION
@@ -41,7 +38,7 @@ namespace m0st4fa {
 		RegularExpressionResult RegularExpression::exec(std::string_view source)
 		{
 			RegularExpressionResult res;
-			
+
 			size_t x = 0;
 			std::cin >> x;
 
@@ -52,8 +49,5 @@ namespace m0st4fa {
 		{
 			return false;
 		}
-
 	}
-
 }
-

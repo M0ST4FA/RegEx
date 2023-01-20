@@ -43,7 +43,7 @@ namespace m0st4fa {
 		static constexpr size_t ERR_RECOVERY_LIMIT = 5;
 
 		std::string_view get_source_code() const { return this->mp_LexicalAnalyzer->getSourceCode(); }
-		TokenType get_next_token() const { return this->mp_LexicalAnalyzer->getNextToken(); }
+		TokenType get_next_token() const { return this->mp_LexicalAnalyzer->getNextToken((unsigned)LA_FLAG::LAF_ALLOW_WHITE_SPACE_CHARS); }
 		SymbolT get_start_symbol() const { return m_StartSymbol; }
 
 	public:

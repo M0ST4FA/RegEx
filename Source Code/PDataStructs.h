@@ -7,6 +7,8 @@
 #include "PItem.h"
 
 namespace m0st4fa {
+
 	struct ParserResult {
+
 	};
 }

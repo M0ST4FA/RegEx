@@ -2,12 +2,15 @@
 
 #include <map>
 #include <iostream>
+#include <format>
+#include <string>
 
 #include "regexTypedefs.h"
 #include "regex.h"
 #include "common.h"
 
 namespace m0st4fa::regex {
+	
 	// DATA STRUCTURES TEMPORARILY USED WHEN CREATING A REGEX OBJECT
 	size_t currPos = 0;
 	std::vector<Position> allPos;
@@ -29,8 +32,138 @@ namespace m0st4fa::regex {
 		newState.data = stack.at(stack.size() - 2).data;
 	};
 
-	void act_reduce(StackType& stack, StateType& newState) {
+	template<typename DFAStateT>
+	void _fill_table(std::vector<DFAStateT>& Dstates, size_t& nextStateNum, size_t markerPosition, std::pair<FSMStateSetType, DFATableType>& table)
+	{
+
+		/** 
+		* for every state `i` in `Dstates`:
+		*	for every position `p` in `i`:
+		*		for every position `f` in follow(`p`):
+		*			let c = the character that corresponds to `f`
+		*			transStates[`c`].insert(`f`)
+		*/
+
+		for (size_t currStateNum = 0; currStateNum < Dstates.size(); currStateNum++) {
+			std::map<char, DFAStateT> transStates;
+			std::cout << "* currStateNum: " << currStateNum << ", size of Dstates: " << Dstates.size() << "\n";
+			DFAStateT& stateSet = Dstates.at(currStateNum);
+
+			auto insertMap = [&nextStateNum](std::map<char, DFAStateT>& map, const std::set<Position>& followpos) {
+
+				for (const Position& pos : followpos) {
+					char key = pos.lexeme;
+
+					auto it = map.find(key);
+					bool exists = it != map.end();
+
+					std::cout << std::format("	Inserting {} into key '{}'\n", (std::string)pos, key);
+
+					if (exists)
+						it->second.insert(pos);
+					else
+						map.insert_or_assign(key, DFAStateT{ {pos}, 0 });
+
+				}
+			};
+
+			// populate DStates
+			for (const Position& pos : stateSet) {
+				const std::set<Position>& followPos = followpos[pos.position];
+
+				if (followPos.empty())
+					continue;
+
+				std::cout << std::format("followpos of position {}: {}\n", (std::string)pos, m0st4fa::toString(followPos));
+
+				insertMap(transStates, followPos);
+			}
+
+			// set the transition table
+			for (std::pair<const char, DFAStateT>& state : transStates) {
+				const auto& it = std::find(Dstates.begin(), Dstates.end(), state.second);
+				bool found = it != Dstates.end();
+
+				// if the state has not been found
+				if (not found) {
+					state.second.state = nextStateNum++;
+					Dstates.push_back(state.second);
+					// table[currState][currInput] = state
+					table.second[stateSet.state][state.first] = state.second.state;
+
+					continue;
+				}
+
+				// if the state has been found
+				table.second[stateSet.state][state.first] = it->state;
+			}
+
+		}
+
+	}
+
+	void act_accept(StackType& stack, StateType& newState, std::pair<FSMStateSetType, DFATableType>& table) {
 		std::cout << std::format("Accepted! the followpos set:\n{}", toString(followpos));
+
+		// create Dstates and initialize it
+		const auto& root = stack.back();
+		const auto& rootFirstpos = root.data.data.firstpos;
+		struct DFAState {
+			std::set<Position> set;
+			size_t state = 0;
+
+			std::set<Position>::iterator begin() {
+				return set.begin();
+			}
+			std::set<Position>::iterator end() {
+				return set.end();
+			}
+
+			bool operator==(const DFAState& rhs) const {
+				return set == rhs.set;
+			}
+			operator std::string() const {
+				return std::format("[{}: {}]", state, m0st4fa::toString(set));
+			}
+
+			bool empty() const {
+				return set.empty();
+			}
+
+			void insert(const Position& pos) {
+				this->set.insert(pos);
+			}
+			void insert(const std::set<Position>& posSet) {
+				this->set.insert(posSet.begin(), posSet.end());
+			}
+			bool contains(const Position& pos) const {
+				return std::any_of(set.begin(), set.end(), [&pos](const Position& position) {
+					return pos == position;
+					});
+			}
+			bool contains(const size_t pos) const {
+				return contains(Position{ pos, REGEX_END_MARKER });
+			}
+		};
+		size_t nextStateNum = 2;
+		std::vector<DFAState> Dstates{ {rootFirstpos, 1} };
+		size_t markerPosition = allPos.back().position;
+		std::cout << "marker position is: " << markerPosition << "\n";
+		
+		// fill Dstates and fill DTable
+		_fill_table<DFAState>(Dstates, nextStateNum, markerPosition, table);
+		
+		// THE TRANSITION FUNCTION IS NOT COMPLETE
+		std::for_each(Dstates.begin(), Dstates.end(), [markerPosition, &table](const DFAState& state) {
+			if (state.contains(markerPosition)) {
+				table.first.insert(state.state);
+				std::cout << "\nFOUND FINAL\n";
+			};
+			});
+
+		Logger logger;
+		logger.log(LoggerInfo::INFO, std::format("{}\n{}\n{}", m0st4fa::toString(table.first), m0st4fa::toString(Dstates), m0st4fa::toString(table.second)));
+
 	}
 
 	void act_factor_alpha_num([[maybe_unused]] StackType& stack, StateType& newState) {
@@ -39,7 +172,7 @@ namespace m0st4fa::regex {
 		auto& newStateData = newState.data.data;
 
 		const StateType& alphaNum = stack.back();
-		Position newPos = { currPos++, alphaNum.token.attribute };
+		Position newPos = { currPos++, alphaNum.token.attribute.at(0) };
 		newStateData.firstpos = { newPos };
 		newStateData.lastpos = { newPos };
 		newStateData.nullable = false;
@@ -55,7 +188,7 @@ namespace m0st4fa::regex {
 		switch (lastState.token.name) {
 			using enum m0st4fa::Terminal;
 		case T_QUANT_STAR_LAZY: {
-			Position newPos = { currPos++, lastState.token.attribute };
+			Position newPos = { currPos++, '*' };
 			newStateData.firstpos = { newPos };
 			newStateData.lastpos = { newPos };
 			newStateData.nullable = false;
@@ -273,7 +406,7 @@ namespace m0st4fa::regex {
 			{vRegEx},
 			index
 		};
-		prod.postfixAction = &act_reduce;
+		prod.postfixAction = &act_accept;
 		grammar.pushProduction(prod);
 
 		// <regex> -> <regex> | <anchor>

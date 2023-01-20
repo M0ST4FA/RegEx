@@ -10,7 +10,7 @@ module;
 export module Tests;
 
 using m0st4fa::state_t;
-using m0st4fa::state_set_t;
+using m0st4fa::FSMStateSetType;
 export typedef std::array<std::array<state_t, 'z'>, 10> table_t;
 
 export template<typename T>

@@ -129,6 +129,9 @@
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
       <CompileAs>Default</CompileAs>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="common.cpp" />
@@ -143,6 +146,7 @@
     <ClCompile Include="ParserTests.cpp" />
     <ClCompile Include="regexEnum.cpp" />
     <ClCompile Include="regexTypedefs.cpp" />
+    <ClCompile Include="Test.cpp" />
     <ClCompile Include="Tests.ixx" />
   </ItemGroup>
   <ItemGroup>
@@ -165,7 +169,7 @@
     <ClInclude Include="PStack.h" />
     <ClInclude Include="PTable.h" />
     <ClInclude Include="regex.h" />
-    <ClInclude Include="regexDFA.h" />
+    <ClCompile Include="regexDFA.cpp" />
     <ClInclude Include="regexEnum.h" />
     <ClCompile Include="regexGrammar.cpp" />
     <ClInclude Include="regexToken.h" />

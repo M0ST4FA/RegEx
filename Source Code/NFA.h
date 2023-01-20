@@ -21,14 +21,14 @@ namespace m0st4fa {
 		FSMResult _simulate_longest_prefix(const InputT&) const;
 		FSMResult _simulate_longest_substring(const InputT&) const;
 
-		bool _check_accepted_longest_prefix(const std::vector<state_set_t>&, size_t&) const;
-		bool _check_accepted_substring(const InputT&, std::vector<state_set_t>&, size_t, size_t&) const;
-		state_set_t _epsilon_closure(const state_set_t&) const;
-		state_set_t _get_final_states(const state_set_t&) const;
+		bool _check_accepted_longest_prefix(const std::vector<FSMStateSetType>&, size_t&) const;
+		bool _check_accepted_substring(const InputT&, std::vector<FSMStateSetType>&, size_t, size_t&) const;
+		FSMStateSetType _epsilon_closure(const FSMStateSetType&) const;
+		FSMStateSetType _get_final_states(const FSMStateSetType&) const;
 
 	public:
 		NonDeterFiniteAutomatan() = default;
-		NonDeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, FSM_TYPE machineType, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
+		NonDeterFiniteAutomatan(const FSMStateSetType& fStates, const TransFuncT& tranFn, FSM_TYPE machineType, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
 			FiniteStateMachine<TransFuncT, InputT>{ fStates, tranFn, machineType, flags }
 		{
 
@@ -60,7 +60,7 @@ namespace m0st4fa {
 	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_whole_string(const InputT& input) const
 	{
 		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
-		state_set_t currState = { startState };
+		FSMStateSetType currState = { startState };
 
 		/**
 		 * Follow a path through the machine using the characters of the string.
@@ -74,10 +74,10 @@ namespace m0st4fa {
 				currState = _epsilon_closure(this->m_TransitionFunc(currState, c));
 		
 		bool accepted = false;
-		const state_set_t& finalStates = this->getFinalStates();
+		const FSMStateSetType& finalStates = this->getFinalStates();
 
 		// assert whether we've reached a final state
-		state_set_t finalState;
+		FSMStateSetType finalState;
 		auto lambda = [&finalState, &finalStates](state_t s) {
 			if (finalStates.contains(s))
 				finalState.insert(s);
@@ -87,7 +87,7 @@ namespace m0st4fa {
 		if (accepted)
 			std::for_each(currState.begin(), currState.end(), lambda);
 		else
-			finalState = state_set_t{ startState };
+			finalState = FSMStateSetType{ startState };
 		
 
 		return FSMResult(accepted, finalState, { 0, accepted ? input.size() : 0 }, input);
@@ -97,7 +97,7 @@ namespace m0st4fa {
 	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_prefix(const InputT& input) const
 	{
 		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
-		std::vector<state_set_t> matchedStatesSet = { {startState} };
+		std::vector<FSMStateSetType> matchedStatesSet = { {startState} };
 
 		/**
 		* keeps track of the path taken through the machine.
@@ -123,10 +123,10 @@ namespace m0st4fa {
 		// figure out whether there is an accepted longest prefix
 		bool accepted = _check_accepted_longest_prefix(matchedStatesSet, index);
 		
-		const state_set_t& finalStates = this->getFinalStates();
+		const FSMStateSetType& finalStates = this->getFinalStates();
 
 		// assert whether we've reached a final state
-		state_set_t finalState;
+		FSMStateSetType finalState;
 		auto lambda = [&finalState, &finalStates](state_t s) {
 			if (finalStates.contains(s))
 				finalState.insert(s);
@@ -136,7 +136,7 @@ namespace m0st4fa {
 		if (accepted)
 			std::for_each(currState.begin(), currState.end(), lambda);
 		else
-			finalState = state_set_t{ startState };
+			finalState = FSMStateSetType{ startState };
 
 		return FSMResult(accepted, finalState, { 0, index }, input);
 	}
@@ -145,7 +145,7 @@ namespace m0st4fa {
 	FSMResult NonDeterFiniteAutomatan<TransFuncT, InputT>::_simulate_longest_substring(const InputT& input) const
 	{
 		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
-		std::vector<state_set_t> matchedStatesSet = { {startState} };
+		std::vector<FSMStateSetType> matchedStatesSet = { {startState} };
 		/**
 		* keeps track of the path taken through the machine.
 		* Will be used to figure out the longest matched prefix, if any.
@@ -164,7 +164,7 @@ namespace m0st4fa {
 			
 			// get the final states we've reached
 			auto& currState = matchedStatesSet.at(endIndex - 1 - startIndex);
-		 	state_set_t finalStateSet = _get_final_states(currState);
+		 	FSMStateSetType finalStateSet = _get_final_states(currState);
 			assert("This set must contain at least a single final state" && finalStateSet.size());
 
 			return FSMResult(true, finalStateSet, { startIndex, endIndex }, input);
@@ -176,7 +176,7 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
-	bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<state_set_t>& stateSet, size_t& index) const
+	bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_longest_prefix(const std::vector<FSMStateSetType>& stateSet, size_t& index) const
 	{
 		bool res = false;
 		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
@@ -187,7 +187,7 @@ namespace m0st4fa {
 		auto it = stateSet.rbegin();
 		while (it != stateSet.rend())
 		{
-			state_set_t currStateSet = *it;
+			FSMStateSetType currStateSet = *it;
 			
 			//// print the currently searched index (previous index)
 			//this->m_Logger.logDebug(
@@ -217,7 +217,7 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
-	bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_substring(const InputT& input, std::vector<state_set_t>& matchedStatesSet, size_t startIndex, size_t& endIndex) const	
+	bool NonDeterFiniteAutomatan<TransFuncT, InputT>::_check_accepted_substring(const InputT& input, std::vector<FSMStateSetType>& matchedStatesSet, size_t startIndex, size_t& endIndex) const	
 	{
 
 		/**
@@ -229,7 +229,7 @@ namespace m0st4fa {
 			for (; charIndex < input.size(); charIndex++)
 			{
 				auto c = input[charIndex];
-				state_set_t currStateSet = this->m_TransitionFunc(matchedStatesSet.back(), c);
+				FSMStateSetType currStateSet = this->m_TransitionFunc(matchedStatesSet.back(), c);
 
 				// if the current state is empty
 				if (-not currStateSet.size())
@@ -264,9 +264,9 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
-	state_set_t NonDeterFiniteAutomatan<TransFuncT, InputT>::_epsilon_closure(const state_set_t& set) const
+	FSMStateSetType NonDeterFiniteAutomatan<TransFuncT, InputT>::_epsilon_closure(const FSMStateSetType& set) const
 	{
-		state_set_t res{set};
+		FSMStateSetType res{set};
 
 		std::stack<state_t> stack{};
 		// initialize the stack
@@ -279,7 +279,7 @@ namespace m0st4fa {
 			stack.pop();
 
 			// check if the state has
-			state_set_t epsilonTransitions = this->m_TransitionFunc(s, '\0');
+			FSMStateSetType epsilonTransitions = this->m_TransitionFunc(s, '\0');
 
 			if (epsilonTransitions.size() > 0) {
 				/**
@@ -304,12 +304,12 @@ namespace m0st4fa {
 	}
 
 	template<typename TransFuncT, typename InputT>
-	inline state_set_t NonDeterFiniteAutomatan<TransFuncT, InputT>::_get_final_states(const state_set_t& currStateSet) const
+	inline FSMStateSetType NonDeterFiniteAutomatan<TransFuncT, InputT>::_get_final_states(const FSMStateSetType& currStateSet) const
 	{
 		constexpr state_t startState = FiniteStateMachine<TransFuncT, InputT>::START_STATE;
 
-		const state_set_t& finalStates = this->getFinalStates();
-		state_set_t finalStateSet;
+		const FSMStateSetType& finalStates = this->getFinalStates();
+		FSMStateSetType finalStateSet;
 
 		auto lambda = [&finalStateSet, &finalStates](state_t s) {
 			if (finalStates.contains(s))

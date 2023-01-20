@@ -178,7 +178,7 @@ namespace m0st4fa {
 		*		  `false`: didn't accept
 		*         exception: the entry is incorrect
 		*/
-		bool _take_parsing_action(ParserResult&);
+		bool _take_parsing_action(auto&);
 	protected:
 		static const StateT START_STATE;
 
@@ -200,7 +200,9 @@ namespace m0st4fa {
 
 			return *this;
 		}
-		ParserResult parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
+
+		template<typename ParserResultT = ParserResult>
+		ParserResultT parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
 	};
 
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
@@ -300,8 +302,9 @@ namespace m0st4fa {
 
 
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
-	inline bool LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_take_parsing_action([[maybe_unused]] ParserResult& result)
+	inline bool LRParser<GrammarT, LexicalAnalyzerT, SymbolT, StateT, ParsingTableT, FSMTableT, InputT>::_take_parsing_action(auto& result)
 	{
+		using ParserResultType = decltype(result);
 
 		size_t currStateNum = this->m_CurrTopState.state;
 		TerminalType currTokenName = this->m_CurrInputToken.name;
@@ -329,8 +332,8 @@ namespace m0st4fa {
 			StackElementType newState = StackElementType{};
 
 			// execute the action, if any
-			if (auto action = static_cast<void(*)(StackType&, StackElementType&)>(production.postfixAction); action != nullptr)
-				action(this->m_Stack, newState);
+			if (auto action = static_cast<void(*)(StackType&, StackElementType&, ParserResultType&)>(production.postfixAction); action != nullptr)
+				action(this->m_Stack, newState, result);
 			else
 				std::cout << "ACCEPTED!";
 
@@ -350,12 +353,13 @@ namespace m0st4fa {
 	template<typename GrammarT, typename LexicalAnalyzerT, typename		SymbolT, typename StateT,
 		typename ParsingTableT,
 		typename FSMTableT, typename InputT>
-	ParserResult LRParser<GrammarT, LexicalAnalyzerT,
+	template<typename ParserResultT>
+	ParserResultT LRParser<GrammarT, LexicalAnalyzerT,
 		SymbolT, StateT,
 		ParsingTableT, FSMTableT, InputT>::
 		parse(ErrorRecoveryType errorRecoveryType)
 	{
-		ParserResult result{};
+		ParserResultT result{};
 
 		/** Algorithm
 		* Initialize the stack to contain only the start state.

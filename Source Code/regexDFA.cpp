@@ -4,6 +4,7 @@
 
 namespace m0st4fa {
 	namespace regex {
+		
 		DFATableType RegularExpression::_get_dfa_table()
 		{
 			DFATableType table{};
@@ -70,6 +71,9 @@ namespace m0st4fa {
 			// alphanumber
 			for (char c = 'a'; c <= 'z'; c++)
 				table[1][c] = 19;
+			for (char c = 'A'; c <= 'Z'; c++)
+				table[1][c] = 19;
+			table[1][' '] = 19;
 
 			for (char c = '0'; c <= '9'; c++)
 				table[1][c] = 20;

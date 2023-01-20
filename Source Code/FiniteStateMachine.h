@@ -14,12 +14,13 @@
 
 namespace m0st4fa {
 
+
 	// TYPE ALIASES
 	typedef unsigned state_t;
-	using state_set_t = std::unordered_set<state_t>;
+	using FSMStateSetType = std::unordered_set<state_t>;
 	
 	template <typename T>
-	concept set_type = std::is_same_v<T, state_set_t> || std::is_same_v<T, std::vector<state_t>>;
+	concept set_type = std::is_same_v<T, FSMStateSetType> || std::is_same_v<T, std::vector<state_t>>;
 	
 	template <set_type T>
 	std::ostream& operator<<(std::ostream& os, const T& set)
@@ -97,8 +98,8 @@ namespace m0st4fa {
 		}
 
 		template <typename InputT>
-		auto operator()(state_set_t stateSet, InputT input) const {
-			state_set_t res;
+		auto operator()(FSMStateSetType stateSet, InputT input) const {
+			FSMStateSetType res;
 			
 			for (state_t state : stateSet) {
 				auto tmp = m_Function.at(state).at(input);
@@ -122,7 +123,7 @@ namespace m0st4fa {
 		friend class FSMResult;
 		
 		// private instance data members
-		state_set_t m_FinalStates{};
+		FSMStateSetType m_FinalStates{};
 		FSM_TYPE m_MachineType;
 		flag_t m_Flags;
 
@@ -136,7 +137,7 @@ namespace m0st4fa {
 
 	public:
 		FiniteStateMachine() = default;
-		FiniteStateMachine(const state_set_t& fStates, const TransFuncT& tranFn, FSM_TYPE machineType ,flag_t flags) :
+		FiniteStateMachine(const FSMStateSetType& fStates, const TransFuncT& tranFn, FSM_TYPE machineType ,flag_t flags) :
 			m_FinalStates { fStates }, m_TransitionFunc{ tranFn }, m_MachineType {machineType}, m_Flags{flags}
 			{
 			
@@ -167,14 +168,14 @@ namespace m0st4fa {
 			return *this;
 		}
 
-		const state_set_t& getFinalStates() const { return m_FinalStates; };
+		const FSMStateSetType& getFinalStates() const { return m_FinalStates; };
 		flag_t getFlags() const { return m_Flags; };
 		FSM_TYPE getMachineType() const { return m_MachineType; };
 	};
 
 	struct FSMResult {
 		bool accepted = false;
-		state_set_t finalState = { FiniteStateMachine<state_t>::START_STATE };
+		FSMStateSetType finalState = { FiniteStateMachine<state_t>::START_STATE };
 		struct {
 			unsigned long start = 0;
 			unsigned long end = 0;

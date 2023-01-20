@@ -18,7 +18,7 @@ import Tests;
 using m0st4fa::TransitionFunction;
 using m0st4fa::DFA;
 using m0st4fa::FSMTable;
-using m0st4fa::state_set_t;
+using m0st4fa::FSMStateSetType;
 using m0st4fa::state_t;
 using m0st4fa::LexicalAnalyzer;
 using m0st4fa::Token;
@@ -53,15 +53,11 @@ using m0st4fa::regex::regexRes;
 
 int main(void) {
 
-	// NEXT TO WORK ON: FOLLOWPOS IS CALCULATED INCORRECTLY
+
+	size_t x = 0;
+	std::cin >> x;
 
 
-	regex re{ R"(a(b|c)\x)", "g" }; // = RegularExpression {pattern, options}; // the regular expression is compiled by the constructor.
-	regexRes reres = re.exec("mostafa"); // you execute the compiled regular expression against the string
-	bool match = re.match("mostafa");    // asserts that the string matches the regular expression
-	re.getPattern();
-	re.getFlags(); 
-	re.getIndex();
 
 	return 0;
 }
@@ -73,7 +69,7 @@ int main(int argc, char** argv) {
 
 	TransitionFunction<FSMTable<>> tf_parser{ fsmTable };
 
-	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
+	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ FSMStateSetType{3, 4, 5, 6, 7}, tf_parser };
 
 	// if no arguments are passed
 	if (argc < 2)
@@ -175,7 +171,7 @@ int main(int argc, char** argv) {
 
 	TransitionFunction<FSMTable<>> tf_parser{ fsmTable };
 
-	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
+	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ FSMStateSetType{3, 4, 5, 6, 7}, tf_parser };
 
 	// if no arguments are passed
 	if (argc < 2)
@@ -275,7 +271,7 @@ int main(int argc, char** argv) {
 
 	TransitionFunction<FSMTable<>> tf_parser{ fsmTable };
 
-	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ state_set_t{3, 4, 5, 6, 7}, tf_parser };
+	DFA<TransitionFunction<FSMTable<>>> automaton_parser{ FSMStateSetType{3, 4, 5, 6, 7}, tf_parser };
 
 	// if no arguments are passed
 	if (argc < 2)
@@ -378,7 +374,7 @@ int main(void) {
 
 	TransitionFunction<table_t> tf{ input };
 
-	DFA<TransitionFunction<table_t>> automaton{ state_set_t{5}, tf };
+	DFA<TransitionFunction<table_t>> automaton{ FSMStateSetType{5}, tf };
 
 	std::string src = "aaabb\taaabb";
 	LexicalAnalyzer<token_t, table_t> lexicalAnal{ automaton, fact, src };
@@ -406,7 +402,7 @@ int main(void) {
 #elif defined TEST_FSM
 
 int main(void) {
-	typedef std::array<std::array<state_set_t, 'z'>, 10> table_t;
+	typedef std::array<std::array<FSMStateSetType, 'z'>, 10> table_t;
 
 	table_t input{};
 	initTranFn_ab_NFA(input);
@@ -417,7 +413,7 @@ int main(void) {
 	/*state_t nextState = tf(1, 'a');
 	std::cout << nextState << std::endl;*/
 
-	state_set_t fstates = { 4, 2 };
+	FSMStateSetType fstates = { 4, 2 };
 	NFA<TransFn<table_t>, std::string> automaton{ fstates, tf, FSM_TYPE::MT_EPSILON_NFA };
 
 	std::string str = "aaababffaba";
@@ -432,7 +428,7 @@ int main(void) {
 	initTranFn_ab(input_dfa);
 
 	TransitionFunction<table_t_dfa> tfDFA{ input_dfa };
-	state_set_t fstatesDFA = state_set_t{ 4 };
+	FSMStateSetType fstatesDFA = FSMStateSetType{ 4 };
 
 	DFA<TransitionFunction<table_t_dfa>> automatonDFA{ fstatesDFA, tfDFA };
 

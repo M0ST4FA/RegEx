@@ -67,6 +67,12 @@
     <ClCompile Include="regexGrammar.cpp">
       <Filter>Source Files\regex</Filter>
     </ClCompile>
+    <ClCompile Include="regexDFA.cpp">
+      <Filter>Source Files\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="Test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DFA.h">
@@ -136,9 +142,6 @@
       <Filter>Source Files\regex</Filter>
     </ClInclude>
     <ClInclude Include="regexTypedefs.h">
-      <Filter>Source Files\regex</Filter>
-    </ClInclude>
-    <ClInclude Include="regexDFA.h">
       <Filter>Source Files\regex</Filter>
     </ClInclude>
   </ItemGroup>

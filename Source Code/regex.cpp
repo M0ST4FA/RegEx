@@ -1,5 +1,4 @@
 #include "regex.h"
-#include "regexDFA.h"
 
 namespace m0st4fa {
 	// INITIALIZATION
@@ -20,7 +19,7 @@ namespace m0st4fa {
 		}
 		DFAType RegularExpression::_get_automaton()
 		{
-			state_set_t fstates;
+			FSMStateSetType fstates;
 			for (size_t i = 2; i < 20; i++)
 				fstates.insert(i);
 
@@ -39,15 +38,14 @@ namespace m0st4fa {
 		{
 			RegularExpressionResult res;
 
-			size_t x = 0;
-			std::cin >> x;
-
 			return res;
 		}
 
 		bool RegularExpression::match(std::string_view source)
 		{
-			return false;
+			auto res = this->m_PatternAutomaton.simulate(source, this->m_FSMMode);
+
+			return res.accepted;
 		}
 	}
 }

@@ -31,13 +31,13 @@ namespace m0st4fa::regex {
 
 	struct Position {
 		size_t position = 0;
-		std::string_view lexeme;
-
+		char lexeme = '\0';
+		
 		explicit(false) operator std::string() const {
-			return std::to_string(position);
+			return std::format("<{}, {}:{}>", position, lexeme == REGEX_END_MARKER ? '#' : lexeme, (size_t)lexeme);
 		}
 		bool operator==(const Position& rhs) const {
-			return position == rhs.position && lexeme == rhs.lexeme;
+			return position	== rhs.position && lexeme == rhs.lexeme;
 		};
 		bool operator<(const Position& rhs) const {
 			return position < rhs.position&& lexeme < rhs.lexeme;

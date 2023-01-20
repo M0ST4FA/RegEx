@@ -28,7 +28,7 @@ namespace m0st4fa {
 		
 	public:
 		DeterFiniteAutomatan() = default;
-		DeterFiniteAutomatan(const state_set_t& fStates, const TransFuncT& tranFn, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
+		DeterFiniteAutomatan(const FSMStateSetType& fStates, const TransFuncT& tranFn, flag_t flags = FSM_FLAG::FF_FLAG_MAX) :
 			FiniteStateMachine<TransFuncT, InputT> {fStates, tranFn, FSM_TYPE::MT_DFA, flags}
 		{};
 		DeterFiniteAutomatan& operator=(const DeterFiniteAutomatan& rhs) {
@@ -64,7 +64,7 @@ namespace m0st4fa {
 
 		bool accepted = this->getFinalStates().contains(currState);
 
-		return FSMResult(accepted, accepted ? state_set_t{currState} : state_set_t{startState}, { 0, accepted ? input.size() : 0 }, input);
+		return FSMResult(accepted, accepted ? FSMStateSetType{currState} : FSMStateSetType{startState}, { 0, accepted ? input.size() : 0 }, input);
 	}
 
 	template<typename TransFuncT, typename InputT>
@@ -105,7 +105,7 @@ namespace m0st4fa {
 		std::cout << "[DFA] matched set of states (path through the FSM): " << matchedStates;
 #endif
 
-		return FSMResult(accepted, accepted ? state_set_t{ matchedStates.at(index) } : state_set_t{startState}, {0, index}, input);
+		return FSMResult(accepted, accepted ? FSMStateSetType{ matchedStates.at(index) } : FSMStateSetType{startState}, {0, index}, input);
 	}
 
 	template<typename TransFuncT, typename InputT>
@@ -135,10 +135,10 @@ namespace m0st4fa {
 
 			// if it was accepted:
 			using ull = unsigned long;
-			return FSMResult{ true, state_set_t { matchedStates.at(charIndex - startIndex) }, {(ull)startIndex, (ull)charIndex}, input };
+			return FSMResult{ true, FSMStateSetType { matchedStates.at(charIndex - startIndex) }, {(ull)startIndex, (ull)charIndex}, input };
 		}
 
-		return FSMResult(false, state_set_t {startState}, {0, 0}, input);
+		return FSMResult(false, FSMStateSetType {startState}, {0, 0}, input);
 	}
 	
 	template<typename TransFuncT, typename InputT>

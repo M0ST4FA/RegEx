@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <array>
 #include <set>
 #include <map>
 #include <type_traits>
@@ -8,14 +9,15 @@
 #include "ANSI.h"
 // FUNCTIONS
 namespace m0st4fa {
+
 	// STRING
 	template <typename T>
 	concept ConvertableToString = std::is_convertible_v<T, std::string>;
-	/*requires (T obj) { stringfy(obj); } ||
-	requires (T obj) { toString(obj); };*/
+	template <typename T>
+	concept NumConvertableToString = requires (T a) { std::to_string(a); };
 
 	template <typename T>
-	// require the object to be iterable and its elements be convertable to strings
+	// require the object to be iterable and its elements be convertible to strings
 		requires requires (T iterable) {
 			{*iterable.begin()} -> ConvertableToString;
 	}
@@ -41,6 +43,70 @@ namespace m0st4fa {
 
 		return temp += " }";
 	}
+
+	template <typename T>
+	// require the object to be iterable and its elements be convertible to strings
+		requires requires (T iterable) {
+			{*iterable.begin()} -> NumConvertableToString;
+	}
+	std::string toString(const T& iterable, bool asList = true) {
+		std::string separator = asList ? ", " : "\n";
+
+		std::string temp = "{ ";
+
+		if (iterable.empty())
+			return temp += " }";
+
+		temp += std::to_string(*iterable.begin());
+
+		for (size_t i = 0; const auto & element : iterable) {
+			// skip the first element
+			if (-not i) {
+				i++;
+				continue;
+			}
+
+			temp += separator + std::to_string(element);
+		}
+
+		return temp += " }";
+	}
+
+	// require the object to be a 2D array and its elements be convertible to strings
+	template <NumConvertableToString T, size_t xdim, size_t ydim>
+	std::string toString(const std::array<std::array<T, ydim>, xdim>& array, bool asList = true) {
+		std::string separator = asList ? ", " : "\n";
+
+		std::string temp = "{ ";
+
+		if (array.empty())
+			return temp += " }";
+
+		// if the array is not empty
+
+		for (size_t x = 0; const std::array<T, ydim>& subarr : array) {
+
+			if (subarr.empty()) {
+				x++;
+				continue;
+			}
+
+			for (size_t y = 0; T element : subarr) {
+				if (!element) {
+					y++;
+					continue;
+				}
+
+				temp += std::format("[{}][{}] = {}\n", x, y, subarr.at(y));
+				y++;
+			}
+
+			x++;
+		}
+
+		return temp += " }";
+	}
+
 
 	template<typename K, typename V>
 	std::string toString(const std::map<K, V>& map) {

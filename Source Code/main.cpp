@@ -11,6 +11,7 @@
 #include "LRPGenerator.h"
 #include "LexicalAnalyzer.h"
 #include "ANSI.h"
+#include "gtest/gtest.h"
 
 import Tests;
 
@@ -51,15 +52,15 @@ using m0st4fa::regex::regexRes;
 
 #ifdef TEST_REGEX
 
-int main(void) {
+int main(int argc, char** argv) {
 
+	testing::InitGoogleTest(&argc, argv);
+	RUN_ALL_TESTS();
 
 	size_t x = 0;
 	std::cin >> x;
 
-
-
-	return 0;
+	return x;
 }
 #elif defined TEST_LR_PARSER
 

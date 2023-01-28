@@ -145,4 +145,7 @@
       <Filter>Source Files\regex</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>

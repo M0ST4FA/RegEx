@@ -47,12 +47,13 @@ namespace m0st4fa::regex {
 		for (size_t currStateNum = 0; currStateNum < Dstates.size(); currStateNum++) {
 			std::map<char, DFAStateT> transStates;
 			std::cout << "* currStateNum: " << currStateNum << ", size of Dstates: " << Dstates.size() << "\n";
+
+			// this may get invalidated when you add anything to the set
 			DFAStateT& stateSet = Dstates.at(currStateNum);
 
-			auto insertMap = [&nextStateNum](std::map<char, DFAStateT>& map, const std::set<Position>& followpos) {
+			auto insertMap = [&nextStateNum](std::map<char, DFAStateT>& map, const std::set<Position>& followpos, const char key) {
 
 				for (const Position& pos : followpos) {
-					char key = pos.lexeme;
 
 					auto it = map.find(key);
 					bool exists = it != map.end();
@@ -63,7 +64,6 @@ namespace m0st4fa::regex {
 						it->second.insert(pos);
 					else
 						map.insert_or_assign(key, DFAStateT{ {pos}, 0 });
-
 				}
 			};
 
@@ -76,11 +76,16 @@ namespace m0st4fa::regex {
 
 				std::cout << std::format("followpos of position {}: {}\n", (std::string)pos, m0st4fa::toString(followPos));
 
-				insertMap(transStates, followPos);
+				insertMap(transStates, followPos, pos.lexeme);
 			}
 
 			// set the transition table
 			for (std::pair<const char, DFAStateT>& state : transStates) {
+
+				//if this transition corresponds to 
+				if (state.first == REGEX_END_MARKER)
+					continue;
+
 				const auto& it = std::find(Dstates.begin(), Dstates.end(), state.second);
 				bool found = it != Dstates.end();
 
@@ -88,8 +93,9 @@ namespace m0st4fa::regex {
 				if (not found) {
 					state.second.state = nextStateNum++;
 					Dstates.push_back(state.second);
+
 					// table[currState][currInput] = state
-					table.second[stateSet.state][state.first] = state.second.state;
+					table.second[Dstates.at(currStateNum).state][state.first] = state.second.state;
 
 					continue;
 				}
@@ -136,6 +142,9 @@ namespace m0st4fa::regex {
 			void insert(const std::set<Position>& posSet) {
 				this->set.insert(posSet.begin(), posSet.end());
 			}
+			void erase(const Position& pos) {
+				set.erase(pos);
+			}
 			bool contains(const Position& pos) const {
 				return std::any_of(set.begin(), set.end(), [&pos](const Position& position) {
 					return pos == position;
@@ -147,14 +156,14 @@ namespace m0st4fa::regex {
 		};
 		size_t nextStateNum = 2;
 		std::vector<DFAState> Dstates{ {rootFirstpos, 1} };
-		size_t markerPosition = allPos.back().position;
-		std::cout << "marker position is: " << markerPosition << "\n";
+		Position markerPosition = allPos.back();
+		std::cout << "marker position is: " << markerPosition.position << "\n";
 		
 		// fill Dstates and fill DTable
-		_fill_table<DFAState>(Dstates, nextStateNum, markerPosition, table);
+		_fill_table<DFAState>(Dstates, nextStateNum, markerPosition.position, table);
 		
 		// THE TRANSITION FUNCTION IS NOT COMPLETE
-		std::for_each(Dstates.begin(), Dstates.end(), [markerPosition, &table](const DFAState& state) {
+		std::for_each(Dstates.begin(), Dstates.end(), [markerPosition, &table](DFAState& state) {
 			if (state.contains(markerPosition)) {
 				table.first.insert(state.state);
 				std::cout << "\nFOUND FINAL\n";
@@ -254,11 +263,14 @@ namespace m0st4fa::regex {
 		case T_QUANT_PLUS_GREEDY:
 			set_follow(data.firstpos, data.lastpos);
 			break;
-		case T_QUANT_QMARK_GREEDY:
+		case T_QUANT_QMARK_GREEDY: {
+			Logger logger;
+			std::cout << std::format("firstpos: {}, lastpos: {}, nullable", m0st4fa::toString(data.firstpos), m0st4fa::toString(data.lastpos)) << "\n";
 			newState.data.data.nullable = true;
 			break;
+		}
 		case T_QUANT_STAR_LAZY:
-			newState.data.data.nullable = true;  
+			newState.data.data.nullable = true;
 			break;
 		case T_QUANT_PLUS_LAZY:
 			break;
@@ -313,7 +325,9 @@ namespace m0st4fa::regex {
 			newData.insertFirstpos(quantData.firstpos);
 		}
 		else if (quantData.nullable) {
-			newData.insertLastpos(concData.lastpos);
+			Logger logger;
+			std::cout << std::format("conc: firstpos: {}, lastpos: {}, nullable", m0st4fa::toString(concData.firstpos), m0st4fa::toString(concData.lastpos)) << "\n";
+			newData.insertLastpos(concData.lastpos); // 
 		}
 
 		// set follow

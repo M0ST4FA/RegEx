@@ -40,7 +40,7 @@ namespace m0st4fa::regex {
 			return position	== rhs.position && lexeme == rhs.lexeme;
 		};
 		bool operator<(const Position& rhs) const {
-			return position < rhs.position&& lexeme < rhs.lexeme;
+			return position < rhs.position;
 		};
 	};
 	struct DataType {
@@ -50,10 +50,15 @@ namespace m0st4fa::regex {
 			bool nullable = false;
 
 			void insertFirstpos(const std::set<Position>& positions) {
+				std::cout << std::format("firstpos before insertion: {}\n", m0st4fa::toString(lastpos));
 				firstpos.insert(positions.begin(), positions.end());
+				std::cout << std::format("firstpos after insertion: {}\n", m0st4fa::toString(lastpos));
 			}
 			void insertLastpos(const std::set<Position>& positions) {
+				std::cout << std::format("lastpos before insertion: {}\n", m0st4fa::toString(lastpos));
 				lastpos.insert(positions.begin(), positions.end());
+				std::cout << std::format("lastpos after insertion: {}\n", m0st4fa::toString(lastpos));
+
 			}
 			// in case any of these is true, the firstpos and laspost, respectively will be considered all the created positions, except the ones in `firstpos` and `lastpos` members.
 			bool fpAllPositions = false;

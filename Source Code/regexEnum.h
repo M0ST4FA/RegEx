@@ -54,8 +54,11 @@ namespace m0st4fa {
 	};
 
 	enum class Flag {
-		F_NONE,
-		F_COUNT,
+		F_NONE             = 0b00000000,
+		F_GLOBAL		   = 0b00000001,
+		F_STIKY            = 0b00000010,
+		F_CASE_INSENSITIVE = 0b00000100,
+		F_COUNT = 4,
 	};
 
 	std::string toString(const Terminal);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <exception>
+
 #include "LRPGenerator.h"
 #include "regexEnum.h"
 
@@ -89,4 +91,16 @@ namespace m0st4fa::regex {
 
 	SymbolType toSymbol(const Terminal);
 	SymbolType toSymbol(const Variable);
+
+}
+
+// EXCEPTIONS
+namespace m0st4fa::regex {
+
+	struct InvalidRegexFlags : public std::exception {
+		const char* what() const noexcept(true) override {
+			return "This sequence of flags is invalid. A flag cannot exist multiple times and certain flags conflict with each other.";
+		}
+	};
+
 }

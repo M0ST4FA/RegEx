@@ -16,7 +16,7 @@ protected:
 	using regex = m0st4fa::regex::RegularExpression;
 	using regexRes = m0st4fa::regex::RegularExpressionResult;
 
-	regex re{ R"(mm?)", "g" }; 
+	regex re{ R"(mm?)", "gg" };
 
 };
 

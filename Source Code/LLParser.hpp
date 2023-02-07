@@ -152,7 +152,8 @@ namespace m0st4fa {
 		* @output If w is in L(G), a leftmost derivation of w; otherwise, an error indication.
 		* It might execute actions during the leftmost derivation, for example, to make a parsing or syntax tree.
 		*/
-		ParserResult parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
+		template<typename ParserResultT>
+		ParserResultT parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
 	};
 
 	// IMPLEMENTATIONS
@@ -160,11 +161,12 @@ namespace m0st4fa {
 		typename SymbolT,
 		typename ParsingTableT, typename FSMTableT,
 		typename InputT>
-	ParserResult LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::parse(ErrorRecoveryType errRecoveryType)
+	template<typename ParserResultT>
+	ParserResultT LLParser<GrammarT, LexicalAnalyzerT, SymbolT, ParsingTableT, FSMTableT, InputT>::parse(ErrorRecoveryType errRecoveryType)
 	{
 		using StackType = std::vector<StackElementType>;
 
-		ParserResult res;
+		ParserResultT res;
 		LoggerInfo info{ LoggerInfo::INFO };
 
 		// Initalize the algorithm, such that the parser is in the initial configuration

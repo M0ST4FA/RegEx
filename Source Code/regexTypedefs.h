@@ -80,6 +80,46 @@ namespace m0st4fa::regex {
 			return data.firstpos.size() || data.lastpos.size();
 		}
 	};
+	struct DFAState {
+		std::set<Position> set;
+		size_t state = 0;
+
+		std::set<Position>::iterator begin() {
+			return set.begin();
+		}
+		std::set<Position>::iterator end() {
+			return set.end();
+		}
+
+		bool operator==(const DFAState& rhs) const {
+			return set == rhs.set;
+		}
+		operator std::string() const {
+			return std::format("[{}: {}]", state, m0st4fa::toString(set));
+		}
+
+		bool empty() const {
+			return set.empty();
+		}
+
+		void insert(const Position& pos) {
+			this->set.insert(pos);
+		}
+		void insert(const std::set<Position>& posSet) {
+			this->set.insert(posSet.begin(), posSet.end());
+		}
+		void erase(const Position& pos) {
+			set.erase(pos);
+		}
+		bool contains(const Position& pos) const {
+			return std::any_of(set.begin(), set.end(), [&pos](const Position& position) {
+				return pos == position;
+				});
+		}
+		bool contains(const size_t pos) const {
+			return contains(Position{ pos, REGEX_END_MARKER });
+		}
+	};
 
 	using StateType = LRState<DataType, TokenType>;
 
@@ -91,6 +131,12 @@ namespace m0st4fa::regex {
 
 	SymbolType toSymbol(const Terminal);
 	SymbolType toSymbol(const Variable);
+
+	struct ParsingResult {
+		DFATableType table;
+		FSMStateSetType finalStates;
+		bool caseInsensitive = false;
+	};
 
 }
 

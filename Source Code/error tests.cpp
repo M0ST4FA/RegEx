@@ -32,6 +32,9 @@ TEST_F(ErrorTest, flags) {
 	EXPECT_NO_THROW({
 		regex r = "/x/g"_r;
 		});
+	
+	regex r = "/x/i"_r;
+	EXPECT_TRUE(r.match("X"));
 
 };
 
@@ -40,6 +43,5 @@ TEST_F(ErrorTest, op) {
 
 	regex r = "/x/g"_r;
 	EXPECT_TRUE(r.match("x"));
-
 
 }

@@ -30,6 +30,11 @@ namespace m0st4fa {
 		const SymbolType RegularExpression::START_SYMBOL = RegularExpression::_get_start_symbol();
 		const TokenFactType RegularExpression::TOKEN_FACTORY = RegularExpression::_get_token_factory();
 		const DFAType RegularExpression::AUTOMATON = RegularExpression::_get_automaton();
+	}
+
+	// BEHAVIOR IMPLEMENTATION
+	namespace regex {
+		
 		RegularExpression operator""_r(const char* str, size_t len)
 		{
 
@@ -49,11 +54,7 @@ namespace m0st4fa {
 
 			return RegularExpression(regexPatt.str(), regexFlag.str());
 		}
-	}
 
-	// BEHAVIOR IMPLEMENTATION
-	namespace regex {
-		
 		void RegularExpression::_parse_flags(std::string_view flags) {
 			static_assert((unsigned)Flag::F_COUNT == 4);
 
@@ -136,7 +137,10 @@ namespace m0st4fa {
 		bool RegularExpression::match(std::string_view source)
 		{
 
-			switch (Flag(this->m_Flags & 0b00000111)) {
+			unsigned mask = ~((unsigned)Flag::F_CASE_INSENSITIVE);
+			unsigned modFlag = this->m_Flags & mask;
+
+			switch (Flag(modFlag & 0b00000111)) {
 				using enum Flag;
 			case F_NONE: {
 				FSMResult res = this->m_PatternAutomaton.simulate(source, this->m_FSMMode);
@@ -164,6 +168,8 @@ namespace m0st4fa {
 			}
 			
 			default:
+
+
 				this->p_Logger.log(LoggerInfo::FATAL_ERROR, "\nUnrecognized flag in match()\n");
 				std::abort();
 			}

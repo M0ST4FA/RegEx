@@ -33,9 +33,34 @@ namespace m0st4fa::regex {
 	};
 
 	template<typename DFAStateT>
-	void _fill_table(std::vector<DFAStateT>& Dstates, size_t& nextStateNum, size_t markerPosition, std::pair<FSMStateSetType, DFATableType>& table)
+	void _fill_table(std::vector<DFAStateT>& Dstates, size_t& nextStateNum, size_t markerPosition, ParsingResult& parsingResult)
 	{
 
+		auto setTranTable = [&parsingResult, &Dstates](size_t currStateNum, size_t input, size_t nextStateNum) {
+			// table[currState][currInput] = state
+			parsingResult.table[currStateNum][input] = nextStateNum;
+
+			if (!(parsingResult.caseInsensitive && std::isalpha(input)))
+				return;
+
+			char complInput = std::isupper(input) ? std::tolower(input) : std::toupper(input);
+			parsingResult.table[currStateNum][complInput] = nextStateNum;
+		};
+		auto insertMap = [&nextStateNum](std::map<char, DFAStateT>& map, const std::set<Position>& followpos, const char key) {
+
+			for (const Position& pos : followpos) {
+
+				auto it = map.find(key);
+				bool exists = it != map.end();
+
+				std::cout << std::format("	Inserting {} into key '{}'\n", (std::string)pos, key);
+
+				if (exists)
+					it->second.insert(pos);
+				else
+					map.insert_or_assign(key, DFAStateT{ {pos}, 0 });
+			}
+		};
 		/** 
 		* for every state `i` in `Dstates`:
 		*	for every position `p` in `i`:
@@ -50,22 +75,6 @@ namespace m0st4fa::regex {
 
 			// this may get invalidated when you add anything to the set
 			DFAStateT& stateSet = Dstates.at(currStateNum);
-
-			auto insertMap = [&nextStateNum](std::map<char, DFAStateT>& map, const std::set<Position>& followpos, const char key) {
-
-				for (const Position& pos : followpos) {
-
-					auto it = map.find(key);
-					bool exists = it != map.end();
-
-					std::cout << std::format("	Inserting {} into key '{}'\n", (std::string)pos, key);
-
-					if (exists)
-						it->second.insert(pos);
-					else
-						map.insert_or_assign(key, DFAStateT{ {pos}, 0 });
-				}
-			};
 
 			// populate DStates
 			for (const Position& pos : stateSet) {
@@ -95,83 +104,44 @@ namespace m0st4fa::regex {
 					Dstates.push_back(state.second);
 
 					// table[currState][currInput] = state
-					table.second[Dstates.at(currStateNum).state][state.first] = state.second.state;
+					setTranTable(Dstates.at(currStateNum).state, state.first, state.second.state);
 
 					continue;
 				}
 
 				// if the state has been found
-				table.second[stateSet.state][state.first] = it->state;
+				setTranTable(stateSet.state, state.first, it->state);
 			}
 
 		}
 
 	}
 
-	void act_accept(StackType& stack, StateType& newState, std::pair<FSMStateSetType, DFATableType>& table) {
+	void act_accept(StackType& stack, StateType& newState, ParsingResult& parsingResult) {
+
 		std::cout << std::format("Accepted! the followpos set:\n{}", toString(followpos));
 
 		// create Dstates and initialize it
 		const auto& root = stack.back();
 		const auto& rootFirstpos = root.data.data.firstpos;
-		struct DFAState {
-			std::set<Position> set;
-			size_t state = 0;
-
-			std::set<Position>::iterator begin() {
-				return set.begin();
-			}
-			std::set<Position>::iterator end() {
-				return set.end();
-			}
-
-			bool operator==(const DFAState& rhs) const {
-				return set == rhs.set;
-			}
-			operator std::string() const {
-				return std::format("[{}: {}]", state, m0st4fa::toString(set));
-			}
-
-			bool empty() const {
-				return set.empty();
-			}
-
-			void insert(const Position& pos) {
-				this->set.insert(pos);
-			}
-			void insert(const std::set<Position>& posSet) {
-				this->set.insert(posSet.begin(), posSet.end());
-			}
-			void erase(const Position& pos) {
-				set.erase(pos);
-			}
-			bool contains(const Position& pos) const {
-				return std::any_of(set.begin(), set.end(), [&pos](const Position& position) {
-					return pos == position;
-					});
-			}
-			bool contains(const size_t pos) const {
-				return contains(Position{ pos, REGEX_END_MARKER });
-			}
-		};
+		
 		size_t nextStateNum = 2;
 		std::vector<DFAState> Dstates{ {rootFirstpos, 1} };
 		Position markerPosition = allPos.back();
 		std::cout << "marker position is: " << markerPosition.position << "\n";
 		
 		// fill Dstates and fill DTable
-		_fill_table<DFAState>(Dstates, nextStateNum, markerPosition.position, table);
+		_fill_table<DFAState>(Dstates, nextStateNum, markerPosition.position, parsingResult);
 		
-		// THE TRANSITION FUNCTION IS NOT COMPLETE
-		std::for_each(Dstates.begin(), Dstates.end(), [markerPosition, &table](DFAState& state) {
+		// get the final states
+		std::for_each(Dstates.begin(), Dstates.end(), [markerPosition, &parsingResult](DFAState& state) {
 			if (state.contains(markerPosition)) {
-				table.first.insert(state.state);
-				std::cout << "\nFOUND FINAL\n";
+				parsingResult.finalStates.insert(state.state);
 			};
 			});
 
 		Logger logger;
-		logger.log(LoggerInfo::INFO, std::format("{}\n{}\n{}", m0st4fa::toString(table.first), m0st4fa::toString(Dstates), m0st4fa::toString(table.second)));
+		logger.log(LoggerInfo::INFO, std::format("{}\n{}\n{}", m0st4fa::toString(parsingResult.finalStates), m0st4fa::toString(Dstates), m0st4fa::toString(parsingResult.table)));
 
 	}
 

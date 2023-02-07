@@ -45,10 +45,11 @@ namespace m0st4fa {
 				this->m_Parser = new(this->m_Parser) ParserType{ *this->m_Lexer, PARSING_TABLE, START_SYMBOL };
 
 				// Initialize the pattern automaton that will be used for matching string inputs
-				const auto FSMData = this->m_Parser->parse<std::pair<FSMStateSetType, DFATableType>>();
+				ParsingResult init = { .caseInsensitive = (bool)(this->m_Flags & (unsigned)Flag::F_CASE_INSENSITIVE) };
+				const auto FSMData = this->m_Parser->parse<ParsingResult>(init);
 
-				const FSMStateSetType& finalStates = FSMData.first;
-				const DFATableType& transTable = FSMData.second;
+				const FSMStateSetType& finalStates = FSMData.finalStates;
+				const DFATableType& transTable = FSMData.table;
 				unsigned FSMFlags = _get_fsm_flags();
 
 				this->m_PatternAutomaton = DFAType{ finalStates, transTable, FSMFlags };

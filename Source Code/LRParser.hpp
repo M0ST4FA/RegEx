@@ -202,7 +202,7 @@ namespace m0st4fa {
 		}
 
 		template<typename ParserResultT = ParserResult>
-		ParserResultT parse(ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
+		ParserResultT parse(const ParserResultT&, ErrorRecoveryType = ErrorRecoveryType::ERT_NONE);
 	};
 
 	template<typename GrammarT, typename LexicalAnalyzerT, typename SymbolT, typename StateT, typename ParsingTableT, typename FSMTableT, typename InputT>
@@ -357,9 +357,9 @@ namespace m0st4fa {
 	ParserResultT LRParser<GrammarT, LexicalAnalyzerT,
 		SymbolT, StateT,
 		ParsingTableT, FSMTableT, InputT>::
-		parse(ErrorRecoveryType errorRecoveryType)
+		parse(const ParserResultT& initResult, ErrorRecoveryType errorRecoveryType)
 	{
-		ParserResultT result{};
+		ParserResultT result{initResult};
 
 		/** Algorithm
 		* Initialize the stack to contain only the start state.

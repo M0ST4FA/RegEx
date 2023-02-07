@@ -142,11 +142,13 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PEnum.cpp" />
     <ClCompile Include="PTable.cpp" />
+    <ClCompile Include="quantifiers tests.cpp" />
     <ClCompile Include="regex.cpp" />
     <ClCompile Include="ParserTests.cpp" />
     <ClCompile Include="regexEnum.cpp" />
     <ClCompile Include="regexTypedefs.cpp" />
-    <ClCompile Include="Test.cpp" />
+    <ClCompile Include="error tests.cpp" />
+    <ClCompile Include="flag tests.cpp" />
     <ClCompile Include="Tests.ixx" />
   </ItemGroup>
   <ItemGroup>

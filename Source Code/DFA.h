@@ -153,9 +153,11 @@ namespace m0st4fa {
 		* The number of states in the set is: (the number of characters in the longest prefix + 1, the start state).
 		* The last state in the matchedSet is almost guaranteed failed state.
 		*/
-		const auto it = matchedStates.rbegin();
-		while (it != matchedStates.rend()) {
-
+		
+		for (auto it = matchedStates.rbegin(); 
+			it != matchedStates.rend(); 
+			index--, it++)
+		{
 			state_t currState = *it;
 
 			if (currState == startState)

@@ -30,6 +30,25 @@ namespace m0st4fa {
 		const SymbolType RegularExpression::START_SYMBOL = RegularExpression::_get_start_symbol();
 		const TokenFactType RegularExpression::TOKEN_FACTORY = RegularExpression::_get_token_factory();
 		const DFAType RegularExpression::AUTOMATON = RegularExpression::_get_automaton();
+		RegularExpression operator""_r(const char* str, size_t len)
+		{
+
+			using enum std::regex_constants::syntax_option_type;
+			using enum std::regex_constants::match_flag_type;
+
+			static std::regex pattern{ "/(.*)/(.*)", icase | optimize };
+			std::cmatch match{};
+
+			if (!std::regex_match(str, match, pattern)) {
+				std::cout << "\nIncorrect sequence in operator\"\"_r\n";
+				std::abort();
+			}
+
+			std::sub_match regexPatt = match[1];
+			std::sub_match regexFlag = match[2];
+
+			return RegularExpression(regexPatt.str(), regexFlag.str());
+		}
 	}
 
 	// BEHAVIOR IMPLEMENTATION
@@ -116,9 +135,39 @@ namespace m0st4fa {
 
 		bool RegularExpression::match(std::string_view source)
 		{
-			auto res = this->m_PatternAutomaton.simulate(source, this->m_FSMMode);
 
-			return res.accepted;
+			switch (Flag(this->m_Flags & 0b00000111)) {
+				using enum Flag;
+			case F_NONE: {
+				FSMResult res = this->m_PatternAutomaton.simulate(source, this->m_FSMMode);
+				return res.accepted;
+			}
+			case F_STIKY: 
+			case F_GLOBAL: {
+				if (this->m_Index < source.size())
+					source.remove_prefix(this->m_Index);
+				else {
+					this->m_Index = 0;
+					return false;
+				}
+
+				FSMResult res = this->m_PatternAutomaton.simulate(source, this->m_FSMMode);
+
+				if (!res.accepted) {
+					this->m_Index = 0;
+					return false;
+				}
+
+				this->m_Index += res.indecies.end;
+
+				return true;
+			}
+			
+			default:
+				this->p_Logger.log(LoggerInfo::FATAL_ERROR, "\nUnrecognized flag in match()\n");
+				std::abort();
+			}
+
 		}
 	}
 }

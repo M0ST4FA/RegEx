@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <regex>
 
 #include "LRParser.hpp"
 #include "regexTypedefs.h"
@@ -14,10 +15,10 @@ namespace m0st4fa {
 			// data members
 			std::string m_Pattern;
 			mutable DFAType m_PatternAutomaton;
-			index_t m_Index = 0;
+			mutable index_t m_Index = 0;
 			std::string_view m_strFlags = "";
 			size_t m_Flags = (size_t)Flag::F_NONE;
-			FSM_MODE m_FSMMode = FSM_MODE::MM_LONGEST_PREFIX;
+			FSM_MODE m_FSMMode = FSM_MODE::MM_LONGEST_SUBSTRING;
 			mutable LexicalAnalyzerType* m_Lexer{ nullptr };
 			mutable ParserType* m_Parser{ nullptr };
 
@@ -61,9 +62,7 @@ namespace m0st4fa {
 			};
 			inline void _set_FSM_sim_mode() {
 
-				if (this->m_Flags == (unsigned)Flag::F_NONE)
-					this->m_FSMMode = FSM_MODE::MM_WHOLE_STRING;
-				else if (this->m_Flags & (unsigned)Flag::F_GLOBAL)
+				if (this->m_Flags == (unsigned)Flag::F_NONE && this->m_Flags & (unsigned)Flag::F_GLOBAL)
 					this->m_FSMMode = FSM_MODE::MM_LONGEST_SUBSTRING;
 				else if (this->m_Flags & (unsigned)Flag::F_STIKY)
 					this->m_FSMMode = FSM_MODE::MM_LONGEST_PREFIX;
@@ -103,6 +102,7 @@ namespace m0st4fa {
 			// getters
 			std::string_view getPattern() const { return std::string_view(m_Pattern.c_str(), m_Pattern.size() - 1); };
 			index_t getIndex() const { return m_Index; };
+			void setIndex(index_t newIndex) { this->m_Index = newIndex; }
 			std::string_view getFlags() const { return this->m_strFlags; };
 		};
 
@@ -110,3 +110,10 @@ namespace m0st4fa {
 		};
 	}
 };
+
+// literal operators
+namespace m0st4fa::regex {
+
+	RegularExpression operator""_r(const char*, size_t);
+
+}
